@@ -1,0 +1,81 @@
+name: Rust-Cargo Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_AR: aarch64-linux-gnu-ar
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build all
+    env:
+      name: "terracotta"
+      MACOSX_DEPLOYMENT_TARGET: "11.1"
+      RUST_BACKTRACE: "full"
+      targets: >-
+        x86_64-unknown-linux-musl 
+        x86_64-unknown-linux-gnu 
+        x86_64-pc-windows-gnu 
+        x86_64-apple-darwin 
+        aarch64-unknown-linux-musl 
+        aarch64-unknown-linux-gnu 
+        aarch64-apple-darwin
+    steps:
+    - uses: actions/checkout@v4
+      name: Git Clone
+    - name: Install cross-compilers
+      run: |
+        sudo apt install --yes --no-install-recommends \
+          gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+          gcc-mingw-w64-x86-64 \
+          musl-tools mingw-w64
+    - uses: Timmmm/setup-osxcross@main
+      name: Install cross-compilers for MacOS (Only Apple Can Do)
+      with:
+        osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
+    - name: Install rustup targets
+      run: |
+        # 将多行字符串转换为空格分隔列表
+        rustup target add $(echo "${{ env.targets }}" | tr '\n' ' ')
+    - name: Build all targets (single command)
+      id: build
+      run: |
+        # 执行单命令构建所有目标
+        cargo build --release --target $(echo $(echo "${{ env.targets }}" | tr '\n' ' ') | sed 's/ / --target /g')
+    - name: （仅编译失败后执行）输出Easytier目录内的内容
+      if: ${{ failure() && steps.build.conclusion == 'failure' }}
+      run: | 
+        sudo apt install --yes tree
+        tree .easytier
+    - name: Run tests
+      run: cargo test --verbose
+    - name: 整理文件列表
+      run: |
+        # 将多行字符串转换为数组
+        TARGETS=($(echo "${{ env.targets }}"))
+        mkdir -p target/output
+        for target in "${TARGETS[@]}"; do
+          bin_name="${{ env.name }}"
+          [[ "$target" == *"windows"* ]] && suffix=".exe" || suffix=""
+          
+          src_path="target/$target/release/$bin_name"
+          if [ -f "$src_path" ]; then
+              mv "$src_path" "target/output/$bin_name"-"$target$suffix"
+          else
+            echo "⚠️ 文件不存在: $src_path"
+          fi
+        done
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: "terracotta-build"
+        path: "target/output/*"

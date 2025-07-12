@@ -76,7 +76,7 @@ jobs:
           
           src_path="target/$target/release/$bin_name$suffix"
           if [ -f "$src_path" ]; then
-              _filename=$(echo $target | sed -e 's/-unknown-/-/g; s/-pc-/-/g; s/^\([^-]*\)-\(.*\)/\2-\1/')
+              _filename=$(echo $target | sed -e 's/-unknown-/-/g; s/-pc-/-/g; s/aarch64/arm64/g; s/x86_64/amd64/g; s/^\([^-]*\)-\(.*\)/\2-\1/' )
               mv "$src_path" "target/output/$bin_name"-"$_filename$suffix"
           else
             echo "⚠️ 文件不存在: $src_path"

@@ -89,6 +89,16 @@ jobs:
         done
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
+      if: github.event_name == 'pull_request'
       with:
         name: "terracotta-build"
         path: "target/output/*"
+
+    - name: Upload Prerelease
+      uses: softprops/action-gh-release@v1
+      if: github.ref_type == 'branch'
+      with:
+        tag_name: cibuild-${{ github.ref_name }}
+        files: |
+          target/output/*
+        prerelease: true

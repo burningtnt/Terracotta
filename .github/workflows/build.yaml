@@ -25,10 +25,11 @@ jobs:
       targets: >-
         x86_64-unknown-linux-musl 
         x86_64-unknown-linux-gnu 
-        x86_64-pc-windows-gnu 
+        x86_64-pc-windows-gnullvm 
         x86_64-apple-darwin 
         aarch64-unknown-linux-musl 
         aarch64-unknown-linux-gnu 
+        aarch64-pc-windows-gnullvm 
         aarch64-apple-darwin
     steps:
     - uses: actions/checkout@v4
@@ -76,7 +77,7 @@ jobs:
           
           src_path="target/$target/release/$bin_name$suffix"
           if [ -f "$src_path" ]; then
-              _filename=$(echo $target | sed -e 's/-unknown-/-/g; s/-pc-/-/g; s/aarch64/arm64/g; s/x86_64/amd64/g; s/^\([^-]*\)-\(.*\)/\2-\1/' )
+              _filename=$(echo $target | sed -e 's/unknown//g; s/pc//g; s/gnullvm//g; s/darwin//g; s/aarch64/arm64/g; s/^\([^-]*\)-\(.*\)/\2-\1/; s/^[[:space:]]*-\+//; s/-\+[[:space:]]*$//; s/[[:space:]]//g; s/--/-/g; ' )
               mv "$src_path" "target/output/$bin_name"-"$_filename$suffix"
           else
             echo "⚠️ 文件不存在: $src_path"

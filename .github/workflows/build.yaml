@@ -41,10 +41,10 @@ jobs:
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
           binutils-aarch64-linux-gnu \
           gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev \
-          gcc-mingw-w64-aarch64 \
           musl-tools musl-dev mingw-w64
         wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
         tar -xvf llvm-mingw.tar.xz -C ${{github.workspace}}
+        mv ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
         echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
     - name: Install cross-compliers for musl
       uses: Lesmiscore/musl-cross-compilers@master

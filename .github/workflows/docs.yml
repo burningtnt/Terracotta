@@ -10,14 +10,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.x
-      - run: pip install mkdocs-material 
-      - name: Deploy
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy MkDocs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG_FILE: sites/mkdocs.yml
-          EXTRA_PACKAGES: build-base
+          CONFIG_FILE: sites/mcdocs.yml
+          WORKING_DIR: sites
+          REQUIREMENTS: sites/requirements.txt

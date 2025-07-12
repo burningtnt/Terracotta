@@ -1,6 +1,9 @@
 site_name: Terracotta
 site_description: Terracotta
+site_dir: sites
 repo_url: https://github.com/burningtnt/Terracotta
+repo_name: Terracotta
+# site_url: https://zkitefly.github.io/Terracotta/
 theme:
   name: material
   language: zh
@@ -15,7 +18,7 @@ theme:
 
 nav:
   - 首页: index.md
-  - 下载: download.md
+  # - 下载: download.md
 
 markdown_extensions:
   - pymdownx.highlight:

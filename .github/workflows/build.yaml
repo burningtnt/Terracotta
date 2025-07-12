@@ -87,18 +87,24 @@ jobs:
             echo "⚠️ 文件不存在: $src_path"
           fi
         done
-    - name: Archive production artifacts
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       if: github.event_name == 'pull_request'
       with:
         name: "terracotta-build"
         path: "target/output/*"
 
+    - name: Delete release assets (cibuild-${{ github.ref_name }})
+      uses: 8Mi-Tech/delete-release-assets-action@main
+      if: github.ref_type == 'branch'
+      with:
+        tag: CIbuild-${{ github.ref_name }}
+        deleteOnlyFromDrafts: false
     - name: Upload Prerelease
       uses: softprops/action-gh-release@v1
       if: github.ref_type == 'branch'
       with:
-        tag_name: cibuild-${{ github.ref_name }}
+        tag_name: CIbuild-${{ github.ref_name }}
         files: |
           target/output/*
         prerelease: true

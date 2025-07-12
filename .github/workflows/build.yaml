@@ -39,7 +39,7 @@ jobs:
         sudo apt update
         sudo apt install --yes --no-install-recommends make build-essential clang libclang-dev lld llvm-dev \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
-          binutils-aarch64-linux-gnu \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
           gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev \
           musl-tools musl-dev mingw-w64
         wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz

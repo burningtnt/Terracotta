@@ -1,0 +1,32 @@
+site_name: Terracotta
+site_description: Terracotta
+repo_url: https://github.com/burningtnt/Terracotta
+theme:
+  name: material
+  language: zh
+  favicon: icon.ico
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+
+nav:
+  - 首页: index.md
+  - 下载: download.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed
+  - admonition
+  - footnotes
+
+plugins:
+  - search:
+      lang: zh

@@ -11,6 +11,8 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_AR: aarch64-linux-gnu-ar
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_AR: aarch64-linux-musl-a
 
 jobs:
   build:
@@ -33,11 +35,12 @@ jobs:
       name: Git Clone
     - name: Install cross-compilers
       run: |
+        sudo apt update
         sudo apt install --yes --no-install-recommends \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
-          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu gcc-aarch64-linux-musl \
           gcc-mingw-w64-x86-64 \
-          musl-tools mingw-w64
+          musl-tools musl-dev mingw-w64
     - uses: Timmmm/setup-osxcross@main
       name: Install cross-compilers for MacOS (Only Apple Can Do)
       with:

@@ -38,9 +38,11 @@ jobs:
         sudo apt update
         sudo apt install --yes --no-install-recommends \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
-          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu gcc-aarch64-linux-musl \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
           gcc-mingw-w64-x86-64 \
           musl-tools musl-dev mingw-w64
+    - name: Install cross-compliers for MUSL
+      uses: Lesmiscore/musl-cross-compilers@master
     - uses: Timmmm/setup-osxcross@main
       name: Install cross-compilers for MacOS (Only Apple Can Do)
       with:

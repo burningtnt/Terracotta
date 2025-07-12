@@ -74,7 +74,7 @@ jobs:
           bin_name="${{ env.name }}"
           [[ "$target" == *"windows"* ]] && suffix=".exe" || suffix=""
           
-          src_path="target/$target/release/$bin_name"
+          src_path="target/$target/release/$bin_name$suffix"
           if [ -f "$src_path" ]; then
               mv "$src_path" "target/output/$bin_name"-"$target$suffix"
           else

@@ -645,7 +645,8 @@
                     <div class="result-icon">🎮</div>
                     <h2 class="result-title">成功加入房间</h2>
                     <p class="result-description">现在可以进入多人游戏了！</p>
-                    <p class="result-description">备用联机地址：<span id="guest-backup-address" style="user-select: all">*</span></p>
+                    <p class="result-description">备用联机地址：<span id="guest-backup-address"
+                            style="user-select: all">*</span></p>
                     <button class="action-button back-button" id="guest-result-back-button">
                         <i class="fas fa-home"></i>
                         返回主页
@@ -666,23 +667,34 @@
 
         let state = { "state": "waiting" };
         if (new URL(location.href).protocol != "file:") {
-            setInterval(() => fetch("/state").then(r => r.json()).then(r => {
-                if (r.state == "waiting") {
-                    if (["main-view", "guest-input-view"].indexOf(document.getElementsByClassName("active")[0].id) == -1) {
-                        showView("main-view");
+            let counter = 0;
+
+            setInterval(() => {
+                fetch("/state").then(r => r.json()).then(r => {
+                    counter = 0;
+
+                    if (r.state == "waiting") {
+                        if (["main-view", "guest-input-view"].indexOf(document.getElementsByClassName("active")[0].id) == -1) {
+                            showView("main-view");
+                        }
+                    } else if (r.state == "scanning") {
+                        showView("host-loading-view");
+                    } else if (r.state == "hosting") {
+                        showView("host-result-view");
+                        if (document.getElementById("invite-code-display").innerText != r.room) {
+                            document.getElementById("invite-code-display").innerText = r.room;
+                        }
+                    } else if (r.state == "guesting") {
+                        showView("guest-result-view");
+                        document.getElementById("guest-backup-address").innerText = r.url
                     }
-                } else if (r.state == "scanning") {
-                    showView("host-loading-view");
-                } else if (r.state == "hosting") {
-                    showView("host-result-view");
-                    if (document.getElementById("invite-code-display").innerText != r.room) {
-                        document.getElementById("invite-code-display").innerText = r.room;
+                }).catch(() => {
+                    counter += 1;
+                    if (counter == 5) {
+                        alert("Terracotta | 陶瓦主程序已崩溃，请向开发者报告该错误");
                     }
-                } else if (r.state == "guesting") {
-                    showView("guest-result-view");
-                    document.getElementById("guest-backup-address").innerText = r.url
-                }
-            }), 500);
+                });
+            }, 500);
         }
 
         ['host-loading-back-button', "host-back-button", 'guest-loading-back-button', 'guest-back-button', 'guest-result-back-button'].forEach(id => {
@@ -716,4 +728,5 @@
         });
     </script>
 </body>
+
 </html>

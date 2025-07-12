@@ -34,7 +34,14 @@ pub fn create_factory() -> Result<EasytierFactory, Error> {
     sevenz_rust2::decompress(Cursor::new(EASYTIER_ARCHIVE.1.to_vec()), dir.clone())
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
-    return Ok(EasytierFactory { exe: Path::join(&dir, EASYTIER_ARCHIVE.0) });
+    let exe: PathBuf = Path::join(&dir, EASYTIER_ARCHIVE.0);
+    #[cfg(unix)] {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(exe.clone()).unwrap().permissions();
+        permissions.set_mode(permissions.mode() | 0o100);
+        fs::set_permissions(exe.clone(), permissions).unwrap();
+    }
+    return Ok(EasytierFactory { exe: exe });
 }
 
 impl Drop for EasytierFactory {

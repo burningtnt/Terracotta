@@ -179,10 +179,20 @@ impl Room {
             ),
             "--network-secret".to_string(),
             String::from_utf8_lossy(&self.secret).to_ascii_lowercase(),
-            "-p".to_string(),
-            "tcp://public.easytier.cn:11010".to_string(),
-            "--no-tun".to_string(),
         ];
+
+        args.extend(
+            vec![
+                "-p",
+                "tcp://public.easytier.cn:11010",
+                "--no-tun",
+                "--compression=zstd",
+                "--multi-thread",
+                "--latency-first",
+            ]
+            .iter()
+            .map(|n| n.to_string()),
+        );
 
         args.append(
             &mut (if self.host {

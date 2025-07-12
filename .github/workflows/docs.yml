@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - 'sites/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write

@@ -42,6 +42,7 @@ jobs:
           binutils-aarch64-linux-gnu \
           gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev \
           musl-tools musl-dev mingw-w64
+        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
     - name: Install cross-compliers for musl
       uses: Lesmiscore/musl-cross-compilers@master
       with:

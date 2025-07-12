@@ -6,7 +6,9 @@ repo_name: Terracotta
 theme:
   name: material
   language: zh
-  favicon: ../icon.ico
+  palette:
+    scheme: default
+    primary: red
   features:
     - navigation.instant
     - navigation.tracking

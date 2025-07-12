@@ -94,12 +94,17 @@ jobs:
         name: "terracotta-build"
         path: "target/output/*"
 
-    - name: Delete release assets (cibuild-${{ github.ref_name }})
+    - name: Delete release assets (CIbuild-${{ github.ref_name }})
       uses: 8Mi-Tech/delete-release-assets-action@main
       if: github.ref_type == 'branch'
       with:
         tag: CIbuild-${{ github.ref_name }}
         deleteOnlyFromDrafts: false
+    - name: Update CIbuild-${{ github.ref_name }} tag
+      uses: 8Mi-Tech/action-gh-release-update-tag@main
+      if: github.ref_type == 'branch'
+      with:
+        tag_name: CIbuild-${{ github.ref_name }}
     - name: Upload Prerelease
       uses: softprops/action-gh-release@v1
       if: github.ref_type == 'branch'

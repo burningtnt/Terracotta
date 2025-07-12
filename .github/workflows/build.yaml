@@ -37,11 +37,11 @@ jobs:
     - name: Install cross-compilers
       run: |
         sudo apt update
-        sudo apt install --yes --no-install-recommends build-essential clang lld \
+        sudo apt install --yes --no-install-recommends build-essential clang lld gcc-multilib g++-multilib \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-          gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev mingw-w64-x86-64-tools \
-          gcc-mingw-w64-aarch64 mingw-w64-aarch64-dev mingw-w64-aarch64-tools \
+          gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev \
+          gcc-mingw-w64-aarch64  \
           musl-tools musl-dev mingw-w64
     - name: Install cross-compliers for musl
       uses: Lesmiscore/musl-cross-compilers@master

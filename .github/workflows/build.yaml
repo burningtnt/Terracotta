@@ -58,11 +58,11 @@ jobs:
       run: |
         # 执行单命令构建所有目标
         cargo build --release --target $(echo $(echo "${{ env.targets }}" | tr '\n' ' ') | sed 's/ / --target /g')
-    - name: （仅编译失败后执行）输出Easytier目录内的内容
-      if: ${{ failure() && steps.build.conclusion == 'failure' }}
-      run: | 
-        sudo apt install --yes tree
-        tree .easytier
+    #- name: （仅编译失败后执行）输出Easytier目录内的内容
+      #if: ${{ failure() && steps.build.conclusion == 'failure' }}
+      #run: | 
+        #sudo apt install --yes tree
+        #tree .easytier
     - name: Run tests
       run: cargo test --verbose
     - name: 整理文件列表
@@ -76,7 +76,8 @@ jobs:
           
           src_path="target/$target/release/$bin_name$suffix"
           if [ -f "$src_path" ]; then
-              mv "$src_path" "target/output/$bin_name"-"$target$suffix"
+              _filename=$(echo $target | sed -e 's/-unknown-/-/g; s/-pc-/-/g; s/^\([^-]*\)-\(.*\)/\2-\1/')
+              mv "$src_path" "target/output/$bin_name"-"$_filename$suffix"
           else
             echo "⚠️ 文件不存在: $src_path"
           fi

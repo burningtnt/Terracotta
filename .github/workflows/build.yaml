@@ -82,25 +82,26 @@ jobs:
         done
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
+      if: ${{ github.event_name == 'pull_request' || github.ref_type == 'branch' && github.ref_name != 'master' }}
       with:
         name: "terracotta-build"
         path: "target/output/*"
     - name: Delete release assets (CIbuild-${{ github.ref_name }})
       uses: 8Mi-Tech/delete-release-assets-action@main
-      if: github.ref_type == 'branch'
+      if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
       with:
         tag: CIbuild-${{ github.ref_name }}
         deleteOnlyFromDrafts: false
     - name: Update CIbuild-${{ github.ref_name }} tag
       uses: richardsimko/update-tag@v1
-      if: github.ref_type == 'branch'
+      if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
       with:
         tag_name: CIbuild-${{ github.ref_name }}
       env:
         GITHUB_TOKEN: ${{ github.token }}
     - name: Upload Prerelease
       uses: softprops/action-gh-release@v1
-      if: github.ref_type == 'branch'
+      if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
       with:
         tag_name: CIbuild-${{ github.ref_name }}
         files: |

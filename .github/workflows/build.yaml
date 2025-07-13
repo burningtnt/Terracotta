@@ -35,6 +35,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     name: Build All
     steps:
     - name: Checkout
@@ -65,13 +67,19 @@ jobs:
     - name: Generate Cargo.lock file
       run: cargo generate-lockfile
     - name: Cargo Cache Restore or Save
+      id: cargo-cache
       uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    - name: Clean Old Cargo Cache
+      if:  steps.cargo-cache.outputs.cache-hit != 'true'
+      uses: yumemi-inc/clean-cache-action@v1
+      with:
+        ref: ${{ github.ref }}
+        key: ${{ runner.os }}-cargo-
     # 进入编译流程
     - name: Install Rust Toolchains
       run: |

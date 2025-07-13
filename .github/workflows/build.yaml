@@ -60,6 +60,14 @@ jobs:
       uses: 8Mi-Tech/setup-osx-cross@main
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install Rust Toolchains
       run: |
         rustup target add $(echo "$targets" | tr '\n' ' ')

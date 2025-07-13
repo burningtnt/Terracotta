@@ -64,7 +64,7 @@ jobs:
     # 准备缓存 Cargo 内容
     - name: Generate Cargo.lock file
       run: cargo generate-lockfile
-    - name: Cache
+    - name: Cargo Cache Restore or Save
       uses: actions/cache@v4
       with:
         path: |

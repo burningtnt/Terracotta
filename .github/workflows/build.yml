@@ -32,8 +32,8 @@ jobs:
         aarch64-pc-windows-gnullvm 
         aarch64-apple-darwin
     steps:
-    - uses: actions/checkout@v4
-      name: Git Clone
+    - name: Checkout
+      uses: actions/checkout@v4
     - name: Install Cross Compiler Toolchains
       run: |
         sudo apt update
@@ -54,7 +54,7 @@ jobs:
       uses: Timmmm/setup-osxcross@main
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
-    - name: Setup Rust Targets
+    - name: Install Rust Toolchains
       run: |
         rustup target add $(echo "${{ env.targets }}" | tr '\n' ' ')
     - name: Build All

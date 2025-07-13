@@ -57,7 +57,7 @@ jobs:
       with:
         target: "aarch64-linux-musl"
     - name: Install Cross Compliers (MacOS)
-      uses: Timmmm/setup-osxcross@main
+      uses: 8Mi-Tech/setup-osx-cross@main
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
     - name: Install Rust Toolchains

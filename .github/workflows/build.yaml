@@ -51,7 +51,7 @@ jobs:
         tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
         mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
         #echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
-        #mv -v ".github/.cargo" "."
+        mv -v ".github/.cargo" "."
     - name: Install Cross Compliers (General)
       uses: Lesmiscore/musl-cross-compilers@master
       with:

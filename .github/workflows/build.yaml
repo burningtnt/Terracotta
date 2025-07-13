@@ -39,6 +39,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    # 安装编译前置
     - name: Install Cross Compiler Toolchains
       run: |
         sudo apt update
@@ -60,6 +61,9 @@ jobs:
       uses: 8Mi-Tech/setup-osx-cross@main
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
+    # 准备缓存 Cargo 内容
+    - name: Generate Cargo.lock file
+      run: cargo generate-lockfile
     - name: Cache
       uses: actions/cache@v4
       with:
@@ -68,6 +72,7 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    # 进入编译流程
     - name: Install Rust Toolchains
       run: |
         rustup target add $(echo "$targets" | tr '\n' ' ')
@@ -75,6 +80,7 @@ jobs:
       id: build
       run: |
         cargo build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+    # 二进制测试流程
     - name: Run Tests
       run: cargo test --verbose
     - name: Assemble Artifact
@@ -93,6 +99,7 @@ jobs:
             echo "[WARNING] File doesn't exist: $src_path"
           fi
         done
+    # 上传到 Artifact 区
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:

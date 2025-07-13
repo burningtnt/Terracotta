@@ -1,3 +1,4 @@
+name: PR Closed Clean
 on:
   pull_request:
     types:
@@ -11,4 +12,4 @@ jobs:
     steps:
       - uses: yumemi-inc/clean-cache-action@v1
         with:
-          ref: 'refs/pull/${{ github.event.pull_request.number }}/merge'
+          ref: '${{ github.ref }}'

@@ -13,6 +13,10 @@ env:
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_AR: aarch64-linux-gnu-ar
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_AR: aarch64-linux-musl-ar
+  CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-clang"
+  CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
+  CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
+  CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
 
 jobs:
   build:
@@ -25,7 +29,8 @@ jobs:
       targets: >-
         x86_64-unknown-linux-musl 
         x86_64-unknown-linux-gnu 
-        x86_64-pc-windows-gnullvm 
+        x86_64-pc-windows-gnullvm
+        x86_64-pc-windows-gnu
         x86_64-apple-darwin 
         aarch64-unknown-linux-musl 
         aarch64-unknown-linux-gnu 
@@ -37,15 +42,15 @@ jobs:
     - name: Install Cross Compiler Toolchains
       run: |
         sudo apt update
-        sudo apt install --yes --no-install-recommends make build-essential clang libclang-dev lld llvm-dev \
+        sudo apt install --yes --no-install-recommends \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-          gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev \
+          gcc-mingw-w64-x86-64 \
           musl-tools musl-dev mingw-w64
         wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
         tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
         mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
-        echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
+        #echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
     - name: Install Cross Compliers (General)
       uses: Lesmiscore/musl-cross-compilers@master
       with:
@@ -56,19 +61,19 @@ jobs:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
     - name: Install Rust Toolchains
       run: |
-        rustup target add $(echo "${{ env.targets }}" | tr '\n' ' ')
+        rustup target add $(echo "$targets" | tr '\n' ' ')
     - name: Build All
       id: build
       run: |
-        cargo build --release --target $(echo $(echo "${{ env.targets }}" | tr '\n' ' ') | sed 's/ / --target /g')
+        cargo build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
     - name: Run Tests
       run: cargo test --verbose
     - name: Assemble Artifact
       run: |
-        TARGETS=($(echo "${{ env.targets }}"))
+        _targets=($(echo "$targets"))
         mkdir -p target/output
-        for target in "${TARGETS[@]}"; do
-          bin_name="${{ env.name }}"
+        for target in "${_targets[@]}"; do
+          bin_name="$name"
           [[ "$target" == *"windows"* ]] && suffix=".exe" || suffix=""
           
           src_path="target/$target/release/$bin_name$suffix"

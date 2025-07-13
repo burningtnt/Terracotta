@@ -17,25 +17,25 @@ env:
   CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
+  RUSTFLAGS: "-C target-feature=+crt-static"
+  name: "terracotta"
+  MACOSX_DEPLOYMENT_TARGET: "11.1"
+  RUST_BACKTRACE: "full"
+  targets: >-
+    x86_64-unknown-linux-musl 
+    x86_64-unknown-linux-gnu 
+    x86_64-pc-windows-gnullvm
+    x86_64-pc-windows-gnu
+    x86_64-apple-darwin 
+    aarch64-unknown-linux-musl 
+    aarch64-unknown-linux-gnu 
+    aarch64-pc-windows-gnullvm 
+    aarch64-apple-darwin
 
 jobs:
   build:
     runs-on: ubuntu-latest
     name: Build All
-    env:
-      name: "terracotta"
-      MACOSX_DEPLOYMENT_TARGET: "11.1"
-      RUST_BACKTRACE: "full"
-      targets: >-
-        x86_64-unknown-linux-musl 
-        x86_64-unknown-linux-gnu 
-        x86_64-pc-windows-gnullvm
-        x86_64-pc-windows-gnu
-        x86_64-apple-darwin 
-        aarch64-unknown-linux-musl 
-        aarch64-unknown-linux-gnu 
-        aarch64-pc-windows-gnullvm 
-        aarch64-apple-darwin
     steps:
     - name: Checkout
       uses: actions/checkout@v4

@@ -42,7 +42,7 @@ jobs:
     - name: Install Cross Compiler Toolchains
       run: |
         sudo apt update
-        sudo apt install --yes --no-install-recommends rustc-dev llvm-tools-preview build-essential \
+        sudo apt install --yes --no-install-recommends build-essential \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
           gcc-mingw-w64-x86-64 \

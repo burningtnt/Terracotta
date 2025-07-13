@@ -42,7 +42,7 @@ jobs:
     - name: Install Cross Compiler Toolchains
       run: |
         sudo apt update
-        sudo apt install --yes --no-install-recommends \
+        sudo apt install --yes --no-install-recommends rustc-dev llvm-tools-preview build-essential \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
           gcc-mingw-w64-x86-64 \
@@ -51,7 +51,7 @@ jobs:
         tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
         mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
         #echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
-        mv -v ".github/.cargo" "."
+        #mv -v ".github/.cargo" "."
     - name: Install Cross Compliers (General)
       uses: Lesmiscore/musl-cross-compilers@master
       with:
@@ -62,11 +62,12 @@ jobs:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
     - name: Install Rust Toolchains
       run: |
+        rustup install nightly
         rustup target add $(echo "$targets" | tr '\n' ' ')
     - name: Build All
       id: build
       run: |
-        cargo build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+        cargo +nightly build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
     - name: Run Tests
       run: cargo test --verbose
     - name: Assemble Artifact

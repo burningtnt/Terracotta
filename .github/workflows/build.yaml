@@ -17,7 +17,7 @@ env:
   CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
-  RUSTFLAGS: "-C target-feature=+crt-static"
+  #RUSTFLAGS: "-C target-feature=+crt-static"
   name: "terracotta"
   MACOSX_DEPLOYMENT_TARGET: "11.1"
   RUST_BACKTRACE: "full"
@@ -51,7 +51,7 @@ jobs:
         tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
         mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
         #echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
-        #mv -v ".github/.cargo" "."
+        mv -v ".github/.cargo" "."
     - name: Install Cross Compliers (General)
       uses: Lesmiscore/musl-cross-compilers@master
       with:
@@ -62,12 +62,11 @@ jobs:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
     - name: Install Rust Toolchains
       run: |
-        rustup install nightly
         rustup target add $(echo "$targets" | tr '\n' ' ')
     - name: Build All
       id: build
       run: |
-        cargo +nightly build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+        cargo build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
     - name: Run Tests
       run: cargo test --verbose
     - name: Assemble Artifact

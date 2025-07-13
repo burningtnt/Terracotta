@@ -88,7 +88,7 @@ jobs:
       with:
         ref: ${{ github.ref }}
         key: ${{ runner.os }}-cargo-full-
-    # 进入编译流程
+    # 编译流程
     - name: Install Rust Toolchains
       run: |
         rustup target add $(echo "$targets" | tr '\n' ' ')
@@ -99,6 +99,7 @@ jobs:
     # 二进制测试流程
     - name: Run Tests
       run: cargo test --verbose
+    # 文件整理流程
     - name: Assemble Artifact
       run: |
         _targets=($(echo "$targets"))

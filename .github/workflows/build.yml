@@ -1,0 +1,86 @@
+name: Rust-Cargo Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_AR: aarch64-linux-gnu-ar
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_AR: aarch64-linux-musl-ar
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build All
+    env:
+      name: "terracotta"
+      MACOSX_DEPLOYMENT_TARGET: "11.1"
+      RUST_BACKTRACE: "full"
+      targets: >-
+        x86_64-unknown-linux-musl 
+        x86_64-unknown-linux-gnu 
+        x86_64-pc-windows-gnullvm 
+        x86_64-apple-darwin 
+        aarch64-unknown-linux-musl 
+        aarch64-unknown-linux-gnu 
+        aarch64-pc-windows-gnullvm 
+        aarch64-apple-darwin
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install Cross Compiler Toolchains
+      run: |
+        sudo apt update
+        sudo apt install --yes --no-install-recommends make build-essential clang libclang-dev lld llvm-dev \
+          gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+          gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev \
+          musl-tools musl-dev mingw-w64
+        wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
+        tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
+        mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
+        echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
+    - name: Install Cross Compliers (General)
+      uses: Lesmiscore/musl-cross-compilers@master
+      with:
+        target: "aarch64-linux-musl"
+    - name: Install Cross Compliers (MacOS)
+      uses: Timmmm/setup-osxcross@main
+      with:
+        osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
+    - name: Install Rust Toolchains
+      run: |
+        rustup target add $(echo "${{ env.targets }}" | tr '\n' ' ')
+    - name: Build All
+      id: build
+      run: |
+        cargo build --release --target $(echo $(echo "${{ env.targets }}" | tr '\n' ' ') | sed 's/ / --target /g')
+    - name: Run Tests
+      run: cargo test --verbose
+    - name: Assemble Artifact
+      run: |
+        TARGETS=($(echo "${{ env.targets }}"))
+        mkdir -p target/output
+        for target in "${TARGETS[@]}"; do
+          bin_name="${{ env.name }}"
+          [[ "$target" == *"windows"* ]] && suffix=".exe" || suffix=""
+          
+          src_path="target/$target/release/$bin_name$suffix"
+          if [ -f "$src_path" ]; then
+              _filename=$(echo $target | sed -e 's/unknown//g; s/pc//g; s/gnullvm//g; s/darwin//g; s/aarch64/arm64/g; s/^\([^-]*\)-\(.*\)/\2-\1/; s/^[[:space:]]*-\+//; s/-\+[[:space:]]*$//; s/[[:space:]]//g; s/--/-/g; ' )
+              mv "$src_path" "target/output/$bin_name"-"$_filename$suffix"
+          else
+            echo "[WARNING] File doesn't exist: $src_path"
+          fi
+        done
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: "terracotta-build"
+        path: "target/output/*"

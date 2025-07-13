@@ -70,7 +70,7 @@ jobs:
       id: cargo-cache-check
       run: |
         case "${{ github.event_name }}" in
-          "push") echo "type=full" >> "$GITHUB_OUTPUT"; echo "path=target" >> "$GITHUB_OUTPUT" ;;
+          "push"|"workflow_dispatch") echo "type=full" >> "$GITHUB_OUTPUT"; echo "path=target" >> "$GITHUB_OUTPUT" ;;
           "pull_request") echo "type=mini" >> "$GITHUB_OUTPUT" ;;
         esac
     - name: Cargo Cache Restore or Save
@@ -83,7 +83,7 @@ jobs:
           ${{ steps.cargo-cache-check.outputs.path }}
         key: ${{ runner.os }}-cargo-${{ steps.cargo-cache-check.outputs.type }}-${{ hashFiles('**/Cargo.lock') }}
     - name: Clean Old Cargo Cache
-      if:  ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+      if:  ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.cargo-cache.outputs.cache-hit != 'true' }}
       uses: yumemi-inc/clean-cache-action@v1
       with:
         ref: ${{ github.ref }}

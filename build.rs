@@ -28,7 +28,7 @@ fn main() {
         ).unwrap_or_else(|_| String::new());
         
         let mut winres = winresource::WindowsResource::new();
-        if !windres_path.is_empty() { winres.set_toolkit_path(&windres_dir); }
+        if !windres_dir.is_empty() { winres.set_toolkit_path(&windres_dir); }
         winres.set_icon(
             Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
                 .join("icon.ico")

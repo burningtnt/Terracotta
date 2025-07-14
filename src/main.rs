@@ -28,7 +28,7 @@ use lock_windows::State as lock;
 #[cfg(unix)]
 pub mod lock_unix;
 #[cfg(unix)]
-use lock_unix as lock;
+use lock_unix::State as lock;
 
 lazy_static! {
     static ref LOGGING_FILE: std::path::PathBuf = std::path::Path::join(

@@ -20,15 +20,21 @@ fn main() {
 
     let target_family = env::var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
-        let windres_dir = env::var(
+        let windres_path = env::var(
             &format!(
-                "CARGO_TARGET_{}_WINDRES_DIR",
+                "CARGO_TARGET_{}_WINDRES_PATH",
                 env::var("TARGET").unwrap().replace('-', "_").to_uppercase()
             )
         ).unwrap_or_else(|_| String::new());
-        
+        let ar_path = env::var(
+            &format!(
+                "CARGO_TARGET_{}_AR",
+                env::var("TARGET").unwrap().replace('-', "_").to_uppercase()
+            )
+        ).unwrap_or_else(|_| String::new());
         let mut winres = winresource::WindowsResource::new();
-        if !windres_dir.is_empty() { winres.set_toolkit_path(&windres_dir); }
+        if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
+        if !ar_path.is_empty() { winres.set_ar_path(&ar_path); }
         winres.set_icon(
             Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
                 .join("icon.ico")
@@ -37,8 +43,8 @@ fn main() {
         );
         winres.compile().unwrap_or_else(|e| {
             panic!(
-                "compile() failed: {}\nwindres_dir was: {}",
-                e, windres_dir
+                "compile() failed: {}\nwindres_path was: {}",
+                e, windres_path
             );
         });
 

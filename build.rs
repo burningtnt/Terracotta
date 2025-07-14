@@ -32,8 +32,8 @@ fn main() {
         winres.set_icon("icon.ico");
         winres.compile().unwrap_or_else(|e| {
             panic!(
-                "compile() failed: {}\nwindres_path was: {}\nenv var name: {}",
-                e, windres_path, var_name
+                "compile() failed: {}\nwindres_path was: {}",
+                e, windres_path
             );
         });
 

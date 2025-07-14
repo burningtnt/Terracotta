@@ -6,7 +6,7 @@ use std::{
     process, vec,
 };
 
-extern crate winresourcewinres;
+extern crate winresource;
 
 fn main() {
     download_easytier();
@@ -24,7 +24,7 @@ fn main() {
             .set_icon("icon.ico");
             .compile()
             .unwrap();
-
+/* <----- 注释开头
         match std::env::var("CARGO_CFG_TARGET_ENV").unwrap().as_str() {
             "gnu" => println!(
                 "cargo::rustc-link-arg={}",
@@ -43,6 +43,7 @@ fn main() {
             _ => panic!(),
         }
         println!("cargo::rerun-if-changed=icon.ico");
+*/ 
     }
 }
 

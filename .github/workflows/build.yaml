@@ -17,6 +17,7 @@ env:
   CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
+  RC: ${{github.workspace}}/llvm-mingw/bin/llvm-rc
   #RUSTFLAGS: "-C target-feature=+crt-static"
   name: "terracotta"
   MACOSX_DEPLOYMENT_TARGET: "11.1"

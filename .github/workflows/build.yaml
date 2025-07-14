@@ -94,15 +94,15 @@ jobs:
         #
         CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: "/usr/bin/x86_64-w64-mingw32-gcc"
         CARGO_TARGET_X86_64_PC_WINDOWS_GNU_AR: "/usr/bin/x86_64-w64-mingw32-ar"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_WINDRES_PATH: "/usr/bin"
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_WINDRES_PATH: "/usr/bin/x86_64-w64-mingw32-windres"
         #
         CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-clang"
         CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "${{github.workspace}}/llvm-mingw/bin"
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "${{github.workspace}}/llvm-mingw/bin/llvm-windres"
         #
         CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
         CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "${{github.workspace}}/llvm-mingw/bin"
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "${{github.workspace}}/llvm-mingw/bin/llvm-windres"
       run: |
         cargo build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
     # 二进制测试流程

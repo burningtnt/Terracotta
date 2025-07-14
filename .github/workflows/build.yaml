@@ -45,6 +45,7 @@ jobs:
         wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
         tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
         mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
+        chmod +x llvm-mingw/bin/*
         mv -v ".github/.cargo" "."
     - name: Install Cross Compliers (General)
       uses: Lesmiscore/musl-cross-compilers@master

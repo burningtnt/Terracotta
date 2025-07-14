@@ -60,7 +60,7 @@ jobs:
       with:
         target: "aarch64-linux-musl"
     - name: Install Cross Compliers (MacOS)
-      uses: 8Mi-Tech/setup-osx-cross@main
+      uses: 8Mi-Tech/setup-osx-cross@6b7954cec12f774c2ff02b2a7596ec6791a39ed5
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
     # 准备缓存 Cargo 内容

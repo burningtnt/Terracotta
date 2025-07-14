@@ -31,7 +31,9 @@ fn main() {
             .set_icon("icon.ico")
             .set_windres_path(&windres_path)
             .compile()
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!("compile() failed: {}\nwindres_path was: {}", e, windres_path);
+            });
 
 /* <----- 注释开头
         match std::env::var("CARGO_CFG_TARGET_ENV").unwrap().as_str() {

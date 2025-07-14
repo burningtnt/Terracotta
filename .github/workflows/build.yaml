@@ -20,11 +20,11 @@ env:
   #
   CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-clang"
   CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
-  CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_RESOURCE_COMPILER: "${{github.workspace}}/llvm-mingw/bin/llvm-rc"
+  #CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_RESOURCE_COMPILER: "${{github.workspace}}/llvm-mingw/bin/llvm-rc"
   #
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
   CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
-  CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_RESOURCE_COMPILER: "${{github.workspace}}/llvm-mingw/bin/llvm-rc"
+  #CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_RESOURCE_COMPILER: "${{github.workspace}}/llvm-mingw/bin/llvm-rc"
   #
   name: "terracotta"
   MACOSX_DEPLOYMENT_TARGET: "11.1"
@@ -61,7 +61,7 @@ jobs:
         wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
         tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
         mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
-        #echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
+        echo "${{github.workspace}}/llvm-mingw/bin" >> $GITHUB_PATH
         mv -v ".github/.cargo" "."
     - name: Install Cross Compliers (General)
       uses: Lesmiscore/musl-cross-compilers@master

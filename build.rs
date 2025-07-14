@@ -6,7 +6,7 @@ use std::{
     process, vec,
 };
 
-extern crate winres;
+extern crate winresourcewinres;
 
 fn main() {
     download_easytier();
@@ -20,14 +20,8 @@ fn main() {
 
     let target_family = env::var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
-        winres::WindowsResource::new()
-            .set_icon_with_id(
-                Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
-                    .join("icon.ico")
-                    .to_str()
-                    .unwrap(),
-                "icon",
-            )
+        winresource::WindowsResource::new()
+            .set_icon("icon.ico");
             .compile()
             .unwrap();
 

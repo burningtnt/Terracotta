@@ -73,6 +73,8 @@ async fn main() {
 }
 
 async fn main_server(port: mpsc::Sender<u16>) {
+    logging!("UI", "Logs will be saved to {}. There will be not information on the console.", (*LOGGING_FILE).to_str().unwrap());
+
     let logging_file = std::fs::File::create((*LOGGING_FILE).clone()).unwrap();
     if cfg!(not(debug_assertions)) {
         #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -80,6 +82,7 @@ async fn main_server(port: mpsc::Sender<u16>) {
             use std::os::unix::io::AsRawFd;
             unsafe {
                 libc::dup2(logging_file.as_raw_fd(), libc::STDOUT_FILENO);
+                libc::dup2(logging_file.as_raw_fd(), libc::STDERR_FILENO);
             }
         }
         #[cfg(windows)]
@@ -88,6 +91,10 @@ async fn main_server(port: mpsc::Sender<u16>) {
             unsafe {
                 let _ = winapi::um::processenv::SetStdHandle(
                     winapi::um::winbase::STD_OUTPUT_HANDLE,
+                    logging_file.as_raw_handle() as _,
+                );
+                let _ = winapi::um::processenv::SetStdHandle(
+                    winapi::um::winbase::STD_ERROR_HANDLE,
                     logging_file.as_raw_handle() as _,
                 );
             }

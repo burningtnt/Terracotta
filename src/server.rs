@@ -154,7 +154,7 @@ pub async fn server_main(port: mpsc::Sender<u16>) {
 
     let rocket = rocket::custom(rocket::Config {
         log_level: rocket::log::LogLevel::Critical,
-        port: 0,
+        port: if cfg!(debug_assertions) { 8080 } else { 0 },
         ..rocket::Config::default()
     })
     .mount(

@@ -2,8 +2,8 @@ use std::borrow::Cow;
 use std::io::Result;
 use std::net::{Ipv4Addr, Ipv6Addr, UdpSocket};
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -14,15 +14,37 @@ pub struct Scanning {
     port: Arc<Mutex<Vec<u16>>>,
 }
 
+fn set_socket_reuse_address(socket: &UdpSocket) -> Result<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::io::AsRawFd;
+        unsafe {
+            let optval: libc::c_int = 1;
+            let ret = libc::setsockopt(
+                socket.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_REUSEPORT,
+                &optval as *const _ as *const libc::c_void,
+                std::mem::size_of_val(&optval) as libc::socklen_t,
+            );
+            if ret != 0 {
+                return Err(std::io::Error::last_os_error());
+            }
+        }
+    }
+
+    return Ok(());
+}
+
 impl Scanning {
     pub fn create(filter: fn(&str) -> bool) -> Scanning {
         let (tx, rx): (Sender<u8>, Receiver<u8>) = mpsc::channel();
         let port = Arc::new(Mutex::new(vec![]));
-    
+
         let port_cloned = Arc::clone(&port);
         thread::spawn(move || {
             let result = Self::run(rx, port_cloned, filter);
-    
+
             match result {
                 Ok(_) => {}
                 Err(err) => {
@@ -30,44 +52,47 @@ impl Scanning {
                 }
             }
         });
-    
+
         return Scanning {
             signal: tx,
             port: port,
         };
     }
-    
-    fn run(signal: Receiver<u8>, output: Arc<Mutex<Vec<u16>>>, filter: fn(&str) -> bool) -> Result<()> {
-        let sockets: [UdpSocket; 2] = [
-            {
-                let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 4445))?;
-                socket.join_multicast_v4(
-                    &Ipv4Addr::from_str("224.0.2.60").unwrap(),
-                    &Ipv4Addr::UNSPECIFIED,
-                )?;
-                socket.set_read_timeout(Some(Duration::from_millis(500)))?;
-    
-                socket
-            },
-            {
-                let socket = UdpSocket::bind((Ipv6Addr::UNSPECIFIED, 4445))?;
-                socket.join_multicast_v6(
-                    &Ipv6Addr::from_str("FF75:230::60").unwrap(),
-                    0,
-                )?;
-                socket.set_read_timeout(Some(Duration::from_millis(500)))?;
-    
-                socket
-            },
-        ];
-    
+
+    fn run(
+        signal: Receiver<u8>,
+        output: Arc<Mutex<Vec<u16>>>,
+        filter: fn(&str) -> bool,
+    ) -> Result<()> {
+        let mut sockets: Vec<UdpSocket> = vec![{
+            let socket = UdpSocket::bind((Ipv6Addr::UNSPECIFIED, 4445))?;
+            set_socket_reuse_address(&socket)?;
+
+            socket.join_multicast_v6(&Ipv6Addr::from_str("FF75:230::60").unwrap(), 0)?;
+            socket.set_read_timeout(Some(Duration::from_millis(500)))?;
+
+            socket
+        }];
+
+        if let Ok(socket) = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 4445)) {
+            set_socket_reuse_address(&socket)?;
+
+            socket.join_multicast_v4(
+                &Ipv4Addr::from_str("224.0.2.60").unwrap(),
+                &Ipv4Addr::UNSPECIFIED,
+            )?;
+            socket.set_read_timeout(Some(Duration::from_millis(500)))?;
+
+            sockets.push(socket);
+        }
+
         let mut buf: [u8; 8192] = [0; 8192];
-    
+
         let mut ports: Vec<(u16, Instant)> = vec![];
-    
+
         loop {
             let mut dirty = false;
-            
+
             if let Ok(value) = signal.recv_timeout(Duration::from_millis(500)) {
                 if value == SIG_TERMINAL {
                     return Ok(());
@@ -75,24 +100,22 @@ impl Scanning {
                     panic!("Unknown signal {}.", value)
                 }
             }
-    
+
             let now = Instant::now();
             for i in (0..ports.len()).rev() {
                 if match now.checked_duration_since(ports[i].1) {
-                    Some(value)=> {
-                        value.as_millis() >= 5_000
-                    }
-                    None => false
+                    Some(value) => value.as_millis() >= 5_000,
+                    None => false,
                 } {
                     dirty = true;
                     ports.remove(i);
                 }
             }
-    
+
             for socket in sockets.iter() {
                 if let Ok((length, _sender)) = socket.recv_from(&mut buf) {
                     let data: Cow<'_, str> = String::from_utf8_lossy(&buf[..length]);
-    
+
                     {
                         let begin = data.find("[MOTD]");
                         let end = data.find("[/MOTD]");
@@ -106,7 +129,7 @@ impl Scanning {
                             continue;
                         }
                     }
-    
+
                     {
                         let begin = data.find("[AD]");
                         let end = data.find("[/AD]");
@@ -124,7 +147,7 @@ impl Scanning {
                                     break;
                                 }
                             }
-    
+
                             ports.push((port, Instant::now()));
                             if !existed {
                                 dirty = true;
@@ -134,11 +157,11 @@ impl Scanning {
                     }
                 }
             }
-    
+
             if dirty {
                 let mut output = output.lock().unwrap();
                 output.clear();
-    
+
                 let mut message = String::from("Updating server list to [");
                 for i in 0..ports.len() {
                     output.push(ports[0].0);

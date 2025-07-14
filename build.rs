@@ -20,26 +20,25 @@ fn main() {
 
     let target_family = env::var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
-        let windres_path = env::var(
+        let windres_dir = env::var(
             &format!(
-                "CARGO_TARGET_{}_WINDRES_PATH",
+                "CARGO_TARGET_{}_WINDRES_DIR",
                 env::var("TARGET").unwrap().replace('-', "_").to_uppercase()
             )
         ).unwrap_or_else(|_| String::new());
         
         let mut winres = winresource::WindowsResource::new();
-        if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
-        winres.set_icon_with_id(
+        if !windres_path.is_empty() { winres.set_toolkit_path(&windres_dir); }
+        winres.set_icon(
             Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
                 .join("icon.ico")
                 .to_str()
-                .unwrap(),
-            "MAINICON",
+                .unwrap()
         );
         winres.compile().unwrap_or_else(|e| {
             panic!(
-                "compile() failed: {}\nwindres_path was: {}",
-                e, windres_path
+                "compile() failed: {}\nwindres_dir was: {}",
+                e, windres_dir
             );
         });
 

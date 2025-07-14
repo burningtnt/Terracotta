@@ -23,17 +23,19 @@ fn main() {
         let windres_path = env::var(
             &format!(
                 "CARGO_TARGET_{}_WINDRES_PATH",
-                env::var("TARGET").unwrap().to_uppercase()
+                env::var("TARGET").unwrap().replace('-', "_").to_uppercase()
             )
         ).unwrap_or_else(|_| String::new());
         
-        winresource::WindowsResource::new()
-            .set_icon("icon.ico")
-            .set_windres_path(&windres_path)
-            .compile()
-            .unwrap_or_else(|e| {
-                panic!("compile() failed: {}\nwindres_path was: {}", e, windres_path);
-            });
+        let mut winres = winresource::WindowsResource::new();
+        if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
+        winres.set_icon("icon.ico");
+        winres.compile().unwrap_or_else(|e| {
+            panic!(
+                "compile() failed: {}\nwindres_path was: {}\nenv var name: {}",
+                e, windres_path, var_name
+            );
+        });
 
 /* <----- 注释开头
         match std::env::var("CARGO_CFG_TARGET_ENV").unwrap().as_str() {

@@ -20,10 +20,19 @@ fn main() {
 
     let target_family = env::var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
+        let windres_path = env::var(
+            &format!(
+                "CARGO_TARGET_{}_WINDRES_PATH",
+                env::var("TARGET").unwrap().to_uppercase()
+            )
+        ).unwrap_or_else(|_| String::new());
+        
         winresource::WindowsResource::new()
             .set_icon("icon.ico")
+            .set_windres_path(&windres_path)
             .compile()
             .unwrap();
+
 /* <----- 注释开头
         match std::env::var("CARGO_CFG_TARGET_ENV").unwrap().as_str() {
             "gnu" => println!(

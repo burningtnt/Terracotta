@@ -29,7 +29,12 @@ fn main() {
         
         let mut winres = winresource::WindowsResource::new();
         if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
-        winres.set_icon("icon.ico");
+        winres.set_icon(
+            Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
+                .join("icon.ico")
+                .to_str()
+                .unwrap()
+        )
         winres.compile().unwrap_or_else(|e| {
             panic!(
                 "compile() failed: {}\nwindres_path was: {}",

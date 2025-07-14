@@ -1,4 +1,5 @@
-name: PR Closed Cleanon:
+name: PR Closed Cleanon
+on:
   pull_request:
     types:
       - closed

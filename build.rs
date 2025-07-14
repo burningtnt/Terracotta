@@ -22,14 +22,13 @@ fn main() {
     if target_family == "windows" {
         winres::WindowsResource::new()
             .set_icon_with_id(
-                Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
+                Path::new(&env::var("CARGO_MANIFEST_DIR")?)
                     .join("icon.ico")
                     .to_str()
-                    .unwrap(),
+                    .ok_or("Invalid icon path (non-UTF8 characters)")?,
                 "icon",
             )
-            .compile()
-            .unwrap();
+            .compile()?;
 
         match std::env::var("CARGO_CFG_TARGET_ENV").unwrap().as_str() {
             "gnu" => println!(

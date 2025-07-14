@@ -36,8 +36,8 @@ fn main() {
         if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
         if !ar_path.is_empty() { winres.set_ar_path(&ar_path); }
         match env::var("CARGO_CFG_TARGET_ARCH").as_deref() {
-            Ok("aarch64") => env::set_var("RCFLAGS", "--target=arm64-windows"),
-            Ok("x86_64")  => env::set_var("RCFLAGS", "--target=x86_64-windows"),
+            Ok("aarch64") => { env::set_var("RCFLAGS", "--target=arm64-windows"); },
+            Ok("x86_64") => { env::set_var("RCFLAGS", "--target=x86_64-windows"); },
             _ => {}
         }
         winres.set_icon(

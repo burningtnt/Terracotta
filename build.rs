@@ -34,7 +34,7 @@ fn main() {
                 .join("icon.ico")
                 .to_str()
                 .unwrap()
-        )
+        );
         winres.compile().unwrap_or_else(|e| {
             panic!(
                 "compile() failed: {}\nwindres_path was: {}",

@@ -21,7 +21,7 @@ fn main() {
     let target_family = env::var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
         winresource::WindowsResource::new()
-            .set_icon("icon.ico");
+            .set_icon("icon.ico")
             .compile()
             .unwrap();
 /* <----- 注释开头

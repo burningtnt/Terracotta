@@ -35,6 +35,11 @@ fn main() {
         let mut winres = winresource::WindowsResource::new();
         if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
         if !ar_path.is_empty() { winres.set_ar_path(&ar_path); }
+        match env::var("CARGO_CFG_TARGET_ARCH").as_deref() {
+            Ok("aarch64") => env::set_var("RCFLAGS", "--target=arm64-windows"),
+            Ok("x86_64")  => env::set_var("RCFLAGS", "--target=x86_64-windows"),
+            _ => {}
+        }
         winres.set_icon(
             Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
                 .join("icon.ico")

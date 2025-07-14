@@ -40,7 +40,7 @@ impl State {
 
             return State::Single { file: file };
         } else {
-            flock(&file, LOCK_SH);
+            let _ = flock(&file, LOCK_SH);
 
             let mut buf: [u8; 2] = [0; 2];
             if let Ok(size) = file.read(&mut buf)

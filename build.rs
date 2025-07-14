@@ -10,7 +10,7 @@ extern crate winresource;
 
 fn main() {
     download_easytier();
-
+    
     sevenz_rust2::compress_to_path(
         "web",
         Path::new(&env::var("OUT_DIR").unwrap()).join("webstatics.7z"),
@@ -36,8 +36,8 @@ fn main() {
         if !windres_path.is_empty() { winres.set_windres_path(&windres_path); }
         if !ar_path.is_empty() { winres.set_ar_path(&ar_path); }
         match env::var("CARGO_CFG_TARGET_ARCH").as_deref() {
-            Ok("aarch64") => { env::set_var("RCFLAGS", "--target=arm64-windows"); },
-            Ok("x86_64") => { env::set_var("RCFLAGS", "--target=x86_64-windows"); },
+            Ok("aarch64") => unsafe_set_var("RCFLAGS", "--target=arm64-windows"),
+            Ok("x86_64") => unsafe_set_var("RCFLAGS", "--target=x86_64-windows"),
             _ => {}
         }
         winres.set_icon(
@@ -214,4 +214,12 @@ fn download_easytier() {
         r.unwrap();
     }
     fs::write(entry_conf, conf.entry).unwrap();
+}
+
+#[allow(unused_unsafe)]
+fn unsafe_set_var(key: &str, value: &str) {
+    // 构建脚本中需要 unsafe 块来修改环境变量
+    unsafe {
+        env::set_var(key, value);
+    }
 }

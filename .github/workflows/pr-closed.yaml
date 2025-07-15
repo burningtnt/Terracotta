@@ -1,8 +1,17 @@
 name: PR Closed Clean
+
 on:
   pull_request:
     types:
       - closed
+  workflow_dispatch:
+    inputs:
+      Pull_Request_ID:
+        required: false
+        type: string
+      key_name_prefix:
+        required: false
+        type: string
 
 jobs:
   clean:
@@ -10,6 +19,19 @@ jobs:
     permissions:
       actions: write
     steps:
-      - uses: yumemi-inc/clean-cache-action@v1
+      - name: Set variables with fallback
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "PR_ID=${{ github.event.inputs.Pull_Request_ID || 'unknown' }}" >> $GITHUB_OUTPUT
+            echo "KEY_PREFIX=${{ github.event.inputs.key_name_prefix || runner.os }}" >> $GITHUB_OUTPUT
+          else
+            echo "PR_ID=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "KEY_PREFIX=${{ runner.os }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Clean cache
+        uses: yumemi-inc/clean-cache-action@v1
         with:
-          ref: 'refs/pull/${{ github.event.pull_request.number }}/merge'
+          ref: refs/pull/${{ steps.vars.outputs.PR_ID }}/merge
+          key: ${{ steps.vars.outputs.KEY_PREFIX }}-

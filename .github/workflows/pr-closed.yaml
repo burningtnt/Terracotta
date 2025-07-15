@@ -19,7 +19,7 @@ jobs:
     permissions:
       actions: write
       contents: read
-      pull-requests: read
+      pull-requests: write
     steps:
       - name: Set variables with fallback
         id: vars

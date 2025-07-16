@@ -58,13 +58,6 @@ jobs:
     # 准备缓存 Cargo 内容
     - name: Generate Cargo.lock file
       run: cargo generate-lockfile
-    - name: Check Action Event Type
-      id: cargo-cache-check
-      run: |
-        case "${{ github.event_name }}" in
-          "push"|"workflow_dispatch") echo "type=full" >> "$GITHUB_OUTPUT"; echo "path=target" >> "$GITHUB_OUTPUT" ;;
-          "pull_request") echo "type=mini" >> "$GITHUB_OUTPUT" ;;
-        esac
     - name: Cargo Cache Restore or Save
       id: cargo-cache
       uses: actions/cache@v4
@@ -72,14 +65,14 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          ${{ steps.cargo-cache-check.outputs.path }}
-        key: ${{ runner.os }}-cargo-${{ steps.cargo-cache-check.outputs.type }}-${{ hashFiles('**/Cargo.lock') }}
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Clean Old Cargo Cache
       if:  ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.cargo-cache.outputs.cache-hit != 'true' }}
       uses: yumemi-inc/clean-cache-action@v1
       with:
         ref: ${{ github.ref }}
-        key: ${{ runner.os }}-cargo-full-
+        key: ${{ runner.os }}-cargo-
     # 编译流程
     - name: Install Rust Toolchains
       run: |
@@ -116,7 +109,7 @@ jobs:
           
           src_path="target/$target/release/$bin_name$suffix"
           if [ -f "$src_path" ]; then
-              _filename=$(echo $target | sed -e 's/unknown//g; s/pc//g; s/gnullvm//g; s/darwin//g; s/aarch64/arm64/g; s/^\([^-]*\)-\(.*\)/\2-\1/; s/^[[:space:]]*-\+//; s/-\+[[:space:]]*$//; s/[[:space:]]//g; s/--/-/g; ' )
+              _filename=$(echo $target | sed -e 's/unknown//g; s/pc//g; s/gnullvm//g; s/darwin//g; s/aarch64/arm64/g; s/apple/macos/g; s/^\([^-]*\)-\(.*\)/\2-\1/; s/^[[:space:]]*-\+//; s/-\+[[:space:]]*$//; s/[[:space:]]//g; s/--/-/g; ' )
               mv "$src_path" "target/output/$bin_name"-"$_filename$suffix"
           else
             echo "[WARNING] File doesn't exist: $src_path"

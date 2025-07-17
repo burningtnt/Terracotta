@@ -6,6 +6,7 @@ use std::{
     thread,
 };
 
+#[repr(C, align(8))]
 static EASYTIER_ARCHIVE: (&'static str, &'static [u8]) = (
     include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")), 
     include_bytes!(env!("TERRACOTTA_ET_ARCHIVE"))

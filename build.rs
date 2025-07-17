@@ -185,16 +185,15 @@ fn download_easytier() {
     
     // ✅ 3. 把 .7z 内容嵌入 Rust 静态变量源码中
     let archive_bytes = std::fs::read(&entry_archive).expect("failed to read archive");
-    let out_file = Path::new(&env::var("OUT_DIR").unwrap()).join("embed_archive.rs");
+    let out_file = Path::new(&env::var("OUT_DIR").unwrap()).join("embed_easytier_7z.rs");
     
     // 👉 将原始字节数组写入为 Rust 代码
     let rust_code = format!(
-        "/// Embedded EasyTier archive ({} bytes)\n\
-         pub static EASYTIER_ARCHIVE: &[u8] = &{:?};",
-        archive_bytes.len(),
-        archive_bytes
+        "pub static EASYTIER_ARCHIVE: (&'static str, &'static [u8]) = ({:?}, &{:?});",
+        conf.entry,
+        archive_bytes,
     );
-    std::fs::write(&out_file, rust_code).expect("failed to write embed_archive.rs");
+    std::fs::write(&out_file, rust_code).expect("failed to write embed_easytier_7z.rs");
     
     // ✅ 可选：自动触发重编译
     println!("cargo:rerun-if-changed={}", entry_archive.display());

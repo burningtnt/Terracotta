@@ -6,7 +6,9 @@ use std::{
     thread,
 };
 
-include!(concat!(env!("OUT_DIR"), "/embed_easytier_7z.rs"));
+#[path = concat!(env!("OUT_DIR"), "/embed_easytier_7z.rs")]
+mod embed;
+use embed::EASYTIER_ARCHIVE;
 
 lazy_static::lazy_static! {
     pub static ref FACTORY: EasytierFactory = create();

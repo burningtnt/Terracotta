@@ -167,9 +167,35 @@ fn download_easytier() {
     }
 
     writer.finish().unwrap();
+/*    
     let r = fs::rename(target.clone(), entry_archive.clone());
     if !fs::metadata(entry_archive.clone()).is_ok() {
         r.unwrap();
     }
     fs::write(entry_conf, conf.entry).unwrap();
+*/
+    // ✅ 1. 移动生成的 .7z 到正式位置
+    let r = fs::rename(&target, &entry_archive);
+    if !entry_archive.exists() {
+        r.unwrap();
+    }
+    
+    // ✅ 2. 写入入口标记
+    fs::write(&entry_conf, conf.entry).unwrap();
+    
+    // ✅ 3. 把 .7z 内容嵌入 Rust 静态变量源码中
+    let archive_bytes = std::fs::read(&entry_archive).expect("faile
+    let out_file = Path::new(&env::var("OUT_DIR").unwrap()).join("e
+    
+    // 👉 将原始字节数组写入为 Rust 代码
+    let rust_code = format!(
+        "/// Embedded EasyTier archive ({} bytes)\n\
+         pub static EASYTIER_ARCHIVE: &[u8] = &{:?};",
+        archive_bytes.len(),
+        archive_bytes
+    );
+    std::fs::write(&out_file, rust_code).expect("failed to write em
+    
+    // ✅ 可选：自动触发重编译
+    println!("cargo:rerun-if-changed={}", entry_archive.display());
 }

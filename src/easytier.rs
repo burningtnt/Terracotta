@@ -6,10 +6,7 @@ use std::{
     thread,
 };
 
-static EASYTIER_ARCHIVE: (&'static str, &'static [u8]) = (
-    include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")), 
-    include_bytes!(env!("TERRACOTTA_ET_ARCHIVE"))
-);
+include!(concat!(env!("OUT_DIR"), "/embed_easytier_7z.rs"));
 
 lazy_static::lazy_static! {
     pub static ref FACTORY: EasytierFactory = create();

@@ -3,8 +3,14 @@ name: Rust-Cargo Build
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - '.github/workflows/docs.yaml'
+      - 'sites/**'
   pull_request:
     branches: [ "master" ]
+    paths-ignore:
+      - '.github/workflows/docs.yaml'
+      - 'sites/**'
   workflow_dispatch: {}
 
 env:

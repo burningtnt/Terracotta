@@ -41,3 +41,9 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[package.metadata.bundle]
+identifier = "net.burningtnt.terracotta"
+name = "Terracotta"
+icon = "build/macos/icon.icns"
+resources = ["build/macos/Info.plist"]

@@ -31,9 +31,10 @@ fn main() {
             }
         }
 
-        compiler.set_icon("icon.ico");
+        compiler.set_icon("build/windows/icon.ico");
         compiler.compile().unwrap();
     }
+    println!("cargo::rerun-if-changed=build/windows/icon.ico");
 }
 
 fn download_easytier() {

@@ -1,0 +1,8 @@
+[package]
+name = "assemble"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+zip = "4.3.0"
+tar = "0.4.44"

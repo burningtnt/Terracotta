@@ -1,6 +1,5 @@
 use std::{
-    env,
-    fs,
+    env, fs,
     io::{self, Read},
     path::Path,
     process, vec,
@@ -11,29 +10,40 @@ fn main() {
 
     sevenz_rust2::compress_to_path(
         "web",
-        Path::new(&env::var("OUT_DIR").unwrap()).join("webstatics.7z"),
+        Path::new(&get_var("OUT_DIR").unwrap()).join("webstatics.7z"),
     )
     .unwrap();
     println!("cargo::rerun-if-changed=web");
 
-    let target_family = env::var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
+    let desc = get_var("TARGET").unwrap().replace('-', "_").to_uppercase();
+
+    let target_family = get_var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
+        println!("cargo::rerun-if-changed=build/windows/icon.ico");
         let mut compiler = winresource::WindowsResource::new();
 
         {
-            let desc = env::var("TARGET").unwrap().replace('-', "_").to_uppercase();
+            let current = Path::new(&get_var("CARGO_MANIFEST_DIR").unwrap()).to_owned();
 
-            if let Ok(windres) = env::var(&format!("CARGO_TARGET_{}_WINDRES_PATH", desc)) {
-                compiler.set_windres_path(&windres.to_string());
+            if let Ok(windres) = get_var(&format!("CARGO_TARGET_{}_WINDRES_PATH", desc)) {
+                let windres = current.join(windres);
+                compiler.set_windres_path(windres.to_str().unwrap());
             }
-            if let Ok(ar) = env::var(&format!("CARGO_TARGET_{}_AR", desc)) {
-                compiler.set_ar_path(&ar.to_string());
+            if let Ok(ar) = get_var(&format!("CARGO_TARGET_{}_AR", desc)) {
+                let ar = current.join(ar);
+                compiler.set_ar_path(ar.to_str().unwrap());
             }
         }
 
-        compiler.set_icon("icon.ico");
+        compiler.set_icon("build/windows/icon.ico");
         compiler.compile().unwrap();
     }
+
+    // if let Ok(value) = get_var(&format!("CARGO_TARGET_{}_RUSTFLAGS", desc)) {
+    //     for ele in value.split(" ") {
+    //         println!("cargo::rustc-link-arg={}", ele)
+    //     }
+    // }
 }
 
 fn download_easytier() {
@@ -44,8 +54,8 @@ fn download_easytier() {
         desc: &'static str,
     }
 
-    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap().to_string();
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap().to_string();
+    let target_os = get_var("CARGO_CFG_TARGET_OS").unwrap().to_string();
+    let target_arch = get_var("CARGO_CFG_TARGET_ARCH").unwrap().to_string();
     let conf = match target_os.as_str() {
         "windows" => match target_arch.as_str() {
             "x86_64" => EasytierFiles {
@@ -103,7 +113,7 @@ fn download_easytier() {
         _ => panic!("Unsupported target os: {}", target_os),
     };
 
-    let base = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
+    let base = Path::new(&get_var("CARGO_MANIFEST_DIR").unwrap())
         .join(".easytier")
         .join(conf.desc);
     let entry_conf = base.clone().join("entry-conf.v1.txt");
@@ -172,4 +182,9 @@ fn download_easytier() {
         r.unwrap();
     }
     fs::write(entry_conf, conf.entry).unwrap();
+}
+
+pub fn get_var<K: core::convert::AsRef<std::ffi::os_str::OsStr>>(key: K) -> core::result::Result<String, std::env::VarError> {
+    println!("cargo::rerun-if-env-changed={}", key.as_ref().to_string_lossy());
+    return env::var(key.as_ref());
 }

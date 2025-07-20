@@ -4,6 +4,9 @@ version = "0.2.0"
 edition = "2024"
 build = "build.rs"
 
+[workspace.package]
+version = "0.2.0"
+
 [dependencies]
 chrono = { version = "0.4.41", default-features = false, features = [
     "clock",
@@ -41,3 +44,7 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[workspace]
+resolver = "3"
+members = ["build"]

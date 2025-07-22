@@ -39,17 +39,6 @@ jobs:
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
           musl-tools musl-dev \
           mingw-w64
-        
-        if [ ! -f "target/llvm-mingw/flag" ]; then
-          mkdir -p target/
-          wget -O target/.llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
-          tar -xf target/.llvm-mingw.tar.xz -C target
-          sudo rm -r -f target/llvm-mingw
-          mv -v -f target/llvm-mingw-* target/llvm-mingw
-          chmod +x target/llvm-mingw/bin/*
-
-          touch target/llvm-mingw/flag
-        fi
     - name: Install Cross Compliers (MacOS)
       uses: 8Mi-Tech/setup-osx-cross@6b7954cec12f774c2ff02b2a7596ec6791a39ed5
       with:
@@ -74,6 +63,18 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    - name: Install LLVM-Mingw
+      run: |
+        if [ ! -f "target/llvm-mingw/flag" ]; then
+          mkdir -p target/
+          wget -O target/.llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
+          tar -xf target/.llvm-mingw.tar.xz -C target
+          sudo rm -r -f target/llvm-mingw
+          mv -v -f target/llvm-mingw-* target/llvm-mingw
+          chmod +x target/llvm-mingw/bin/*
+
+          touch target/llvm-mingw/flag
+        fi
     - name: Install Rust Toolchains
       run: |
         rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
@@ -160,7 +161,16 @@ jobs:
 
         ls -R
         
+        IFS=$'\n'
         ARTIFACTS=($(find . -mindepth 1 -maxdepth 1 -type f))
+        unset IFS
         for ARTIFACT in "${ARTIFACTS[@]}"; do
           cat "$ARTIFACT" | gh-actions-artifact-client.js upload $(basename "$ARTIFACT")
         done
+
+        cd ..
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: terracotta-all.zip
+        path: artifacts

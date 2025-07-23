@@ -14,10 +14,11 @@ extern crate rocket;
 use lazy_static::lazy_static;
 
 use std::{
-    env, fs,
+    env, fs, io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     sync::mpsc,
-    thread::spawn,
+    thread,
+    time::SystemTime,
 };
 
 pub mod code;
@@ -29,17 +30,19 @@ pub mod server;
 #[cfg(target_family = "windows")]
 pub mod lock_windows;
 #[cfg(target_family = "windows")]
-use lock_windows::State as lock;
+use lock_windows::State as Lock;
 #[cfg(target_family = "unix")]
 pub mod lock_unix;
 #[cfg(target_family = "unix")]
-use lock_unix::State as lock;
+use lock_unix::State as Lock;
 
 lazy_static::lazy_static! {
     static ref ADDRESSES: Vec<IpAddr> = {
         let mut addresses: Vec<IpAddr> = vec![];
 
         if let Ok(networks) = local_ip_address::list_afinet_netifas() {
+            logging!("UI", "Raw Local IP Addresses: {:?}", networks);
+
             for (_, address) in networks.into_iter() {
                 match address {
                     IpAddr::V4(ip) => {
@@ -67,76 +70,195 @@ lazy_static::lazy_static! {
 }
 
 lazy_static! {
-    static ref LOGGING_FILE: std::path::PathBuf = {
-        let base = if cfg!(target_os = "macos")
-            && let Ok(home) = env::var("HOME")
-        {
-            std::path::Path::new(&home).to_owned()
-        } else {
-            std::path::Path::new(&env::temp_dir()).to_owned()
-        };
-
+    static ref FILE_ROOT: std::path::PathBuf = if cfg!(target_os = "macos")
+        && let Ok(home) = env::var("HOME")
+    {
+        std::path::Path::new(&home).join("terracotta")
+    } else {
+        std::path::Path::new(&env::temp_dir()).join("terracotta")
+    };
+    static ref WORKING_DIR: std::path::PathBuf = {
         use chrono::{Datelike, Timelike};
         let now = chrono::Local::now();
-        base.join(format!(
-            "terracotta-log/{:04}-{:02}-{:02}-{:02}-{:02}-{:02}.log",
+
+        (*FILE_ROOT).join(format!(
+            "{:04}-{:02}-{:02}-{:02}-{:02}-{:02}-{}",
             now.year(),
             now.month(),
             now.day(),
             now.hour(),
             now.minute(),
-            now.second()
+            now.second(),
+            std::process::id()
         ))
     };
+    static ref LOGGING_FILE: std::path::PathBuf = WORKING_DIR.join("application.log");
+    static ref EASYTIER_DIR: std::path::PathBuf = WORKING_DIR.join("embedded-easytier");
 }
 
 #[rocket::main]
 async fn main() {
-    let state = lock::get_state();
-    match &state {
-        lock::Single { .. } => {
-            logging!("UI", "Running in server mode.");
+    thread::spawn(move || {
+        let now = SystemTime::now();
 
-            let (tx, rx) = mpsc::channel::<u16>();
-            let tx2 = tx.clone();
-
-            let future = main_server(tx);
-            spawn(move || {
-                let port = rx.recv().unwrap();
-                if port != 0 {
-                    state.set_port(port);
+        if let Ok(value) = fs::read_dir(&*FILE_ROOT) {
+            for file in value {
+                if let Ok(file) = file
+                    && let Ok(metadata) = file.metadata()
+                    && let Ok(file_type) = file.file_type()
+                    && let Ok(time) = metadata.created()
+                    && let Ok(duration) = now.duration_since(time)
+                    && duration.as_secs()
+                        >= if cfg!(debug_assertions) {
+                            10
+                        } else {
+                            24 * 60 * 60
+                        }
+                    && let Err(e) = if file_type.is_dir() {
+                        fs::remove_dir_all(file.path())
+                    } else {
+                        fs::remove_file(file.path())
+                    }
+                {
+                    logging!("UI", "Cannot remove old file {:?}: {:?}", file.path(), e);
                 }
-            });
-
-            future.await;
-            let _ = tx2.send(0);
+            }
         }
-        lock::Secondary { port } => {
+    });
+
+    fn wait<T>(obj: T) {
+        let mut buf = String::from("");
+        io::stdin().read_line(&mut buf).unwrap();
+        std::mem::drop(obj);
+    }
+
+    let arguments = env::args().skip(1).collect::<Vec<_>>();
+    match arguments.len() {
+        0 => main_auto().await,
+        1 => match arguments[0].as_str() {
+            "--auto" => main_auto().await,
+            "--single" => main_single(None).await,
+            "--help" => {
+                println!("Welcoming using Terracotta | 陶瓦联机");
+                println!("Usage: terracotta [OPTIONS]");
+                println!("Options:");
+                println!("  --auto: Automatically determine the mode to run.");
+                println!("  --single: Forcely run in single server mode.");
+                println!("  --secondary <port>: Forcely run in secondary mode, opening an UI on the specified port.");
+                println!("  --server <port>: Host a Terracotta Room on the specified port.");
+                println!("  --client <room_code>: Join a Terracotta Room with the specified room code.");   
+            },
+            _ => main_panic(arguments),
+        },
+        2 => match arguments[0].as_str() {
+            "--server" => {
+                if let Ok(port) = arguments[1].parse::<u16>() {
+                    let room = code::Room::create(port);
+                    logging!(
+                        "UI",
+                        "Hosting Minecraft server, port = {}, room = {}.",
+                        port,
+                        room.code
+                    );
+                    wait(room.start());
+
+                    easytier::FACTORY.drop_in_place();
+                } else {
+                    main_panic_msg(arguments, "Invalid room code");
+                }
+            },
+            "--client" => {
+                if let Ok(room) = code::Room::from(&arguments[1]) {
+                    logging!(
+                        "UI",
+                        "Joining Minecraft server, port = {}, room = {}.",
+                        room.port,
+                        room.code
+                    );
+                    wait(room.start());
+
+                    easytier::FACTORY.drop_in_place();
+                } else {
+                    main_panic_msg(arguments, "Invalid port number");
+                }
+            },
+            "--secondary" => {
+                if let Ok(port) = arguments[1].parse::<u16>() {
+                    main_secondary(port);
+                } else {
+                    main_panic_msg(arguments, "Invalid port number");
+                }
+            },
+            _ => main_panic(arguments),
+        },
+        _ => main_panic(arguments),
+    };
+}
+
+fn main_panic(arguments: Vec<String>) {
+    logging!("UI", "Unknown arguments: {}", arguments.join(", "));
+}
+
+fn main_panic_msg(arguments: Vec<String>, msg: &'static str) {
+    logging!("UI", "{}: {}", msg, arguments.join(", "));
+}
+
+async fn main_auto() {
+    let state = Lock::get_state();
+    match &state {
+        Lock::Single { .. } => {
+            logging!("UI", "Running in server mode.");
+            main_single(Some(state)).await;
+        }
+        Lock::Secondary { port } => {
             logging!("UI", "Running in secondary mode, port={}.", port);
 
-            let _ = open::that(format!("http://127.0.0.1:{}/", port));
+            main_secondary(*port);
         }
-        lock::Unknown => {
+        Lock::Unknown => {
             logging!(
                 "UI",
                 "Cannot determin application mode. Fallback to server mode."
             );
 
-            let (tx, _) = mpsc::channel::<u16>();
-            main_server(tx).await;
+            main_single(None).await;
         }
     };
 }
 
-async fn main_server(port: mpsc::Sender<u16>) {
+async fn main_single(state: Option<Lock>) {
     redirect_std(&*LOGGING_FILE);
 
-    let future = server::server_main(port);
-    let _ = Box::new(&*easytier::FACTORY);
+    let (tx, rx) = mpsc::channel::<u16>();
+    let tx2 = tx.clone();
+
+    let future = server::server_main(tx);
+    thread::spawn(|| {
+        let _ = &*easytier::FACTORY;
+    });
+
+    if let Some(state) = state {
+        thread::spawn(move || {
+            let port = rx.recv().unwrap();
+            if port != 0 {
+                state.set_port(port);
+            }
+        });
+    }
+
     future.await;
+    let _ = tx2.send(0);
+
+    easytier::FACTORY.drop_in_place();
 }
 
-fn redirect_std(file: &std::path::PathBuf) {
+fn main_secondary(port: u16) {
+    logging!("UI", "Running in secondary mode, port={}.", port);
+
+    let _ = open::that(format!("http://127.0.0.1:{}/", port));
+}
+
+fn redirect_std(file: &'static std::path::PathBuf) {
     let is_enable = env::args().into_iter().any(|e| &e == "--redirect-std=yes");
     let is_disable = env::args().into_iter().any(|e| &e == "--redirect-std=no");
 

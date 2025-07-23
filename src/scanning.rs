@@ -4,7 +4,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime};
 use std::{mem, thread};
 
 use socket2::{Domain, SockAddr, Socket, Type};
@@ -79,7 +79,7 @@ impl Scanning {
         let mut buf: [mem::MaybeUninit<u8>; 8192] =
             unsafe { mem::MaybeUninit::uninit().assume_init() };
 
-        let mut ports: Vec<(u16, Instant)> = vec![];
+        let mut ports: Vec<(u16, SystemTime)> = vec![];
 
         loop {
             let mut dirty = false;
@@ -92,11 +92,11 @@ impl Scanning {
                 }
             }
 
-            let now = Instant::now();
+            let now = SystemTime::now();
             for i in (0..ports.len()).rev() {
-                if match now.checked_duration_since(ports[i].1) {
-                    Some(value) => value.as_millis() >= 5_000,
-                    None => false,
+                if match now.duration_since(ports[i].1) {
+                    Ok(value) => value.as_millis() >= 5_000,
+                    Err(_) => false,
                 } {
                     dirty = true;
                     ports.remove(i);
@@ -140,7 +140,7 @@ impl Scanning {
                                 }
                             }
 
-                            ports.push((port, Instant::now()));
+                            ports.push((port, SystemTime::now()));
                             if !existed {
                                 dirty = true;
                             }

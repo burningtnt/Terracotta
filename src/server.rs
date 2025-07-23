@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Mutex, mpsc};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime};
 
 use rocket::http::Status;
 use rocket::serde::json;
@@ -14,10 +14,10 @@ use crate::scanning::Scanning;
 
 enum AppState {
     Waiting {
-        begin: Instant,
+        begin: SystemTime,
     },
     Scanning {
-        begin: Instant,
+        begin: SystemTime,
         scanner: Scanning,
     },
     Hosting {
@@ -35,7 +35,7 @@ lazy_static::lazy_static! {
     static ref GLOBAL_STATE: Mutex<(u32, AppState)> = Mutex::new((
         0,
         AppState::Waiting {
-            begin: Instant::now(),
+            begin: SystemTime::now(),
         }
     ));
 }
@@ -44,10 +44,10 @@ fn access_state() -> std::sync::MutexGuard<'static, (u32, AppState)> {
     let mut guard = GLOBAL_STATE.lock().unwrap();
     match &mut (*guard).1 {
         AppState::Waiting { begin } => {
-            *begin = Instant::now();
+            *begin = SystemTime::now();
         }
         AppState::Scanning { begin, .. } => {
-            *begin = Instant::now();
+            *begin = SystemTime::now();
         }
         _ => {}
     }
@@ -146,7 +146,7 @@ fn set_state_ide() -> Status {
     let state = &mut *access_state();
     state.0 += 1;
     state.1 = AppState::Waiting {
-        begin: Instant::now(),
+        begin: SystemTime::now(),
     };
     return Status::Ok;
 }
@@ -158,7 +158,7 @@ fn set_state_scanning() -> Status {
     let state = &mut *access_state();
     state.0 += 1;
     state.1 = AppState::Scanning {
-        begin: Instant::now(),
+        begin: SystemTime::now(),
         scanner: Scanning::create(|motd| motd != code::MOTD),
     };
     return Status::Ok;
@@ -237,17 +237,19 @@ pub async fn server_main(port: mpsc::Sender<u16>) {
         launch_signal_rx.recv().unwrap();
 
         loop {
-            fn handle_offline(time: &Instant) -> bool {
+            fn handle_offline(time: &SystemTime) -> bool {
                 const TIMEOUT: u64 = if cfg!(debug_assertions) { 20 } else { 600 };
 
-                let timeout = Instant::now().duration_since(*time).as_secs();
-                if timeout >= TIMEOUT {
-                    logging!(
-                        "UI",
-                        "Server has been in IDE state for {}s. Shutting down.",
-                        TIMEOUT
-                    );
-                    return true;
+                if let Ok(timeout) = SystemTime::now().duration_since(*time) {
+                    let timeout = timeout.as_secs();
+                    if timeout >= TIMEOUT {
+                        logging!(
+                            "UI",
+                            "Server has been in IDE state for {}s. Shutting down.",
+                            TIMEOUT
+                        );
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -292,7 +294,7 @@ pub async fn server_main(port: mpsc::Sender<u16>) {
                         logging!("UI", "Easytier has been dead.");
                         state.0 += 1;
                         state.1 = AppState::Waiting {
-                            begin: Instant::now(),
+                            begin: SystemTime::now(),
                         };
                     }
                 }
@@ -301,7 +303,7 @@ pub async fn server_main(port: mpsc::Sender<u16>) {
                         logging!("UI", "Easytier has been dead.");
                         state.0 += 1;
                         state.1 = AppState::Waiting {
-                            begin: Instant::now(),
+                            begin: SystemTime::now(),
                         };
                     }
                 }

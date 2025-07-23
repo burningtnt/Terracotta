@@ -1,0 +1,4 @@
+[package]
+name = "assemble"
+edition = "2024"
+version.workspace = true

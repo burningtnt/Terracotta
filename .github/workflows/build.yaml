@@ -2,122 +2,176 @@ name: Rust-Cargo Build
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-  workflow_dispatch: {}
+    paths-ignore:
+      - 'sites/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
-  #
   name: "terracotta"
   MACOSX_DEPLOYMENT_TARGET: "11.1"
   RUST_BACKTRACE: "full"
   targets: >-
-    x86_64-unknown-linux-musl 
-    x86_64-unknown-linux-gnu 
-    x86_64-pc-windows-gnullvm 
-    x86_64-pc-windows-gnu 
-    x86_64-apple-darwin 
-    aarch64-unknown-linux-musl 
-    aarch64-unknown-linux-gnu 
-    aarch64-pc-windows-gnullvm 
+    x86_64-pc-windows-gnullvm
+    aarch64-pc-windows-gnullvm
+    x86_64-unknown-linux-gnu
+    aarch64-unknown-linux-gnu
+    x86_64-unknown-linux-musl
+    aarch64-unknown-linux-musl
+    x86_64-apple-darwin
     aarch64-apple-darwin
 
 jobs:
-  build:
+  build-executable:
     runs-on: ubuntu-22.04
     permissions:
       actions: write
-    name: Build All
+    name: Build Executable
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    # 安装编译前置
-    - name: Install Cross Compiler Toolchains
+    - name: Install Cross Compilers (General)
       run: |
         sudo apt update
         sudo apt install --yes --no-install-recommends build-essential \
           gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-          gcc-mingw-w64-x86-64 \
-          musl-tools musl-dev mingw-w64
-        wget -O llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
-        tar -xf llvm-mingw.tar.xz -C ${{github.workspace}}
-        mv -v ${{github.workspace}}/llvm-mingw-* ${{github.workspace}}/llvm-mingw
-        chmod +x llvm-mingw/bin/*
-        mv -v ".github/.cargo" "."
-    - name: Install Cross Compliers (General)
-      uses: Lesmiscore/musl-cross-compilers@master
-      with:
-        target: "aarch64-linux-musl"
+          musl-tools musl-dev \
+          mingw-w64
     - name: Install Cross Compliers (MacOS)
       uses: 8Mi-Tech/setup-osx-cross@6b7954cec12f774c2ff02b2a7596ec6791a39ed5
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
-    # 准备缓存 Cargo 内容
-    - name: Generate Cargo.lock file
+    - name: Install Cross Compliers (Linux ARM64 MUSL)
+      uses: Lesmiscore/musl-cross-compilers@316df0fb4a48405086effb2e25c9c9dcce2f2b62
+      with:
+        target: "aarch64-linux-musl"
+    - name: Install Rustup
+      run: |
+        if ! command -v cargo &> /dev/null; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
+          echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
+        fi
+    - name: Generate Cache Key
       run: cargo generate-lockfile
-    - name: Cargo Cache Restore or Save
-      id: cargo-cache
+    - name: Cache Cargo
       uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
           target
+          .easytier
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Clean Old Cargo Cache
-      if:  ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.cargo-cache.outputs.cache-hit != 'true' }}
-      uses: yumemi-inc/clean-cache-action@v1
-      with:
-        ref: ${{ github.ref }}
-        key: ${{ runner.os }}-cargo-
-    # 编译流程
+    - name: Install LLVM-Mingw
+      run: |
+        if [ ! -f "target/llvm-mingw/flag" ]; then
+          mkdir -p target/
+          wget -O target/.llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
+          tar -xf target/.llvm-mingw.tar.xz -C target
+          sudo rm -r -f target/llvm-mingw
+          mv -v -f target/llvm-mingw-* target/llvm-mingw
+          chmod +x target/llvm-mingw/bin/*
+
+          touch target/llvm-mingw/flag
+        fi
     - name: Install Rust Toolchains
       run: |
-        rustup target add $(echo "$targets" | tr '\n' ' ')
+        rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
     - name: Build All
       id: build
       env:
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER: "target/llvm-mingw/bin/x86_64-w64-mingw32-clang"
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "target/llvm-mingw/bin/x86_64-w64-mingw32-ar"
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "target/llvm-mingw/bin/x86_64-w64-mingw32-windres"
+
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "target/llvm-mingw/bin/aarch64-w64-mingw32-clang"
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "target/llvm-mingw/bin/aarch64-w64-mingw32-ar"
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "target/llvm-mingw/bin/aarch64-w64-mingw32-windres"
+
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_AR: aarch64-linux-gnu-ar
+
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_AR: aarch64-linux-musl-ar
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: "/usr/bin/x86_64-w64-mingw32-gcc"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_AR: "/usr/bin/x86_64-w64-mingw32-ar"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_WINDRES_PATH: "/usr/bin/x86_64-w64-mingw32-windres"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-clang"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-ar"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "${{github.workspace}}/llvm-mingw/bin/x86_64-w64-mingw32-windres"
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-clang"
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-ar"
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "${{github.workspace}}/llvm-mingw/bin/aarch64-w64-mingw32-windres"
       run: |
-        cargo build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
-    # 二进制测试流程
-    - name: Run Tests
-      run: cargo test --verbose
-    # 文件整理流程
+        mkdir -p .cargo
+        cp -f build/config.toml .cargo/config.toml
+        cargo +nightly build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+        rm -r -f .cargo
     - name: Assemble Artifact
-      run: |
-        _targets=($(echo "$targets"))
-        mkdir -p target/output
-        for target in "${_targets[@]}"; do
-          bin_name="$name"
-          [[ "$target" == *"windows"* ]] && suffix=".exe" || suffix=""
-          
-          src_path="target/$target/release/$bin_name$suffix"
-          if [ -f "$src_path" ]; then
-              _filename=$(echo $target | sed -e 's/unknown//g; s/pc//g; s/gnullvm//g; s/darwin//g; s/aarch64/arm64/g; s/apple/macos/g; s/^\([^-]*\)-\(.*\)/\2-\1/; s/^[[:space:]]*-\+//; s/-\+[[:space:]]*$//; s/[[:space:]]//g; s/--/-/g; ' )
-              mv "$src_path" "target/output/$bin_name"-"$_filename$suffix"
-          else
-            echo "[WARNING] File doesn't exist: $src_path"
-          fi
-        done
-    # 上传到 Artifact 区
+      run: cargo run -p assemble
+      env:
+        TERRACOTTA_ARTIFACT: target/terracotta
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: "terracotta-build"
-        path: "target/output/*"
+        name: terracotta.zip
+        path: target/terracotta
+  assemble-dmg:
+    name: Assemble DMG
+    runs-on: macos-latest
+    needs: build-executable
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Restore Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: terracotta.zip
+        path: inputs
+    - name: Install Dependencies
+      uses: lhotari/gh-actions-artifact-client@v2
+    - name: Transform Artifact
+      run: |
+        TEMP_DIR=$(mktemp -d)
+        cp -R inputs/* "$TEMP_DIR"
+
+        mkdir artifacts
+        cd artifacts
+
+        IFS=$'\n'
+        APP_FOLDERS=($(find "$TEMP_DIR" -type d -name "*.app"))
+        unset IFS
+
+        for APP_FOLDER in "${APP_FOLDERS[@]}"; do
+
+          PKG_ROOT=$(mktemp -d)
+          mkdir -p "$PKG_ROOT/Applications"
+          cp -R "$APP_FOLDER" "$PKG_ROOT/Applications/"
+          chmod -R 777 "$PKG_ROOT/"
+
+          APP_NAME=($(dirname "$APP_FOLDER"))
+          APP_NAME=($(basename "$APP_NAME"))
+          PKG_NAME="${APP_NAME}.pkg"
+          echo "Creating package: folder=${PKG_ROOT}, pkg=${PKG_NAME}"
+
+          pkgbuild \
+            --root "$PKG_ROOT" \
+            --identifier "net.burningtnt.terracotta" \
+            --version "1.0" \
+            --install-location "/" \
+            "$PKG_NAME"
+          rm -rf "$PKG_ROOT"
+          rm -rf "$APP_FOLDER"
+        done
+
+        find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -exec mv {} . \;
+        rm -rf "$TEMP_DIR"
+
+        ls -R
+        
+        IFS=$'\n'
+        ARTIFACTS=($(find . -mindepth 1 -maxdepth 1 -type f))
+        unset IFS
+        for ARTIFACT in "${ARTIFACTS[@]}"; do
+          zip -q - "$ARTIFACT" | gh-actions-artifact-client.js upload $(basename "$ARTIFACT")
+        done
+
+        cd ..
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: terracotta-all.zip
+        path: artifacts

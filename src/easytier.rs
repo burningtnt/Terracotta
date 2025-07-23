@@ -8,6 +8,8 @@ use std::{
     time::Duration,
 };
 
+use crate::EASYTIER_DIR;
+
 static EASYTIER_ARCHIVE: (&'static str, &'static [u8]) = (
     include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")),
     include_bytes!(env!("TERRACOTTA_ET_ARCHIVE")),
@@ -26,22 +28,19 @@ pub struct Easytier {
 }
 
 fn create() -> EasytierFactory {
-    let dir = Path::join(&env::temp_dir(), format!("terracotta-rs-{}", process::id()));
-
-    let _ = fs::remove_dir_all(dir.clone());
-    let _ = fs::create_dir_all(dir.clone());
+    let _ = fs::create_dir_all(&*EASYTIER_DIR);
 
     logging!(
         "Easytier",
         "Releasing easytier to {}",
-        dir.to_string_lossy()
+        &*EASYTIER_DIR.to_string_lossy()
     );
 
-    sevenz_rust2::decompress(Cursor::new(EASYTIER_ARCHIVE.1.to_vec()), dir.clone())
+    sevenz_rust2::decompress(Cursor::new(EASYTIER_ARCHIVE.1.to_vec()), &*EASYTIER_DIR)
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
         .unwrap();
 
-    let exe: PathBuf = Path::join(&dir, EASYTIER_ARCHIVE.0);
+    let exe: PathBuf = Path::join(&*EASYTIER_DIR, EASYTIER_ARCHIVE.0);
     #[cfg(target_family = "unix")]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -54,16 +53,15 @@ fn create() -> EasytierFactory {
 
 impl Drop for EasytierFactory {
     fn drop(&mut self) {
-        let dir = self.exe.parent();
-        if let Some(dir) = dir {
-            let _ = fs::remove_dir_all(dir);
-        }
+        self.drop_in_place();
     }
 }
 
 impl EasytierFactory {
     pub fn create(&self, args: Vec<String>) -> Easytier {
         logging!("Easytier", "Starting easytier: {:?}", args);
+
+        fs::metadata(&self.exe).unwrap();
 
         let mut process: process::Child = Command::new(self.exe.as_path())
             .args(args)
@@ -133,6 +131,13 @@ impl EasytierFactory {
                 }
             }
         });
+    }
+
+    pub fn drop_in_place(&self) {
+        let dir = self.exe.parent();
+        if let Some(dir) = dir {
+            let _ = fs::remove_dir_all(dir);
+        }
     }
 }
 

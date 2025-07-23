@@ -55,18 +55,6 @@ fn main() {
             transform: TargetTransform::NONE,
         },
         Target {
-            toolchain: "x86_64-unknown-linux-musl",
-            executable: "terracotta",
-            classifier: "linux-x86_64-musl",
-            transform: TargetTransform::NONE,
-        },
-        Target {
-            toolchain: "aarch64-unknown-linux-musl",
-            executable: "terracotta",
-            classifier: "linux-aarch64-musl",
-            transform: TargetTransform::NONE,
-        },
-        Target {
             toolchain: "x86_64-apple-darwin",
             executable: "terracotta",
             classifier: "macos-x86_64",

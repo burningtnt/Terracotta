@@ -35,7 +35,9 @@ sevenz-rust2 = { version = "0.16.0", default-features = false, features = [
     "compress",
     "util",
 ] }
-reqwest = { version = "0.12.22", features = ["blocking"] }
+reqwest = { version = "0.12.22", default-features = false, features = [
+    "rustls-tls", "charset", "http2", "system-proxy", "blocking"
+] }
 zip = "4.3.0"
 
 [profile.release]

@@ -17,8 +17,6 @@ env:
     aarch64-pc-windows-gnullvm
     x86_64-unknown-linux-gnu
     aarch64-unknown-linux-gnu
-    x86_64-unknown-linux-musl
-    aarch64-unknown-linux-musl
     x86_64-apple-darwin
     aarch64-apple-darwin
 
@@ -34,71 +32,52 @@ jobs:
     - name: Install Cross Compilers (General)
       run: |
         sudo apt update
-        sudo apt install --yes --no-install-recommends build-essential \
-          gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
-          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-          musl-tools musl-dev \
-          mingw-w64
+        sudo apt install --yes --no-install-recommends build-essential llvm-18 clang-18
     - name: Install Cross Compliers (MacOS)
       uses: 8Mi-Tech/setup-osx-cross@6b7954cec12f774c2ff02b2a7596ec6791a39ed5
       with:
         osx-version: "${{ env.MACOSX_DEPLOYMENT_TARGET }}"
-    - name: Install Cross Compliers (Linux ARM64 MUSL)
-      uses: Lesmiscore/musl-cross-compilers@316df0fb4a48405086effb2e25c9c9dcce2f2b62
-      with:
-        target: "aarch64-linux-musl"
+    - name: Config Cross Compilers
+      run: |
+        mkdir -p target/bin
+        echo -e '#!/usr/bin/bash\nexec /usr/bin/llvm-windres-18 --target=aarch64-w64-mingw32 "$@"' > target/bin/llvm-windres-aarch64-w64-mingw32.sh
+        chmod +x target/bin/llvm-windres-aarch64-w64-mingw32.sh
+    - name: Install Zig
+      uses: mlugg/setup-zig@v2
     - name: Install Rustup
       run: |
         if ! command -v cargo &> /dev/null; then
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
           echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
         fi
+    - name: Install cargo-zigbuild
+      run: cargo install --locked cargo-zigbuild
     - name: Generate Cache Key
       run: cargo generate-lockfile
     - name: Cache Cargo
       uses: actions/cache@v4
       with:
         path: |
+          ~/.cargo/bin/
           ~/.cargo/registry
           ~/.cargo/git
           target
           .easytier
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Install LLVM-Mingw
-      run: |
-        if [ ! -f "target/llvm-mingw/flag" ]; then
-          mkdir -p target/
-          wget -O target/.llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
-          tar -xf target/.llvm-mingw.tar.xz -C target
-          sudo rm -r -f target/llvm-mingw
-          mv -v -f target/llvm-mingw-* target/llvm-mingw
-          chmod +x target/llvm-mingw/bin/*
-
-          touch target/llvm-mingw/flag
-        fi
     - name: Install Rust Toolchains
       run: |
         rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
     - name: Build All
       id: build
       env:
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER: "target/llvm-mingw/bin/x86_64-w64-mingw32-clang"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "target/llvm-mingw/bin/x86_64-w64-mingw32-ar"
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "target/llvm-mingw/bin/x86_64-w64-mingw32-windres"
-
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_LINKER: "target/llvm-mingw/bin/aarch64-w64-mingw32-clang"
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "target/llvm-mingw/bin/aarch64-w64-mingw32-ar"
-        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "target/llvm-mingw/bin/aarch64-w64-mingw32-windres"
-
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_AR: aarch64-linux-gnu-ar
-
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_AR: aarch64-linux-musl-ar
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "/usr/bin/llvm-windres-18"
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_AR: "/usr/bin/llvm-ar-18"
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_WINDRES_PATH: "target/bin/llvm-windres-aarch64-w64-mingw32.sh"
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNULLVM_AR: "/usr/bin/llvm-ar-18"
       run: |
         mkdir -p .cargo
         cp -f build/config.toml .cargo/config.toml
-        cargo +nightly build --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+        cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
         rm -r -f .cargo
     - name: Assemble Artifact
       run: cargo run -p assemble

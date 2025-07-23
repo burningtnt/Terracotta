@@ -166,7 +166,7 @@ jobs:
         ARTIFACTS=($(find . -mindepth 1 -maxdepth 1 -type f))
         unset IFS
         for ARTIFACT in "${ARTIFACTS[@]}"; do
-          cat "$ARTIFACT" | gh-actions-artifact-client.js upload $(basename "$ARTIFACT")
+          zip -q - "$ARTIFACT" | gh-actions-artifact-client.js upload $(basename "$ARTIFACT")
         done
 
         cd ..

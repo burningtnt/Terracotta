@@ -3,7 +3,6 @@ use std::{env, fs, path};
 fn main() {
     enum TargetTransform {
         NONE,
-        TAR,
         DMG,
     }
 
@@ -47,25 +46,25 @@ fn main() {
             toolchain: "x86_64-unknown-linux-gnu",
             executable: "terracotta",
             classifier: "linux-x86_64-gnu",
-            transform: TargetTransform::TAR,
+            transform: TargetTransform::NONE,
         },
         Target {
             toolchain: "aarch64-unknown-linux-gnu",
             executable: "terracotta",
             classifier: "linux-aarch64-gnu",
-            transform: TargetTransform::TAR,
+            transform: TargetTransform::NONE,
         },
         Target {
             toolchain: "x86_64-unknown-linux-musl",
             executable: "terracotta",
             classifier: "linux-x86_64-musl",
-            transform: TargetTransform::TAR,
+            transform: TargetTransform::NONE,
         },
         Target {
             toolchain: "aarch64-unknown-linux-musl",
             executable: "terracotta",
             classifier: "linux-aarch64-musl",
-            transform: TargetTransform::TAR,
+            transform: TargetTransform::NONE,
         },
         Target {
             toolchain: "x86_64-apple-darwin",
@@ -99,16 +98,6 @@ fn main() {
         match target.transform {
             TargetTransform::NONE => {
                 fs::copy(target.locate(), artifact.join(name)).unwrap();
-            }
-            TargetTransform::TAR => {
-                let mut header = tar::Header::new_gnu();
-                header.set_size(target.open().metadata().unwrap().len());
-                header.set_cksum();
-                tar::Builder::new(
-                    fs::File::create(artifact.join(format!("{}.tar", &name))).unwrap(),
-                )
-                .append_data(&mut header, &name, &mut target.open())
-                .unwrap();
             }
             TargetTransform::DMG => {
                 let source = env::current_dir().unwrap().join(format!("build/macos"));

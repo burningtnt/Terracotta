@@ -129,7 +129,7 @@ fn download_easytier() {
         "freebsd" => match target_arch.as_str() {
             "x86_64" => EasytierFiles {
                 url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-freebsd-13.2-x86_64-{V}.zip",
-                files: vec!["easytier-freebsd-x86_64/easytier-core"],
+                files: vec!["easytier-freebsd-13.2-x86_64/easytier-core"],
                 entry: "easytier-core",
                 desc: "freebsd-x86_64",
             },

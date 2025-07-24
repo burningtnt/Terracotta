@@ -92,7 +92,7 @@ fn main() {
                 header.set_mode(0o755);
 
                 let mut tar_builder = tar::Builder::new(
-                    fs::File::create(artifact.join(format!("{}.tar.gz", name))).unwrap(),
+                    fs::File::create(artifact.join(format!("{}.tar", name))).unwrap(),
                 );
                 let mut writer = tar_builder.append_writer(&mut header, name).unwrap();
                 io::copy(&mut target.open(), &mut writer).unwrap();

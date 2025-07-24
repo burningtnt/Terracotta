@@ -80,10 +80,6 @@ jobs:
         cp -f build/config.toml .cargo/config.toml
         cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
         rm -r -f .cargo
-    - name: Assemble Artifact
-      run: cargo run -p assemble
-      env:
-        TERRACOTTA_ARTIFACT: target/terracotta
     - name: Create AppImage & Apple App
       run: |
         cargo install cargo-packager --locked
@@ -95,7 +91,15 @@ jobs:
 
         # 苹果App
         cargo +nightly packager --release -f app --target x86_64-apple-darwin -v
+        mkdir -p target/terracotta/terracotta-macos-x86_64
+        mv -v target/terracotta/terracotta.app target/terracotta/terracotta-macos-x86_64/
         cargo +nightly packager --release -f app --target aarch64-apple-darwin -v
+        mkdir -p target/terracotta/terracotta-macos-aarch64
+        mv -v target/terracotta/terracotta.app target/terracotta/terracotta-macos-aarch64/
+    - name: Assemble Artifact
+      run: cargo run -p assemble
+      env:
+        TERRACOTTA_ARTIFACT: target/terracotta
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:

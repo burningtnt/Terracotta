@@ -60,6 +60,11 @@ members = ["build"]
 identifier = "net.burningtnt.terracotta"
 out-dir = "target/terracotta"
 icons = ["build/icons/*"]
+category = "Game"
 
 [package.metadata.packager.appimage.files]
 "build/linux/terracotta.desktop" = "usr/share/applications/terracotta.desktop"
+
+[package.metadata.packager.macos]
+minimumSystemVersion = "10.15"
+infoPlistPath = "build/macos/Info.plist"

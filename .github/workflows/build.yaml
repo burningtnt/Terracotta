@@ -103,20 +103,19 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: terracotta.zip
+        name: terracotta-build
         path: target/terracotta
   assemble-dmg:
     name: Assemble DMG
     runs-on: macos-latest
     needs: build-executable
-    if: false
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Restore Artifact
       uses: actions/download-artifact@v4
       with:
-        name: terracotta.zip
+        name: terracotta-build
         path: inputs
     - name: Install Dependencies
       uses: lhotari/gh-actions-artifact-client@v2
@@ -170,5 +169,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: terracotta-all.zip
+        name: terracotta-build-all
         path: artifacts

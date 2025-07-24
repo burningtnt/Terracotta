@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Terracotta
-Exec=AppRun
-Icon=terracotta-icon
+Exec=terracotta
+Icon=terracotta
 Type=Application
 Categories=Utility;

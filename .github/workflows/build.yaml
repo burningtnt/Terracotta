@@ -84,6 +84,18 @@ jobs:
       run: cargo run -p assemble
       env:
         TERRACOTTA_ARTIFACT: target/terracotta
+    - name: Create AppImage & Apple App
+      run: |
+        cargo install cargo-packager --locked
+        
+        # AppImage
+        cargo +nightly packager --release -f appimage --target x86_64-unknown-linux-gnu
+        # cargo +nightly packager -f appimage --target aarch64-unknown-linux-gnu
+        # 目前 aarch64-unknown-linux-gnu 的 AppImage 生成有问题，暂时不打包
+
+        # 苹果App
+        cargo +nightly packager --release -f app --target x86_64-apple-darwin -v
+        cargo +nightly packager --release -f app --target aarch64-apple-darwin -v
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -93,6 +105,7 @@ jobs:
     name: Assemble DMG
     runs-on: macos-latest
     needs: build-executable
+    if: false
     steps:
     - name: Checkout
       uses: actions/checkout@v4

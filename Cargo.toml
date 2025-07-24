@@ -55,3 +55,11 @@ panic = "abort"
 [workspace]
 resolver = "3"
 members = ["build"]
+
+[package.metadata.packager]
+identifier = "net.burningtnt.terracotta"
+out-dir = "target/terracotta"
+icons = ["build/icons/*"]
+
+[package.metadata.packager.appimage.files]
+"build/linux/terracotta.desktop" = "usr/share/applications/terracotta.desktop"

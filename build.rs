@@ -126,6 +126,15 @@ fn download_easytier() {
             },
             _ => panic!("Unsupported target arch: {}", target_arch),
         },
+        "freebsd" => match target_arch.as_str() {
+            "x86_64" => EasytierFiles {
+                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-freebsd-x86_64-{V}.zip",
+                files: vec!["easytier-freebsd-x86_64/easytier-core"],
+                entry: "easytier-core",
+                desc: "freebsd-x86_64",
+            },
+            _ => panic!("Unsupported target arch: {}", target_arch),
+        }
         _ => panic!("Unsupported target os: {}", target_os),
     };
 

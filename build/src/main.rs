@@ -59,6 +59,12 @@ fn main() {
             classifier: "macos-aarch64",
             transform: TargetTransform::DMG,
         },
+        Target {
+            toolchain: "x86_64-unknown-freebsd",
+            executable: "terracotta",
+            classifier: "freebsd-x86_64",
+            transform: TargetTransform::NONE,
+        },
     ];
 
     let artifact = env::current_dir()

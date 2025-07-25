@@ -61,10 +61,14 @@ jobs:
           target
           .easytier
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Install cargo-zigbuild
+    - name: Install Cargo-Zigbuild
       uses: taiki-e/cache-cargo-install-action@v2
       with:
         tool: cargo-zigbuild
+    - name: Install Cargo-Packager
+      uses: taiki-e/cache-cargo-install-action@v2
+      with:
+        tool: cargo-packager
     - name: Install Rust Toolchains
       run: |
         rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
@@ -84,27 +88,51 @@ jobs:
       run: cargo run -p assemble
       env:
         TERRACOTTA_ARTIFACT: target/terracotta
-    - name: Create AppImage & Apple App
-      run: |
-        cargo install cargo-packager --locked
-        
+    - name: Create AppImage
+      run: |       
         # AppImage
         cargo +nightly packager --release -f appimage --target x86_64-unknown-linux-gnu
-        # cargo +nightly packager -f appimage --target aarch64-unknown-linux-gnu
-        # 目前 aarch64-unknown-linux-gnu 的 AppImage 生成有问题，暂时不打包
-
-        # 苹果App
-        cargo +nightly packager --release -f app --target x86_64-apple-darwin -v
-        mkdir -p target/terracotta/terracotta-macos-x86_64
-        mv -v target/terracotta/terracotta.app target/terracotta/terracotta-macos-x86_64/
-        cargo +nightly packager --release -f app --target aarch64-apple-darwin -v
-        mkdir -p target/terracotta/terracotta-macos-aarch64
-        mv -v target/terracotta/terracotta.app target/terracotta/terracotta-macos-aarch64/
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: terracotta-build
         path: target/terracotta
+
+  build-linux-arm64:
+    name: Build Linux ARM64
+    runs-on: ubuntu-24.04-arm
+    needs: build-executable
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Restore Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: terracotta-build
+        path: artifacts
+    - name: Install Rustup
+      run: |
+        if ! command -v cargo &> /dev/null; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
+          echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
+        fi
+    - name: Install Cargo-Packager
+      uses: taiki-e/cache-cargo-install-action@v2
+      with:
+        tool: cargo-packager
+    - name: Install Rust Toolchains
+      run: |
+        rustup target add --toolchain nightly aarch64-unknown-linux-gnu
+    - name: Install GitHub Actions Artifact Client
+      uses: lhotari/gh-actions-artifact-client@v2
+    - name: Create AppImage
+      run: |       
+        # AppImage
+        mkdir -p target/aarch64-unknown-linux-gnu/release
+        mv -v artifacts/$(ls artifacts | grep "linux-aarch64-gnu") target/aarch64-unknown-linux-gnu/release/terracotta
+        cargo +nightly packager --release -f appimage --target aarch64-unknown-linux-gnu
+        cat target/terracotta/$(ls target/terracotta | grep "_aarch64.AppImage") | gh-actions-artifact-client.js upload $(ls target/terracotta | grep "_aarch64.AppImage")
+
   assemble-dmg:
     name: Assemble DMG
     runs-on: macos-latest

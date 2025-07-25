@@ -133,7 +133,7 @@ jobs:
         fi
         mv -v artifacts/$(ls artifacts | grep "linux-aarch64-gnu") target/aarch64-unknown-linux-gnu/release/terracotta
         cargo +nightly packager --release -f appimage --target aarch64-unknown-linux-gnu
-        cat target/terracotta/$(ls target/terracotta | grep "_aarch64.AppImage") | gh-actions-artifact-client.js upload $(ls target/terracotta | grep "_aarch64.AppImage")
+        zip -q - target/terracotta/$(ls target/terracotta | grep "_aarch64.AppImage") | gh-actions-artifact-client.js upload $(ls target/terracotta | grep "_aarch64.AppImage")
 
   assemble-dmg:
     name: Assemble DMG

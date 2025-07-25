@@ -127,8 +127,11 @@ jobs:
       uses: lhotari/gh-actions-artifact-client@v2
     - name: Create AppImage
       run: |       
-        # AppImage
         mkdir -p target/aarch64-unknown-linux-gnu/release
+        if [ -f artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar") ]; then
+          tar -vxf artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar") -C artifacts
+          rm artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar")
+        fi
         mv -v artifacts/$(ls artifacts | grep "linux-aarch64-gnu") target/aarch64-unknown-linux-gnu/release/terracotta
         cargo +nightly packager --release -f appimage --target aarch64-unknown-linux-gnu
         cat target/terracotta/$(ls target/terracotta | grep "_aarch64.AppImage") | gh-actions-artifact-client.js upload $(ls target/terracotta | grep "_aarch64.AppImage")

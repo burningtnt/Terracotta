@@ -1,0 +1,9 @@
+[package.metadata.packager]
+identifier = "net.burningtnt.terracotta"
+out-dir = "target/terracotta"
+category = "Game"
+icons = ["build/macos/icons/*"]
+
+[package.metadata.packager.macos]
+minimumSystemVersion = "10.15"
+infoPlistPath = "build/macos/Info.plist"

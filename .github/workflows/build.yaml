@@ -61,11 +61,11 @@ jobs:
           target
           .easytier
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Install Cargo-Zigbuild
+    - name: Install cargo-zigbuild
       uses: taiki-e/cache-cargo-install-action@v2
       with:
         tool: cargo-zigbuild
-    - name: Install Cargo-Packager
+    - name: Install cargo-packager
       uses: taiki-e/cache-cargo-install-action@v2
       with:
         tool: cargo-packager
@@ -89,7 +89,8 @@ jobs:
       env:
         TERRACOTTA_ARTIFACT: target/terracotta
     - name: Create AppImage
-      run: |       
+      run: |
+        cat build/patch-packager-linux.toml >> Cargo.toml
         cargo +nightly packager --release -f appimage --target x86_64-unknown-linux-gnu
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -115,7 +116,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
           echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
         fi
-    - name: Install Cargo-Packager
+    - name: Install cargo-packager
       uses: taiki-e/cache-cargo-install-action@v2
       with:
         tool: cargo-packager
@@ -125,7 +126,8 @@ jobs:
     - name: Install GitHub Actions Artifact Client
       uses: lhotari/gh-actions-artifact-client@v2
     - name: Create AppImage
-      run: |       
+      run: |
+        cat build/patch-packager-linux.toml >> Cargo.toml
         mkdir -p target/aarch64-unknown-linux-gnu/release
         if [ -f artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar") ]; then
           tar -vxf artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar") -C artifacts

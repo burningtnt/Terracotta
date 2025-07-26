@@ -91,23 +91,23 @@ jobs:
     - name: Upload artifacts
       id: upload-artifacts
       run: |
-        declare -A artifacts
-        artifacts["x86_64-pc-windows-gnullvm/release/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
-        artifacts["aarch64-pc-windows-gnullvm/release/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
+        declare -A win_artifacts
+        win_artifacts["x86_64-pc-windows-gnullvm/release/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
+        win_artifacts["aarch64-pc-windows-gnullvm/release/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
 
-        for artifact in "${!artifacts[@]}"; do
-          zip -q - "target/$artifact" | gh-actions-artifact-client.js upload "${artifacts[$artifact]}"
+        for artifact in "${!win_artifacts[@]}"; do
+          zip -q - "target/$artifact" | gh-actions-artifact-client.js upload "${win_artifacts[$artifact]}"
         done
         
-        declare -A artifacts
-        artifacts["x86_64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-x86_64.tar"
-        artifacts["aarch64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-arm64.tar"
-        artifacts["x86_64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
-        artifacts["aarch64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"
+        declare -A unix_artifacts
+        unix_artifacts["x86_64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-x86_64.tar"
+        unix_artifacts["aarch64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-arm64.tar"
+        unix_artifacts["x86_64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
+        unix_artifacts["aarch64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"
 
-        for artifact in "${!artifacts[@]}"; do
+        for artifact in "${!unix_artifacts[@]}"; do
           chmod 755 "target/$artifact"
-          tar -cJf - "target/$artifact" | gh-actions-artifact-client.js upload "${artifacts[$artifact]}"
+          tar -cJf - "target/$artifact" | gh-actions-artifact-client.js upload "${unix_artifacts[$artifact]}"
         done
 
         echo "version=${TERRACOTTA_VERSION}" >> $GITHUB_OUTPUT

@@ -107,7 +107,7 @@ jobs:
 
         for artifact in "${!unix_artifacts[@]}"; do
           chmod 755 "target/$artifact"
-          parent=$(dirname "$artifact")
+          parent=$(dirname "target/$artifact")
           file=$(basename "$artifact")
           tar -cJf - -C "$parent" "$file" | gh-actions-artifact-client.js upload "${unix_artifacts[$artifact]}"
         done

@@ -107,7 +107,9 @@ jobs:
 
         for artifact in "${!unix_artifacts[@]}"; do
           chmod 755 "target/$artifact"
-          tar -cJf - "target/$artifact" | gh-actions-artifact-client.js upload "${unix_artifacts[$artifact]}"
+          parent=$(dirname "$artifact")
+          file=$(basename "$artifact")
+          tar -cJf - -C "$parent" "$file" | gh-actions-artifact-client.js upload "${unix_artifacts[$artifact]}"
         done
 
         echo "version=${TERRACOTTA_VERSION}" >> $GITHUB_OUTPUT
@@ -118,8 +120,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Install TAR
-      run: brew install gnu-tar
     - name: Install Artifact Handle
       uses: lhotari/gh-actions-artifact-client@v2
     - name: Build DMG

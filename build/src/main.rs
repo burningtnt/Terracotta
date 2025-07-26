@@ -1,10 +1,9 @@
-use std::{env, fs, io, path};
+use std::{env, fs, io::{self, Write}, path};
 
 fn main() {
     enum TargetTransform {
         NONE,
-        TARGZ,
-        DMG,
+        TAR,
     }
 
     struct Target {
@@ -44,25 +43,25 @@ fn main() {
             toolchain: "x86_64-unknown-linux-gnu",
             executable: "terracotta",
             classifier: "linux-x86_64-gnu",
-            transform: TargetTransform::TARGZ,
+            transform: TargetTransform::TAR,
         },
         Target {
             toolchain: "aarch64-unknown-linux-gnu",
             executable: "terracotta",
             classifier: "linux-aarch64-gnu",
-            transform: TargetTransform::TARGZ,
+            transform: TargetTransform::TAR,
         },
         Target {
             toolchain: "x86_64-apple-darwin",
             executable: "terracotta",
             classifier: "macos-x86_64",
-            transform: TargetTransform::DMG,
+            transform: TargetTransform::NONE,
         },
         Target {
             toolchain: "aarch64-apple-darwin",
             executable: "terracotta",
             classifier: "macos-aarch64",
-            transform: TargetTransform::DMG,
+            transform: TargetTransform::NONE,
         },
         // Target {
         //     toolchain: "x86_64-unknown-freebsd",
@@ -71,6 +70,11 @@ fn main() {
         //     transform: TargetTransform::NONE,
         // },
     ];
+
+    if let Ok(output) = env::var("GITHUB_ENV") {
+        let mut f = fs::OpenOptions::new().write(true).append(true).open(output).unwrap();
+        writeln!(f, "TERRACOTTA_VERSION={}", env!("CARGO_PKG_VERSION")).unwrap();
+    }
 
     let artifact = env::current_dir()
         .unwrap()
@@ -91,7 +95,7 @@ fn main() {
             TargetTransform::NONE => {
                 fs::copy(target.locate(), artifact.join(name)).unwrap();
             }
-            TargetTransform::TARGZ => {
+            TargetTransform::TAR => {
                 let mut header = tar::Header::new_gnu();
                 header.set_size(target.open().metadata().unwrap().len());
                 header.set_cksum();
@@ -103,28 +107,6 @@ fn main() {
                 let mut writer = tar_builder.append_writer(&mut header, name).unwrap();
                 io::copy(&mut target.open(), &mut writer).unwrap();
                 writer.finish().unwrap();
-            }
-            TargetTransform::DMG => {
-                let source = env::current_dir().unwrap().join(format!("build/macos"));
-
-                fn copy_dir_all(src: impl AsRef<path::Path>, dst: impl AsRef<path::Path>) {
-                    fs::create_dir_all(&dst).unwrap();
-                    for entry in fs::read_dir(src).unwrap() {
-                        let entry = entry.unwrap();
-                        let ty = entry.file_type().unwrap();
-                        if ty.is_dir() {
-                            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()));
-                        } else {
-                            fs::copy(entry.path(), dst.as_ref().join(entry.file_name())).unwrap();
-                        }
-                    }
-                }
-                copy_dir_all(source, artifact.join(format!("{}/terracotta.app", name)));
-
-                let file =
-                    artifact.join(format!("{}/terracotta.app/Contents/MacOS/terracotta", name));
-                fs::create_dir_all(file.parent().unwrap()).unwrap();
-                fs::copy(target.locate(), &file).unwrap();
             }
         }
     }

@@ -26,6 +26,8 @@ jobs:
     permissions:
       actions: write
     name: Build Executable
+    outputs:
+      version: ${{ steps.upload-artifacts.outputs.version }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -84,11 +86,31 @@ jobs:
       run: cargo run -p assemble
       env:
         TERRACOTTA_ARTIFACT: target/terracotta
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: terracotta.zip
-        path: target/terracotta
+    - name: Install Artifact Handle
+      uses: lhotari/gh-actions-artifact-client@v2
+    - name: Upload artifacts
+      id: upload-artifacts
+      run: |
+        declare -A artifacts
+        artifacts["x86_64-pc-windows-gnullvm/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
+        artifacts["aarch64-pc-windows-gnullvm/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
+
+        for artifact in "${!artifacts[@]}"; do
+          zip -q - "target/$artifact" | gh-actions-artifact-client.js upload "${artifacts[$artifact]}"
+        done
+        
+        declare -A artifacts
+        artifacts["x86_64-unknown-linux-gnu/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-x86_64.tar"
+        artifacts["aarch64-unknown-linux-gnu/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-arm64.tar"
+        artifacts["x86_64-apple-darwin/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
+        artifacts["aarch64-apple-darwin/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"
+
+        for artifact in "${!artifacts[@]}"; do
+          chmod 755 "target/$artifact"
+          tar -cJf - "target/$artifact" | gh-actions-artifact-client.js upload "${artifacts[$artifact]}"
+        done
+
+        echo "version=${TERRACOTTA_VERSION}" >> $GITHUB_OUTPUT
   assemble-dmg:
     name: Assemble DMG
     runs-on: macos-latest
@@ -96,62 +118,37 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Install TAR
+      run: brew install gnu-tar
+    - name: Install Artifact Handle
+      uses: lhotari/gh-actions-artifact-client@v2
     - name: Restore Artifact
       uses: actions/download-artifact@v4
       with:
         name: terracotta.zip
         path: inputs
-    - name: Install Dependencies
-      uses: lhotari/gh-actions-artifact-client@v2
-    - name: Transform Artifact
+    - name: Build DMG
+      env:
+        TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}
       run: |
-        TEMP_DIR=$(mktemp -d)
-        cp -R inputs/* "$TEMP_DIR"
+        classifiers=("x86_64" "arm64")
 
-        mkdir artifacts
-        cd artifacts
-
-        IFS=$'\n'
-        APP_FOLDERS=($(find "$TEMP_DIR" -type d -name "*.app"))
-        unset IFS
-
-        for APP_FOLDER in "${APP_FOLDERS[@]}"; do
-
-          PKG_ROOT=$(mktemp -d)
-          mkdir -p "$PKG_ROOT/Applications"
-          cp -R "$APP_FOLDER" "$PKG_ROOT/Applications/"
-          chmod -R 777 "$PKG_ROOT/"
-
-          APP_NAME=($(dirname "$APP_FOLDER"))
-          APP_NAME=($(basename "$APP_NAME"))
-          PKG_NAME="${APP_NAME}.pkg"
-          echo "Creating package: folder=${PKG_ROOT}, pkg=${PKG_NAME}"
-
+        for classifier in "${classifiers[@]}"; do
+          TEMP_DIR=$(mktemp -d)
+          mkdir -p "$TEMP_DIR/Applications"
+          cp -R build/macos/terracotta.app "$TEMP_DIR/Applications"
+          mkdir "$TEMP_DIR/terracotta.app/Contents/MacOS/"
+          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar" \
+            | gtar -xOJf - \
+            >> "$TEMP_DIR/terracotta.app/Contents/MacOS/terracotta"
+        
+          chmod -R 755 "$TEMP_DIR/"
+          PKG_OUTPUT=$(mktemp)
           pkgbuild \
-            --root "$PKG_ROOT" \
+            --root "$TEMP_DIR" \
             --identifier "net.burningtnt.terracotta" \
             --version "1.0" \
             --install-location "/" \
-            "$PKG_NAME"
-          rm -rf "$PKG_ROOT"
-          rm -rf "$APP_FOLDER"
+            "$PKG_OUTPUT"
+          cat $PKG_OUTPUT | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.pkg"
         done
-
-        find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -exec mv {} . \;
-        rm -rf "$TEMP_DIR"
-
-        ls -R
-        
-        IFS=$'\n'
-        ARTIFACTS=($(find . -mindepth 1 -maxdepth 1 -type f))
-        unset IFS
-        for ARTIFACT in "${ARTIFACTS[@]}"; do
-          zip -q - "$ARTIFACT" | gh-actions-artifact-client.js upload $(basename "$ARTIFACT")
-        done
-
-        cd ..
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: terracotta-all.zip
-        path: artifacts

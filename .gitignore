@@ -1,3 +1,5 @@
 /target
 /.easytier
 Cargo.lock
+/.cargo
+/.cargo-packager

@@ -65,6 +65,10 @@ jobs:
       uses: taiki-e/cache-cargo-install-action@v2
       with:
         tool: cargo-zigbuild
+    - name: Install cargo-packager
+      uses: taiki-e/cache-cargo-install-action@v2
+      with:
+        tool: cargo-packager
     - name: Install Rust Toolchains
       run: |
         rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
@@ -84,11 +88,58 @@ jobs:
       run: cargo run -p assemble
       env:
         TERRACOTTA_ARTIFACT: target/terracotta
+    - name: Create AppImage
+      run: |
+        cat build/patch-packager-linux.toml >> Cargo.toml
+        cargo +nightly packager --release -f appimage --target x86_64-unknown-linux-gnu
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: terracotta.zip
+        name: terracotta-build
         path: target/terracotta
+
+  build-linux-arm64:
+    name: Build Linux ARM64
+    runs-on: ubuntu-24.04-arm
+    needs: build-executable
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Restore Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: terracotta-build
+        path: artifacts
+    - name: Install Rustup
+      run: |
+        if ! command -v cargo &> /dev/null; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
+          echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
+        fi
+    - name: Install cargo-packager
+      uses: taiki-e/cache-cargo-install-action@v2
+      with:
+        tool: cargo-packager
+    - name: Install Rust Toolchains
+      run: |
+        rustup target add --toolchain nightly aarch64-unknown-linux-gnu
+    - name: Install GitHub Actions Artifact Client
+      uses: lhotari/gh-actions-artifact-client@v2
+    - name: Create AppImage
+      run: |
+        cat build/patch-packager-linux.toml >> Cargo.toml
+        mkdir -p target/aarch64-unknown-linux-gnu/release
+        if [ -f artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar") ]; then
+          tar -vxf artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar") -C artifacts
+          rm artifacts/$(ls artifacts | grep "linux-aarch64-gnu.tar")
+        fi
+        mv -v artifacts/$(ls artifacts | grep "linux-aarch64-gnu") target/aarch64-unknown-linux-gnu/release/terracotta
+        cargo +nightly packager --release -f appimage --target aarch64-unknown-linux-gnu
+        {
+          cd target/terracotta
+          zip -q - $(ls | grep "_aarch64.AppImage") | gh-actions-artifact-client.js upload $(ls | grep "_aarch64.AppImage")
+        }
+
   assemble-dmg:
     name: Assemble DMG
     runs-on: macos-latest
@@ -99,7 +150,7 @@ jobs:
     - name: Restore Artifact
       uses: actions/download-artifact@v4
       with:
-        name: terracotta.zip
+        name: terracotta-build
         path: inputs
     - name: Install Dependencies
       uses: lhotari/gh-actions-artifact-client@v2
@@ -153,5 +204,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: terracotta-all.zip
+        name: terracotta-build-all
         path: artifacts

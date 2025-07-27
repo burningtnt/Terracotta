@@ -113,7 +113,7 @@ jobs:
           chmod 755 "$source"
 
           target="${source}.tar"
-          tar -cJf "$target" "$source"
+          tar -cf "$target" "$source"
           zip -q - "$target" | gh-actions-artifact-client.js upload "$target.zip"
         done
 
@@ -140,7 +140,7 @@ jobs:
           mkdir "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/"
           gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" >> "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip"
           unzip -p "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" \
-            | gtar -xOJf - \
+            | gtar -xOf - \
             >> "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/terracotta"
         
           chmod -R 755 "$TEMP_DIR/"
@@ -190,7 +190,7 @@ jobs:
 
         gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip" >> "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip"
         unzip -p "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip" \
-          | tar -xOJf - \
+          | tar -xOf - \
           >> "$artifact/terracotta"
         
         ./linux-deploy.AppImage --appdir=./temp \
@@ -205,7 +205,7 @@ jobs:
         chmod 755 "$appimage"
         mv "$appimage" "$source"
         
-        tar -cJf "$target" "$source"
+        tar -cf "$target" "$source"
         zip -q - "$target"
           | gh-actions-artifact-client.js upload "$target.zip"
       env:

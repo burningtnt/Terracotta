@@ -205,10 +205,10 @@ jobs:
       run: |
         ls
 
-        if [[ -f "Terracotta-AARCH64.AppImage" ]]; then
-          appimage="Terracotta-AARCH64.AppImage"
+        if [[ -f "Terracotta-aarch64.AppImage" ]]; then
+          appimage="Terracotta-aarch64.AppImage"
         else
-          appimage="Terracotta-X86_64.AppImage"
+          appimage="Terracotta-x86_64.AppImage"
         fi
         source="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
         target="${source}.tar"

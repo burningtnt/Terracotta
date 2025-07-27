@@ -148,8 +148,11 @@ jobs:
           cat $PKG_OUTPUT | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.pkg"
         done
   assemble-app-image:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     name: Assemble App Image
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     needs: build-executable
     steps:
       - name: Checkout
@@ -158,17 +161,33 @@ jobs:
         uses: lhotari/gh-actions-artifact-client@v2
       - name: Install Linux Deploy
         run: |
-          wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          if [ "$IS_ARM" == "true" ]; then
+            $classifier="x86_64"
+          else
+            $classifier="aarch64"
+          fi
+
+          wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${classifier}.AppImage
           chmod +x linux-deploy.AppImage
+        env:
+          IS_ARM: ${{ contains(runner.arch, 'ARM') }}
       - name: Build App Image
-        run: |
-          artifact=$(mktemp -d)
-          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-x86_64.tar" \
+        run: |        
+          artifact=$(mktemp)
+          if [ "$IS_ARM" == "true" ]; then
+            $classifier="x86_64"
+          else
+            $classifier="arm64"
+          fi
+
+          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" \
             | gtar -xOJf - \
             >> "$artifact"
           
-          output="terracotta-${TERRACOTTA_VERSION}-linux-x86_64.AppImage"
+          output="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
           linux-deploy.AppImage -e "$artifact" -d build/linux/terracotta.desktop -i build/linux/terracotta.png --output "$output"
           zip -q - "$output" \
             | gh-actions-artifact-client.js upload "$output"
+        env:
+          IS_ARM: ${{ contains(runner.arch, 'ARM') }}
           

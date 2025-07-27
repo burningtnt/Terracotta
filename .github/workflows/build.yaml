@@ -115,9 +115,6 @@ jobs:
           target="${source}.tar"
           tar -cJf "$target" "$source"
           zip -q - "$target" | gh-actions-artifact-client.js upload "$target.zip"
-
-          cat "$source" | gh-actions-artifact-client.js upload "executable-$source"
-          cat "$target" | gh-actions-artifact-client.js upload "tar-$source"
         done
 
         echo "version=${TERRACOTTA_VERSION}" >> $GITHUB_OUTPUT
@@ -141,7 +138,7 @@ jobs:
           mkdir -p "$TEMP_DIR/Applications"
           cp -R build/macos/terracotta.app "$TEMP_DIR/Applications"
           mkdir "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/"
-          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar" >> "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip"
+          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" >> "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip"
           unzip -p "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" \
             | gtar -xOJf - \
             >> "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/terracotta"
@@ -191,7 +188,7 @@ jobs:
           classifier="arm64"
         fi
 
-        gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" >> "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip"
+        gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip" >> "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip"
         unzip -p "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip" \
           | tar -xOJf - \
           >> "$artifact/terracotta"

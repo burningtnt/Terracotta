@@ -106,11 +106,13 @@ jobs:
         unix_artifacts["aarch64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64"
 
         for artifact in "${!unix_artifacts[@]}"; do
-          f="${unix_artifacts[$artifact]}.tar"
-          cp "target/$artifact" "$f"
-          chmod 755 "target/$artifact"
-          tar -cJf "$f" "${unix_artifacts[$artifact]}"
-          zip -q - "$f" | gh-actions-artifact-client.js upload "${unix_artifacts[$artifact]}"
+          source="${unix_artifacts[$artifact]}"
+          cp "target/$artifact" "$source"
+          chmod 755 "$source"
+
+          target="${source}.tar"
+          tar -cJf "$target" "$source"
+          zip -q - "$target" | gh-actions-artifact-client.js upload "$target"
         done
 
         echo "version=${TERRACOTTA_VERSION}" >> $GITHUB_OUTPUT
@@ -186,15 +188,17 @@ jobs:
           | tar -xOJf - \
           >> "$artifact"
         
-        output="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
         ./linux-deploy.AppImage --appdir=./temp --desktop-file=build/linux/terracotta.desktop --icon-file=build/linux/icon.png -e "$artifact" --output=appimage
         appimage=(Terracotta-*.AppImage)
+        source="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}"
+        target="${source}.tar"
+
         chmod 755 "$appimage"
-        mv "$appimage" "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}"
+        mv "$appimage" "$source"
         
-        tar -cJf "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}"
-        zip -q - "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar"
-          | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar"
+        tar -cJf "$target" "$source"
+        zip -q - "$target"
+          | gh-actions-artifact-client.js upload "$target"
       env:
         IS_ARM: ${{ contains(runner.arch, 'ARM') }}
         TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}

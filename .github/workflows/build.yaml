@@ -198,8 +198,13 @@ jobs:
           --icon-file=build/linux/icon.png \
           -e "$artifact/terracotta" \
           --output=appimage
+      env:
+        IS_ARM: ${{ contains(runner.arch, 'ARM') }}
+        TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}
+    - name: Upload Artifact
+      run: |
         appimage=(Terracotta-*.AppImage)
-        source="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}"
+        source="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
         target="${source}.tar"
 
         chmod 755 "$appimage"
@@ -209,6 +214,5 @@ jobs:
         zip -q - "$target"
           | gh-actions-artifact-client.js upload "$target.zip"
       env:
-        IS_ARM: ${{ contains(runner.arch, 'ARM') }}
         TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}
           

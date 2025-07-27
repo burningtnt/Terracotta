@@ -161,7 +161,7 @@ jobs:
         uses: lhotari/gh-actions-artifact-client@v2
       - name: Install Linux Deploy
         run: |
-          if [ "$IS_ARM" == "true" ]; then
+          if [ "$IS_ARM" = "false" ]; then
             $classifier="x86_64"
           else
             $classifier="aarch64"
@@ -174,7 +174,7 @@ jobs:
       - name: Build App Image
         run: |        
           artifact=$(mktemp)
-          if [ "$IS_ARM" == "true" ]; then
+          if [ "$IS_ARM" = "false" ]; then
             $classifier="x86_64"
           else
             $classifier="arm64"

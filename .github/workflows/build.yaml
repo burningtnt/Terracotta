@@ -203,7 +203,13 @@ jobs:
         TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}
     - name: Upload Artifact
       run: |
-        appimage=(Terracotta-*.AppImage)
+        ls
+
+        if [[ -f "Terracotta-AARCH64.AppImage" ]]; then
+          appimage="Terracotta-AARCH64.AppImage"
+        else
+          appimage="Terracotta-X86_64.AppImage"
+        fi
         source="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
         target="${source}.tar"
 

@@ -206,12 +206,9 @@ jobs:
         fi
 
         source="terracotta-${TERRACOTTA_VERSION}-linux-${CLASSIFIER}.AppImage"
-        target="${source}.tar"
-
-        chmod 755 "$appimage"
         mv "$appimage" "$source"
-        
-        tar -cf "$target" "$source"
-        zip -q - "$target" \
-          | gh-actions-artifact-client.js upload "$target.zip"
+        chmod 755 "$source"
+
+        zip -q - "$source" \
+          | gh-actions-artifact-client.js upload "${source}.zip"
           

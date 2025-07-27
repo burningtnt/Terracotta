@@ -96,20 +96,25 @@ jobs:
         win_artifacts["aarch64-pc-windows-gnullvm/release/terracotta.exe"]="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
 
         for artifact in "${!win_artifacts[@]}"; do
-          zip -q - "target/$artifact" | gh-actions-artifact-client.js upload "${win_artifacts[$artifact]}"
+          source="${win_artifacts[$artifact]}"
+          cp "target/$artifact" "$source"
+          zip -q - "$source" | gh-actions-artifact-client.js upload "$source.zip"
         done
         
         declare -A unix_artifacts
-        unix_artifacts["x86_64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-x86_64.tar"
-        unix_artifacts["aarch64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-arm64.tar"
-        unix_artifacts["x86_64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
-        unix_artifacts["aarch64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"
+        unix_artifacts["x86_64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
+        unix_artifacts["aarch64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-arm64"
+        unix_artifacts["x86_64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
+        unix_artifacts["aarch64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64"
 
         for artifact in "${!unix_artifacts[@]}"; do
-          chmod 755 "target/$artifact"
-          parent=$(dirname "target/$artifact")
-          file=$(basename "$artifact")
-          tar -cJf - -C "$parent" "$file" | gh-actions-artifact-client.js upload "${unix_artifacts[$artifact]}"
+          source="${unix_artifacts[$artifact]}"
+          cp "target/$artifact" "$source"
+          chmod 755 "$source"
+
+          target="${source}.tar"
+          tar -cf "$target" "$source"
+          zip -q - "$target" | gh-actions-artifact-client.js upload "$target.zip"
         done
 
         echo "version=${TERRACOTTA_VERSION}" >> $GITHUB_OUTPUT
@@ -133,8 +138,9 @@ jobs:
           mkdir -p "$TEMP_DIR/Applications"
           cp -R build/macos/terracotta.app "$TEMP_DIR/Applications"
           mkdir "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/"
-          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar" \
-            | gtar -xOJf - \
+          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" >> "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip"
+          unzip -p "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" \
+            | gtar -xOf - \
             >> "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/terracotta"
         
           chmod -R 755 "$TEMP_DIR/"
@@ -145,5 +151,67 @@ jobs:
             --version "1.0" \
             --install-location "/" \
             "$PKG_OUTPUT"
-          cat $PKG_OUTPUT | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.pkg"
+          zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.pkg.zip"
         done
+  assemble-app-image:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    name: Assemble App Image
+    runs-on: ${{ matrix.os }}
+    needs: build-executable
+    env:
+      TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install Artifact Handle
+      uses: lhotari/gh-actions-artifact-client@v2
+    - name: Install Linux Deploy
+      run: |
+        if [ "$IS_ARM" = "false" ]; then
+          classifier="x86_64"
+          echo "CLASSIFIER=x86_64" >> $GITHUB_ENV
+        else
+          classifier="aarch64"
+          echo "CLASSIFIER=arm64" >> $GITHUB_ENV
+        fi
+
+        wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${classifier}.AppImage
+        chmod +x linux-deploy.AppImage
+      env:
+        IS_ARM: ${{ contains(runner.arch, 'ARM') }}
+    - name: Build App Image
+      run: |        
+        artifact=$(mktemp -d)
+        chmod 755 "$artifact"
+
+        gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${CLASSIFIER}.tar.zip" >> "terracotta-${TERRACOTTA_VERSION}-linux-${CLASSIFIER}.tar.zip"
+        unzip -p "terracotta-${TERRACOTTA_VERSION}-linux-${CLASSIFIER}.tar.zip" \
+          | tar -xOf - \
+          >> "$artifact/terracotta"
+        
+        ./linux-deploy.AppImage --appdir=./temp \
+          --desktop-file=build/linux/terracotta.desktop \
+          --icon-file=build/linux/icon.png \
+          -e "$artifact/terracotta" \
+          --output=appimage
+    - name: Upload Artifact
+      run: |
+        if [ "$CLASSIFIER" = "arm64" ]; then
+          appimage="Terracotta-aarch64.AppImage"
+        else
+          appimage="Terracotta-x86_64.AppImage"
+        fi
+
+        source="terracotta-${TERRACOTTA_VERSION}-linux-${CLASSIFIER}.AppImage"
+        target="${source}.tar"
+
+        chmod 755 "$appimage"
+        mv "$appimage" "$source"
+        
+        tar -cf "$target" "$source"
+        zip -q - "$target" \
+          | gh-actions-artifact-client.js upload "$target.zip"
+          

@@ -185,7 +185,7 @@ jobs:
           >> "$artifact"
         
         output="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
-        linux-deploy.AppImage -e "$artifact" -d build/linux/terracotta.desktop -i build/linux/terracotta.png --output "$output"
+        ./linux-deploy.AppImage -e "$artifact" -d build/linux/terracotta.desktop -i build/linux/terracotta.png --output "$output"
         zip -q - "$output" \
           | gh-actions-artifact-client.js upload "$output"
       env:

@@ -181,7 +181,7 @@ jobs:
         fi
 
         gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" \
-          | gtar -xOJf - \
+          | tar -xOJf - \
           >> "$artifact"
         
         output="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"

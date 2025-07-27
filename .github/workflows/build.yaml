@@ -177,7 +177,7 @@ jobs:
         IS_ARM: ${{ contains(runner.arch, 'ARM') }}
     - name: Build App Image
       run: |        
-        artifact=$(mktemp)
+        artifact=$(mktemp -d)
         chmod 755 "$artifact"
         if [ "$IS_ARM" = "false" ]; then
           classifier="x86_64"

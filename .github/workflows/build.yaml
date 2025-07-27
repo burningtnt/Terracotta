@@ -217,7 +217,7 @@ jobs:
         mv "$appimage" "$source"
         
         tar -cf "$target" "$source"
-        zip -q - "$target"
+        zip -q - "$target" \
           | gh-actions-artifact-client.js upload "$target.zip"
       env:
         TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}

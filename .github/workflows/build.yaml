@@ -54,15 +54,16 @@ jobs:
         fi
     - name: Generate Cache Key
       run: cargo generate-lockfile
-    - name: Cache Cargo
-      uses: actions/cache@v4
+    - name: Restore Cargo Cache
+      id: restore-cargo-cache
+      uses: actions/cache/restore@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
           target
           .easytier
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install cargo-zigbuild
       uses: taiki-e/cache-cargo-install-action@v2
       with:
@@ -86,6 +87,15 @@ jobs:
       run: cargo run -p assemble
       env:
         TERRACOTTA_ARTIFACT: target/terracotta
+    - name: Generate Cargo Cache
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+          .easytier
+        key: ${{ steps.restore-cargo-cache.outputs.cache-primary-key }}
     - name: Install Artifact Handle
       uses: lhotari/gh-actions-artifact-client@v2
     - name: Upload artifacts

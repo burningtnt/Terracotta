@@ -153,6 +153,7 @@ jobs:
         done
   assemble-app-image:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     name: Assemble App Image
@@ -188,12 +189,12 @@ jobs:
         gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" >> "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip"
         unzip -p "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar.zip" \
           | tar -xOJf - \
-          > "$artifact/terracotta"
+          >> "$artifact/terracotta"
         
         ./linux-deploy.AppImage --appdir=./temp \
           --desktop-file=build/linux/terracotta.desktop \
           --icon-file=build/linux/icon.png \
-          -e "$artifact" \
+          -e "$artifact/terracotta" \
           --output=appimage
         appimage=(Terracotta-*.AppImage)
         source="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}"

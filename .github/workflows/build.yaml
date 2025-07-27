@@ -198,6 +198,7 @@ jobs:
           --icon-file=build/linux/icon.png \
           -e "$artifact/terracotta" \
           --output=appimage
+        echo "classifier=$classifier" >> $GITHUB_ENV
       env:
         IS_ARM: ${{ contains(runner.arch, 'ARM') }}
         TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}

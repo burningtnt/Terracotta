@@ -162,9 +162,9 @@ jobs:
       - name: Install Linux Deploy
         run: |
           if [ "$IS_ARM" = "false" ]; then
-            $classifier="x86_64"
+            classifier="x86_64"
           else
-            $classifier="aarch64"
+            classifier="aarch64"
           fi
 
           wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${classifier}.AppImage
@@ -175,9 +175,9 @@ jobs:
         run: |        
           artifact=$(mktemp)
           if [ "$IS_ARM" = "false" ]; then
-            $classifier="x86_64"
+            classifier="x86_64"
           else
-            $classifier="arm64"
+            classifier="arm64"
           fi
 
           gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" \

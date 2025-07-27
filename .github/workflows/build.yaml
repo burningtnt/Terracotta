@@ -155,39 +155,40 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: build-executable
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Artifact Handle
-        uses: lhotari/gh-actions-artifact-client@v2
-      - name: Install Linux Deploy
-        run: |
-          if [ "$IS_ARM" = "false" ]; then
-            classifier="x86_64"
-          else
-            classifier="aarch64"
-          fi
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install Artifact Handle
+      uses: lhotari/gh-actions-artifact-client@v2
+    - name: Install Linux Deploy
+      run: |
+        if [ "$IS_ARM" = "false" ]; then
+          classifier="x86_64"
+        else
+          classifier="aarch64"
+        fi
 
-          wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${classifier}.AppImage
-          chmod +x linux-deploy.AppImage
-        env:
-          IS_ARM: ${{ contains(runner.arch, 'ARM') }}
-      - name: Build App Image
-        run: |        
-          artifact=$(mktemp)
-          if [ "$IS_ARM" = "false" ]; then
-            classifier="x86_64"
-          else
-            classifier="arm64"
-          fi
+        wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${classifier}.AppImage
+        chmod +x linux-deploy.AppImage
+      env:
+        IS_ARM: ${{ contains(runner.arch, 'ARM') }}
+    - name: Build App Image
+      run: |        
+        artifact=$(mktemp)
+        if [ "$IS_ARM" = "false" ]; then
+          classifier="x86_64"
+        else
+          classifier="arm64"
+        fi
 
-          gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" \
-            | gtar -xOJf - \
-            >> "$artifact"
-          
-          output="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
-          linux-deploy.AppImage -e "$artifact" -d build/linux/terracotta.desktop -i build/linux/terracotta.png --output "$output"
-          zip -q - "$output" \
-            | gh-actions-artifact-client.js upload "$output"
-        env:
-          IS_ARM: ${{ contains(runner.arch, 'ARM') }}
+        gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.tar" \
+          | gtar -xOJf - \
+          >> "$artifact"
+        
+        output="terracotta-${TERRACOTTA_VERSION}-linux-${classifier}.AppImage"
+        linux-deploy.AppImage -e "$artifact" -d build/linux/terracotta.desktop -i build/linux/terracotta.png --output "$output"
+        zip -q - "$output" \
+          | gh-actions-artifact-client.js upload "$output"
+      env:
+        IS_ARM: ${{ contains(runner.arch, 'ARM') }}
+        TERRACOTTA_VERSION: ${{needs.build-executable.outputs.version}}
           

@@ -332,7 +332,7 @@ fn get_meta() -> json::Json<json::Value> {
     }));
 }
 
-pub async fn server_main(port: mpsc::Sender<u16>) {
+pub async fn server_main(port: mpsc::Sender<u16>, daemon: bool) {
     let (launch_signal_tx, launch_signal_rx) = mpsc::channel::<()>();
     let shutdown_signal_tx = launch_signal_tx.clone();
 
@@ -360,7 +360,7 @@ pub async fn server_main(port: mpsc::Sender<u16>) {
                 launch_signal_tx.send(()).unwrap();
 
                 let local_port = rocket.config().port;
-                if !cfg!(debug_assertions) {
+                if !cfg!(debug_assertions) && !daemon {
                     let _ = open::that(format!("http://127.0.0.1:{}/", local_port));
                 }
                 let _ = port.send(local_port);

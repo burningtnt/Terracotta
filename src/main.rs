@@ -136,13 +136,15 @@ async fn main() {
         0 => main_auto().await,
         1 => match arguments[0].as_str() {
             "--auto" => main_auto().await,
-            "--single" => main_single(None).await,
+            "--single" => main_single(None, false).await,
+            "--daemon" => main_single(None, true).await,
             "--help" => {
                 println!("Welcoming using Terracotta | 陶瓦联机");
                 println!("Usage: terracotta [OPTIONS]");
                 println!("Options:");
                 println!("  --auto: Automatically determine the mode to run.");
                 println!("  --single: Forcely run in single server mode.");
+                println!("  --daemon: Forcely run in single server daemon mode.");
                 println!("  --secondary <port>: Forcely run in secondary mode, opening an UI on the specified port.");
                 println!("  --server <port>: Host a Terracotta Room on the specified port.");
                 println!("  --client <room_code>: Join a Terracotta Room with the specified room code.");   
@@ -207,7 +209,7 @@ async fn main_auto() {
     match &state {
         Lock::Single { .. } => {
             logging!("UI", "Running in server mode.");
-            main_single(Some(state)).await;
+            main_single(Some(state), false).await;
         }
         Lock::Secondary { port } => {
             logging!("UI", "Running in secondary mode, port={}.", port);
@@ -220,18 +222,18 @@ async fn main_auto() {
                 "Cannot determin application mode. Fallback to server mode."
             );
 
-            main_single(None).await;
+            main_single(None, false).await;
         }
     };
 }
 
-async fn main_single(state: Option<Lock>) {
+async fn main_single(state: Option<Lock>, daemon: bool) {
     redirect_std(&*LOGGING_FILE);
 
     let (tx, rx) = mpsc::channel::<u16>();
     let tx2 = tx.clone();
 
-    let future = server::server_main(tx);
+    let future = server::server_main(tx, daemon);
     thread::spawn(|| {
         let _ = &*easytier::FACTORY;
     });

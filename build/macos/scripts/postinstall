@@ -9,9 +9,7 @@ cat <<EOF > /Library/LaunchAgents/net.burningtnt.terracotta.daemon.plist
     <string>net.burningtnt.terracotta.daemon</string>
     <key>ProgramArguments</key>
     <array>
-        <string>open</string>
-        <string>/Applications/terracotta.app</string>
-        <string>--args</string>
+        <string>/Applications/terracotta.app/Contents/MacOS/terracotta</string>
         <string>--daemon</string>
     </array>
     <key>KeepAlive</key>

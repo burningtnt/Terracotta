@@ -69,7 +69,7 @@ lazy_static::lazy_static! {
 }
 
 lazy_static! {
-    static ref FILE_ROOT: std::path::PathBuf = if cfg!(target_os = "macos")
+    pub static ref FILE_ROOT: std::path::PathBuf = if cfg!(target_os = "macos")
         && let Ok(home) = env::var("HOME")
     {
         std::path::Path::new(&home).join("terracotta")

@@ -1,10 +1,12 @@
 use std::os::windows::fs::OpenOptionsExt;
 use std::{
-    env, fs,
+    fs,
     io::{Read, Write},
     path, thread,
     time::Duration,
 };
+
+use crate::FILE_ROOT;
 
 pub enum State {
     Single { file: fs::File },
@@ -13,7 +15,7 @@ pub enum State {
 }
 
 lazy_static::lazy_static! {
-    static ref LOCK: path::PathBuf = path::Path::join(&env::temp_dir(), "terracotta.lock");
+    static ref LOCK: path::PathBuf = FILE_ROOT.join("terracotta.lock");
 }
 
 impl State {

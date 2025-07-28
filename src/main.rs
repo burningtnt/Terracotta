@@ -17,7 +17,7 @@ use std::{
     env, fs, io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     sync::mpsc,
-    thread,
+    thread, time::Duration,
 };
 
 pub mod code;
@@ -215,6 +215,10 @@ async fn main_auto() {
             logging!("UI", "Running in secondary mode, port={}.", port);
 
             main_secondary(*port);
+
+            if cfg!(target_os = "macos") {
+                thread::sleep(Duration::from_secs(5));
+            }
         }
         Lock::Unknown => {
             logging!(
@@ -275,8 +279,6 @@ async fn main_single(state: Option<Lock>, daemon: bool) {
 }
 
 fn main_secondary(port: u16) {
-    logging!("UI", "Running in secondary mode, port={}.", port);
-
     let _ = open::that(format!("http://127.0.0.1:{}/", port));
 }
 

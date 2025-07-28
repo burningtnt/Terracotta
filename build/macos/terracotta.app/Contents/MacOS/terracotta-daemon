@@ -1,1 +1,4 @@
-terracotta --daemon
+#!/bin/bash
+
+e=$(dirname "$0")
+"$e/terracotta" --daemon

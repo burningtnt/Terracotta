@@ -149,7 +149,7 @@ jobs:
           TEMP_DIR=$(mktemp -d)
           mkdir -p "$TEMP_DIR/Applications"
           cp -R build/macos/terracotta.app "$TEMP_DIR/Applications"
-          mkdir "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/"
+          mkdir -p "$TEMP_DIR/Applications/terracotta.app/Contents/MacOS/"
           gh-actions-artifact-client.js download "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar" >> "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip"
           unzip -p "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.tar.zip" \
             | gtar -xOf - \

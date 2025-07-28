@@ -137,7 +137,7 @@ async fn main() {
         1 => match arguments[0].as_str() {
             "--auto" => main_auto().await,
             "--single" => main_single(None, false).await,
-            "--daemon" => main_single(None, true).await,
+            "--daemon" => main_daemon().await,
             "--help" => {
                 println!("Welcoming using Terracotta | 陶瓦联机");
                 println!("Usage: terracotta [OPTIONS]");
@@ -223,6 +223,27 @@ async fn main_auto() {
             );
 
             main_single(None, false).await;
+        }
+    };
+}
+
+async fn main_daemon() {
+    let state = Lock::get_state();
+    match &state {
+        Lock::Single { .. } => {
+            logging!("UI", "Running in daemon server mode.");
+            main_single(Some(state), true).await;
+        }
+        Lock::Secondary { port } => {
+            logging!("UI", "Running in daemon secondary mode, port={}.", port);
+        }
+        Lock::Unknown => {
+            logging!(
+                "UI",
+                "Cannot determin application mode. Fallback to server mode."
+            );
+
+            main_single(None, true).await;
         }
     };
 }

@@ -143,6 +143,8 @@ jobs:
       run: |
         classifiers=("x86_64" "arm64")
 
+        chmod -R 755 build/macos/scripts
+
         for classifier in "${classifiers[@]}"; do
           TEMP_DIR=$(mktemp -d)
           mkdir -p "$TEMP_DIR/Applications"
@@ -160,6 +162,7 @@ jobs:
             --identifier "net.burningtnt.terracotta" \
             --version "1.0" \
             --install-location "/" \
+            --scripts build/macos/scripts \
             "$PKG_OUTPUT"
           zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-macos-${classifier}.pkg"
         done

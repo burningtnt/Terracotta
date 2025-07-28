@@ -1,0 +1,21 @@
+#!/bin/bash
+
+cat <<EOF > /Library/LaunchAgents/net.burningtnt.terracotta.daemon.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>net.burningtnt.terracotta.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>open</string>
+        <string>/Applications/terracotta.app</string>
+        <string>--args</string>
+        <string>--single</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+EOF

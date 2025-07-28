@@ -377,6 +377,10 @@ pub async fn server_main(port: mpsc::Sender<u16>) {
 
         loop {
             fn handle_offline(time: &SystemTime) -> bool {
+                if cfg!(target_os = "macos") {
+                    return false;
+                }
+
                 const TIMEOUT: u64 = if cfg!(debug_assertions) { 20 } else { 600 };
 
                 if let Ok(timeout) = time::now().duration_since(*time) {

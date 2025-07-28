@@ -17,7 +17,7 @@ use std::{
     env, fs, io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     sync::mpsc,
-    thread, time::Duration,
+    thread,
 };
 
 pub mod code;

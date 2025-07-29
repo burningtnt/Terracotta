@@ -6,6 +6,11 @@ on:
       - 'sites/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
+    inputs:
+      version:
+        description: Terracotta Version
+        required: true
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
@@ -71,6 +76,13 @@ jobs:
     - name: Install Rust Toolchains
       run: |
         rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
+    - name: Compute Version
+      run: |
+        if [ -z "${{ github.event.inputs.version }}" ]; then
+          echo "TERRACOTTA_VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        else
+          echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+        fi
     - name: Build All
       id: build
       env:

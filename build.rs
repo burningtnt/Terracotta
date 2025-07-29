@@ -17,6 +17,12 @@ fn main() {
 
     let desc = get_var("TARGET").unwrap().replace('-', "_").to_uppercase();
 
+    let version = match get_var("TERRACOTTA_VERSION") {
+        Ok(v) => v,
+        Err(_) => "snapshot".to_string()
+    };
+    println!("cargo::rustc-env=TERRACOTTA_VERSION={}", version);
+
     let target_family = get_var("CARGO_CFG_TARGET_FAMILY").unwrap().to_string();
     if target_family == "windows" {
         println!("cargo::rerun-if-changed=build/windows/icon.ico");
@@ -35,6 +41,9 @@ fn main() {
             }
         }
 
+        for vs in ["FileVersion", "ProductVersion"] {
+            compiler.set(vs, &version);
+        }
         compiler.set_icon("build/windows/icon.ico");
         compiler.compile().unwrap();
     }

@@ -218,10 +218,10 @@ fn set_state_guesting(room: Option<String>) -> Status {
                 socket
                     .set_write_timeout(Some(Duration::from_secs(4)))
                     .unwrap();
-                if let Ok(_) = socket.connect_timeout(&SockAddr::from(SocketAddrV4::new(
-                    Ipv4Addr::new(127, 0, 0, 1),
-                    port,
-                )), Duration::from_secs(4)) {
+                if let Ok(_) = socket.connect_timeout(
+                    &SockAddr::from(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), port)),
+                    Duration::from_secs(4),
+                ) {
                     if let Ok(_) = socket.send(&[0xFE]) {
                         let mut buf: [mem::MaybeUninit<u8>; 1] =
                             unsafe { mem::MaybeUninit::uninit().assume_init() };
@@ -318,7 +318,7 @@ fn download_log() -> std::fs::File {
 #[get("/meta")]
 fn get_meta() -> json::Json<json::Value> {
     return json::Json(json::json!({
-        "version": env!("CARGO_PKG_VERSION"),
+        "version": env!("TERRACOTTA_VERSION"),
         "easytier_version": env!("TERRACOTTA_ET_VERSION"),
         "target_tuple": format!(
             "{}-{}-{}-{}",

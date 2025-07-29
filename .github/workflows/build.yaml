@@ -56,7 +56,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
           echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
         else
-          rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+          rustup component add rust-src --toolchain x86_64-unknown-linux-gnu
         fi
     - name: Generate Cache Key
       run: cargo generate-lockfile

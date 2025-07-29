@@ -1,4 +1,4 @@
-use std::{env, fs, io::{self, Write}, path};
+use std::{env, fs, io, path};
 
 fn main() {
     enum TargetTransform {
@@ -71,11 +71,6 @@ fn main() {
         // },
     ];
 
-    if let Ok(output) = env::var("GITHUB_ENV") {
-        let mut f = fs::OpenOptions::new().write(true).append(true).open(output).unwrap();
-        writeln!(f, "TERRACOTTA_VERSION={}", env!("CARGO_PKG_VERSION")).unwrap();
-    }
-
     let artifact = env::current_dir()
         .unwrap()
         .join(env::var("TERRACOTTA_ARTIFACT").unwrap());
@@ -87,7 +82,7 @@ fn main() {
     for target in targets.iter() {
         let name = format!(
             "terracotta-{}-{}",
-            env!("CARGO_PKG_VERSION"),
+            env!("TERRACOTTA_VERSION"),
             target.classifier
         );
 

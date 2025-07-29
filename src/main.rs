@@ -110,6 +110,7 @@ async fn main() {
         if let Ok(value) = fs::read_dir(&*FILE_ROOT) {
             for file in value {
                 if let Ok(file) = file
+                    && file.path().file_name().and_then(|v| v.to_str()).is_none_or(|v| v != "terracotta.lock")
                     && let Ok(metadata) = file.metadata()
                     && let Ok(file_type) = file.file_type()
                     && let Ok(time) = metadata.created()

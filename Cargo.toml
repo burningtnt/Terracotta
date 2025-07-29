@@ -1,6 +1,6 @@
 [package]
 name = "terracotta"
-version = "0.3.3"
+version = "0.0.0-snapshot"
 edition = "2024"
 build = "build.rs"
 
@@ -8,7 +8,7 @@ build = "build.rs"
 version = "v2.3.2"
 
 [workspace.package]
-version = "0.3.3"
+version = "0.0.0-snapshot"
 
 [dependencies]
 chrono = { version = "0.4.41", default-features = false, features = [

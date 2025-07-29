@@ -9,7 +9,6 @@ on:
     inputs:
       version:
         description: Terracotta Version
-        required: true
         type: string
 
 env:
@@ -70,9 +69,7 @@ jobs:
           .easytier
         key: cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install cargo-zigbuild
-      uses: taiki-e/cache-cargo-install-action@v2
-      with:
-        tool: cargo-zigbuild
+      run: cargo install cargo-zigbuild --force
     - name: Install Rust Toolchains
       run: |
         rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')

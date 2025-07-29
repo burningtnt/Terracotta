@@ -1,8 +1,9 @@
 [build]
-rustflags = ["-Z", "threads=8"]
+rustflags = ["-Z", "threads=8", "-Z", "share-generics=no"]
 
 [target.'cfg(target_family = "windows")']
 rustflags = [
+  "-Z", "threads=8", "-Z", "share-generics=no",
   "-C", "target-feature=+crt-static",
   "-C", "link-args=-Wl",
   "--cfg", "target_vendor=\"win7\"",

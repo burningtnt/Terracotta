@@ -28,7 +28,7 @@ fn main() {
 
     let targets: Vec<Target> = vec![
         Target {
-            toolchain: "x86_64-pc-windows-gnullvm",
+            toolchain: "x86_64-win7-windows-gnullvm",
             executable: "terracotta.exe",
             classifier: "windows-x86_64.exe",
             transform: TargetTransform::NONE,

@@ -67,7 +67,7 @@ jobs:
           ~/.cargo/git
           target
           .easytier
-        key: cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: cargo
     - name: Install cargo-zigbuild
       run: cargo install cargo-zigbuild --force
     - name: Install Rust Toolchains
@@ -90,7 +90,7 @@ jobs:
       run: |
         mkdir -p .cargo
         cp -f build/config.toml .cargo/config.toml
-        cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
+        cargo +nightly zigbuild -Z build-std --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
         rm -r -f .cargo
     - name: Assemble Artifact
       run: cargo run -p assemble

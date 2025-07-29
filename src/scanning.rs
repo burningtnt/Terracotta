@@ -9,8 +9,6 @@ use std::{mem, thread};
 
 use socket2::{Domain, SockAddr, Socket, Type};
 
-use crate::time;
-
 const SIG_TERMINAL: u8 = 1;
 
 pub struct Scanning {
@@ -94,7 +92,7 @@ impl Scanning {
                 }
             }
 
-            let now = time::now();
+            let now = SystemTime::now();
             for i in (0..ports.len()).rev() {
                 if match now.duration_since(ports[i].1) {
                     Ok(value) => value.as_millis() >= 5_000,
@@ -142,7 +140,7 @@ impl Scanning {
                                 }
                             }
 
-                            ports.push((port, time::now()));
+                            ports.push((port, SystemTime::now()));
                             if !existed {
                                 dirty = true;
                             }

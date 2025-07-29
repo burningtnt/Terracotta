@@ -12,7 +12,7 @@ use crate::code::{self, Room};
 use crate::easytier::Easytier;
 use crate::fakeserver::FakeServer;
 use crate::scanning::Scanning;
-use crate::{LOGGING_FILE, time};
+use crate::LOGGING_FILE;
 
 enum AppState {
     Waiting {
@@ -46,7 +46,7 @@ lazy_static::lazy_static! {
     static ref GLOBAL_STATE: Mutex<(u32, AppState)> = Mutex::new((
         0,
         AppState::Waiting {
-            begin: time::now(),
+            begin: SystemTime::now(),
         }
     ));
 }
@@ -55,13 +55,13 @@ fn access_state() -> std::sync::MutexGuard<'static, (u32, AppState)> {
     let mut guard = GLOBAL_STATE.lock().unwrap();
     match &mut (*guard).1 {
         AppState::Waiting { begin } => {
-            *begin = time::now();
+            *begin = SystemTime::now();
         }
         AppState::Scanning { begin, .. } => {
-            *begin = time::now();
+            *begin = SystemTime::now();
         }
         AppState::Exception { begin, .. } => {
-            *begin = time::now();
+            *begin = SystemTime::now();
         }
         _ => {}
     }
@@ -167,7 +167,7 @@ fn set_state_ide() -> Status {
 
     let state = &mut *access_state();
     state.0 += 1;
-    state.1 = AppState::Waiting { begin: time::now() };
+    state.1 = AppState::Waiting { begin: SystemTime::now() };
     return Status::Ok;
 }
 
@@ -178,7 +178,7 @@ fn set_state_scanning() -> Status {
     let state = &mut *access_state();
     state.0 += 1;
     state.1 = AppState::Scanning {
-        begin: time::now(),
+        begin: SystemTime::now(),
         scanner: Scanning::create(|motd| motd != code::MOTD),
     };
     return Status::Ok;
@@ -239,13 +239,13 @@ fn set_state_guesting(room: Option<String>) -> Status {
 
             let mut ok = false;
             for _ in 0..5 {
-                let end = time::now() + Duration::from_secs(5);
+                let end = SystemTime::now() + Duration::from_secs(5);
                 if check_conn(port) {
                     ok = true;
                     break;
                 }
 
-                thread::sleep(end.duration_since(time::now()).unwrap_or(Duration::ZERO));
+                thread::sleep(end.duration_since(SystemTime::now()).unwrap_or(Duration::ZERO));
             }
 
             let index = {
@@ -257,7 +257,7 @@ fn set_state_guesting(room: Option<String>) -> Status {
                 state.0 += 1;
                 if !ok {
                     state.1 = AppState::Exception {
-                        begin: time::now(),
+                        begin: SystemTime::now(),
                         kind: EXCEPTION_KIND_PING_HOST_FAIL,
                     };
 
@@ -276,7 +276,7 @@ fn set_state_guesting(room: Option<String>) -> Status {
 
             let mut error_count: u8 = 0;
             loop {
-                let end = time::now() + Duration::from_secs(5);
+                let end = SystemTime::now() + Duration::from_secs(5);
                 if check_conn(port) {
                     error_count = 0;
                 } else {
@@ -290,7 +290,7 @@ fn set_state_guesting(room: Option<String>) -> Status {
                         logging!("UI", "Connection to room has been lost, port = {}.", port);
                         state.0 += 1;
                         state.1 = AppState::Exception {
-                            begin: time::now(),
+                            begin: SystemTime::now(),
                             kind: EXCEPTION_KIND_PING_HOST_RST,
                         };
                         return;
@@ -301,7 +301,7 @@ fn set_state_guesting(room: Option<String>) -> Status {
                     return;
                 }
 
-                thread::sleep(end.duration_since(time::now()).unwrap_or(Duration::ZERO));
+                thread::sleep(end.duration_since(SystemTime::now()).unwrap_or(Duration::ZERO));
             }
         });
         return Status::Ok;
@@ -385,7 +385,7 @@ pub async fn server_main(port: mpsc::Sender<u16>, daemon: bool) {
 
                 const TIMEOUT: u64 = if cfg!(debug_assertions) { 20 } else { 600 };
 
-                if let Ok(timeout) = time::now().duration_since(*time) {
+                if let Ok(timeout) = SystemTime::now().duration_since(*time) {
                     let timeout = timeout.as_secs();
                     if timeout >= TIMEOUT {
                         logging!(
@@ -439,7 +439,7 @@ pub async fn server_main(port: mpsc::Sender<u16>, daemon: bool) {
                         logging!("UI", "Easytier has been dead.");
                         state.0 += 1;
                         state.1 = AppState::Exception {
-                            begin: time::now(),
+                            begin: SystemTime::now(),
                             kind: EXCEPTION_KIND_HOST_ET_CRASH,
                         };
                     }
@@ -449,7 +449,7 @@ pub async fn server_main(port: mpsc::Sender<u16>, daemon: bool) {
                         logging!("UI", "Easytier has been dead.");
                         state.0 += 1;
                         state.1 = AppState::Exception {
-                            begin: time::now(),
+                            begin: SystemTime::now(),
                             kind: EXCEPTION_KIND_GUEST_ET_CRASH,
                         };
                     }

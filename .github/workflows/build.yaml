@@ -99,6 +99,7 @@ jobs:
         cargo +nightly zigbuild --release \
           -Z build-std=core,std,alloc,proc_macro,panic_abort \
           -Z build-std-features=default,panic_immediate_abort,optimize_for_size \
+          -Z share-generics=no \
           --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
         rm -r -f .cargo
     - name: Assemble Artifact

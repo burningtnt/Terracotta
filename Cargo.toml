@@ -24,7 +24,7 @@ open = { version = "5.3.2", default-features = false }
 rand_core = { version = "0.9.3", features = ["os_rng"] }
 rocket = { version = "0.5.1", default-features = false, features = ["json"] }
 serde_json = "1.0.141"
-sevenz-rust2 = { version = "0.17.1", default-features = false, features = [
+sevenz-rust2 = { version = "0.16.0", default-features = false, features = [
     "util",
 ] }
 socket2 = "0.6.0"
@@ -36,7 +36,7 @@ winapi = { version = "0.3.9", default-features = false, features = [
 
 [build-dependencies]
 winresource = "0.1"
-sevenz-rust2 = { version = "0.17.1", default-features = false, features = [
+sevenz-rust2 = { version = "0.16.0", default-features = false, features = [
     "compress",
     "util",
 ] }

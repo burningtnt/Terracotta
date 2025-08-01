@@ -53,7 +53,7 @@ jobs:
     - name: Install Rustup
       run: |
         if ! command -v cargo &> /dev/null; then
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly-x86_64-unknown-linux-gnu
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable-x86_64-unknown-linux-gnu
           echo PATH=$PATH:$HOME/.cargo/bin >> $GITHUB_ENV
         fi
     - name: Generate Cache Key
@@ -72,7 +72,7 @@ jobs:
       run: cargo install cargo-zigbuild --force
     - name: Install Rust Toolchains
       run: |
-        rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
+        rustup target add --toolchain stable $(echo "$targets" | tr '\n' ' ')
     - name: Compute Version
       run: |
         if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -90,7 +90,7 @@ jobs:
       run: |
         mkdir -p .cargo
         cp -f build/config.toml .cargo/config.toml
-        cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
+        cargo zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
         rm -r -f .cargo
     - name: Assemble Artifact
       run: cargo run -p assemble

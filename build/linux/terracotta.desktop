@@ -4,3 +4,4 @@ Exec=terracotta
 Icon=icon
 Type=Application
 Categories=Utility;
+Terminal=false

@@ -1,8 +1,3 @@
-#![cfg_attr(
-    all(target_os = "windows", not(debug_assertions)),
-    windows_subsystem = "windows"
-)]
-
 #[macro_export]
 macro_rules! logging {
     ($prefix:expr, $($arg:tt)*) => {

@@ -1,4 +1,0 @@
-#!/bin/bash
-
-launchctl stop terracotta-daemon
-exit 0

@@ -17,5 +17,5 @@ cat <<EOF > /Library/LaunchAgents/net.burningtnt.terracotta.daemon.plist
 </plist>
 EOF
 
-launchctl start terracotta-daemon
+launchctl kickstart -k gui/$(id -u)/net.burningtnt.terracotta.daemon
 exit 0

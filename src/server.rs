@@ -29,8 +29,12 @@ impl<'r> rocket::response::Responder<'r, 'static> for MemoryFile {
         use rocket::http::ContentType;
         use std::io::Cursor;
 
-        let ct = self.0.as_ref().path.extension()
-          .and_then(|ext| ContentType::from_extension(&ext.to_string_lossy()));
+        let ct = self
+            .0
+            .as_ref()
+            .path
+            .extension()
+            .and_then(|ext| ContentType::from_extension(&ext.to_string_lossy()));
 
         let mut response = rocket::Response::build()
             .header(ContentType::Binary)
@@ -101,8 +105,8 @@ fn static_files(path: PathBuf) -> Result<MemoryFile, Status> {
             match lock.as_ref() {
                 Some((sender, storages)) => {
                     let _ = sender.send(());
-                     return respond(path, storages);
-                },
+                    return respond(path, storages);
+                }
                 None => {
                     let pages = compute_static_pages();
                     let respond = respond(path, &pages);
@@ -112,13 +116,16 @@ fn static_files(path: PathBuf) -> Result<MemoryFile, Status> {
                         loop {
                             if let Err(_) = receiver.recv_timeout(Duration::from_secs(60)) {
                                 let mut lock = MAIN_PAGE.write().unwrap();
-                                logging!("UI", "Invaliding static page cache to reduce memory usage.");
+                                logging!(
+                                    "UI",
+                                    "Invaliding static page cache to reduce memory usage."
+                                );
                                 *lock = None;
                                 return;
                             }
                         }
                     });
-                    
+
                     *lock = Some((sender, pages));
                     return respond;
                 }
@@ -156,9 +163,27 @@ fn set_state_guesting(room: Option<String>) -> Status {
     return Status::BadRequest;
 }
 
-#[get("/log")]
-fn download_log() -> std::fs::File {
-    return std::fs::File::open((*LOGGING_FILE).clone()).unwrap();
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "macos")] {
+        #[get("/log")]
+        fn download_log() -> Status {
+            use std::process::Command;
+            return match Command::new("open")
+                .arg((*LOGGING_FILE).parent().unwrap())
+                .spawn() {
+                    Ok(_) => Status::Ok,
+                    Err(e) => {
+                        logging!("Core", "Cannot open logging file: {:?}", e);
+                        Status::InternalServerError
+                    }
+                };
+        }
+    } else {
+        #[get("/log")]
+        fn download_log() -> std::fs::File {
+            return std::fs::File::open((*LOGGING_FILE).clone()).unwrap();
+        }
+    }
 }
 
 #[get("/panic")]

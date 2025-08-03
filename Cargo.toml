@@ -22,6 +22,10 @@ libc = "0.2.174"
 local-ip-address = "0.6.5"
 native-dialog = "0.9.0"
 num-bigint = "0.4.6"
+objc2 = "0.6.1"
+objc2-app-kit = "0.3.1"
+objc2-foundation = "0.3.1"
+objc2-web-kit = "0.3.1"
 open = { version = "5.3.2", default-features = false }
 rand_core = { version = "0.9.3", features = ["os_rng"] }
 rocket = { version = "0.5.1", default-features = false, features = ["json"] }

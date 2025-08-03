@@ -40,6 +40,9 @@ pub mod logging;
 pub mod scanning;
 pub mod server;
 
+#[cfg(target_os = "macos")]
+pub mod ui_macos;
+
 pub const MOTD: &'static str = "§6§l双击进入陶瓦联机大厅（请保持陶瓦运行）";
 
 #[cfg(target_family = "windows")]
@@ -155,38 +158,8 @@ async fn main() {
         }
     }
 
-    thread::spawn(move || {
-        let now = SystemTime::now();
-
-        if let Ok(value) = fs::read_dir(&*FILE_ROOT) {
-            for file in value {
-                if let Ok(file) = file
-                    && file
-                        .path()
-                        .file_name()
-                        .and_then(|v| v.to_str())
-                        .is_none_or(|v| v != "terracotta.lock")
-                    && let Ok(metadata) = file.metadata()
-                    && let Ok(file_type) = file.file_type()
-                    && let Ok(time) = metadata.created()
-                    && let Ok(duration) = now.duration_since(time)
-                    && duration.as_secs()
-                        >= if cfg!(debug_assertions) {
-                            10
-                        } else {
-                            24 * 60 * 60
-                        }
-                    && let Err(e) = if file_type.is_dir() {
-                        fs::remove_dir_all(file.path())
-                    } else {
-                        fs::remove_file(file.path())
-                    }
-                {
-                    logging!("UI", "Cannot remove old file {:?}: {:?}", file.path(), e);
-                }
-            }
-        }
-    });
+    #[cfg(not(target_os = "macos"))]
+    cleanup();
 
     fn main_panic(arguments: Vec<String>) {
         logging!("UI", "Unknown arguments: {}", arguments.join(", "));
@@ -217,7 +190,7 @@ async fn main_general() {
 
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
-                    native_dialog::DialogBuilder::message()
+                    let _ = native_dialog::DialogBuilder::message()
                         .set_level(native_dialog::MessageLevel::Error)
                         .set_title("Terracotta | 陶瓦联机")
                         .set_text("未检测到后台守护进程，请尝试重启电脑，或与开发者联系。")
@@ -253,6 +226,9 @@ async fn main_daemon() {
     match &state {
         Lock::Single { .. } => {
             logging!("UI", "Running in daemon server mode.");
+            #[cfg(target_os = "macos")]
+            cleanup();
+
             main_single(Some(state), true).await;
         }
         Lock::Secondary { port } => {
@@ -283,7 +259,6 @@ async fn main_single(state: Option<Lock>, daemon: bool) {
     if let Some(state) = state {
         thread::spawn(move || {
             let port = rx.recv().unwrap();
-            output_port(port);
             if port != 0 {
                 state.set_port(port);
             }
@@ -297,7 +272,14 @@ async fn main_single(state: Option<Lock>, daemon: bool) {
 }
 
 fn main_secondary(port: u16) {
-    let _ = open::that(format!("http://127.0.0.1:{}/", port));
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            ui_macos::open(format!("http://127.0.0.1:{}/", port));
+        } else {
+            let _ = open::that(format!("http://127.0.0.1:{}/", port));
+        }
+    }
+    
     output_port(port);
 }
 
@@ -352,4 +334,39 @@ fn output_port(port: u16) {
             "url": format!("http://127.0.0.1:{}/", port)
         })
     );
+}
+
+fn cleanup() {
+    thread::spawn(move || {
+        let now = SystemTime::now();
+
+        if let Ok(value) = fs::read_dir(&*FILE_ROOT) {
+            for file in value {
+                if let Ok(file) = file
+                    && file
+                        .path()
+                        .file_name()
+                        .and_then(|v| v.to_str())
+                        .is_none_or(|v| v != "terracotta.lock")
+                    && let Ok(metadata) = file.metadata()
+                    && let Ok(file_type) = file.file_type()
+                    && let Ok(time) = metadata.created()
+                    && let Ok(duration) = now.duration_since(time)
+                    && duration.as_secs()
+                        >= if cfg!(debug_assertions) {
+                            2
+                        } else {
+                            24 * 60 * 60
+                        }
+                    && let Err(e) = if file_type.is_dir() {
+                        fs::remove_dir_all(file.path())
+                    } else {
+                        fs::remove_file(file.path())
+                    }
+                {
+                    logging!("UI", "Cannot remove old file {:?}: {:?}", file.path(), e);
+                }
+            }
+        }
+    });
 }

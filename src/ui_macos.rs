@@ -79,6 +79,9 @@ pub fn open(url: String) {
             defer: Bool::NO
         ];
 
+        let min_size = NSSize::new(500., 500.);
+        let _: () = msg_send![window, setMinSize: min_size];
+
         let _: () = msg_send![window, setTitle: &*NSString::from_str("Terracotta | 陶瓦联机")];
 
         // Setup WebView
@@ -89,6 +92,7 @@ pub fn open(url: String) {
         let color: *mut AnyObject =
             msg_send![class!(NSColor), colorWithRed:0.102, green:0.102, blue:0.18, alpha:1.0];
         let _: () = msg_send![window, setBackgroundColor: color];
+        let _: () = msg_send![webview, setBackgroundColor: color];
         let _: () = msg_send![webview, setHidden: Bool::YES];
 
         // Load URL

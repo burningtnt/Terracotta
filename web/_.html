@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="web-title">Terracotta | 陶瓦联机</title>
+    <title id="web-title"></title>
     <link rel="stylesheet" href="font-awesome.css">
     <style>
         @font-face {
@@ -21,7 +21,6 @@
         }
 
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #f0f0f0;
             min-height: 100vh;
             padding: 20px;
@@ -548,7 +547,7 @@
     </style>
 </head>
 
-<body>
+<body style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
     <div class="container">
         <header>
             <h1 style="font-weight: bold;" id="page-title">Terracotta | 陶瓦联机</h1>
@@ -690,6 +689,8 @@
             document.getElementById("web-foot").innerText = 
                 `Terracotta | 陶瓦联机 ${r.version} ${r.target_tuple}, EasyTier ${r.easytier_version}`;
         });
+
+        document.getElementById("web-title").innerText = "Terracotta | 陶瓦联机"
 
         document.getElementById("page-title").addEventListener("click", (function () {
             let previous = 0;

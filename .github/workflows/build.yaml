@@ -74,7 +74,7 @@ jobs:
       run: cargo install cargo-zigbuild --force
     - name: Install Rust Toolchains
       run: |
-        rustup target add --toolchain nightly $(echo "$targets" | sed 's/\.2\.[0-9]\+//' | tr '\n' ' ')
+        rustup target add --toolchain nightly $(echo "$targets" | sed 's/\.2\.[0-9]\+//g' | tr '\n' ' ')
     - name: Compute Version
       run: |
         if [ -z "${{ github.event.inputs.version }}" ]; then

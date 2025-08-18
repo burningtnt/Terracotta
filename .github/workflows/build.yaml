@@ -19,10 +19,10 @@ env:
   targets: >-
     x86_64-pc-windows-gnullvm
     aarch64-pc-windows-gnullvm
-    x86_64-unknown-linux-gnu
-    aarch64-unknown-linux-gnu
-    loongarch64-unknown-linux-gnu
-    riscv64gc-unknown-linux-gnu
+    x86_64-unknown-linux-gnu.2.17
+    aarch64-unknown-linux-gnu.2.17
+    loongarch64-unknown-linux-gnu.2.36
+    riscv64gc-unknown-linux-gnu.2.27
     x86_64-apple-darwin
     aarch64-apple-darwin
 
@@ -74,7 +74,7 @@ jobs:
       run: cargo install cargo-zigbuild --force
     - name: Install Rust Toolchains
       run: |
-        rustup target add --toolchain nightly $(echo "$targets" | tr '\n' ' ')
+        rustup target add --toolchain nightly $(echo "$targets" | sed 's/\.2\.[0-9]\+//' | tr '\n' ' ')
     - name: Compute Version
       run: |
         if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -92,7 +92,7 @@ jobs:
       run: |
         mkdir -p .cargo
         cp -f build/config.toml .cargo/config.toml
-        cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g' | sed 's/-linux-gnu/-linux-gnu.2.17/g' )
+        cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
         rm -r -f .cargo
     - name: Assemble Artifact
       run: cargo run -p assemble
@@ -125,6 +125,8 @@ jobs:
         declare -A unix_artifacts
         unix_artifacts["x86_64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
         unix_artifacts["aarch64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-arm64"
+        unix_artifacts["riscv64gc-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
+        unix_artifacts["loongarch64-unknown-linux-gnu/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
         unix_artifacts["x86_64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
         unix_artifacts["aarch64-apple-darwin/release/terracotta"]="terracotta-${TERRACOTTA_VERSION}-macos-arm64"
 

@@ -20,7 +20,7 @@ fn main() {
 
     let version = match get_var("TERRACOTTA_VERSION") {
         Ok(v) => v,
-        Err(_) => "snapshot".to_string()
+        Err(_) => "snapshot".to_string(),
     };
     println!("cargo::rustc-env=TERRACOTTA_VERSION={}", version);
 
@@ -65,10 +65,12 @@ fn download_easytier() {
     }
 
     let version = {
-        let mut input = fs::read_to_string(Path::new(&get_var("CARGO_MANIFEST_DIR").unwrap()).join("Cargo.toml"))
-            .unwrap()
-            .parse::<toml::Table>()
-            .unwrap();
+        let mut input = fs::read_to_string(
+            Path::new(&get_var("CARGO_MANIFEST_DIR").unwrap()).join("Cargo.toml"),
+        )
+        .unwrap()
+        .parse::<toml::Table>()
+        .unwrap();
 
         for key in "package.metadata.easytier".split(".") {
             input = match input.into_iter().find(|(k, _)| k == key).unwrap().1 {
@@ -118,6 +120,18 @@ fn download_easytier() {
                 files: vec!["easytier-linux-aarch64/easytier-core"],
                 entry: "easytier-core",
                 desc: "linux-arm64",
+            },
+            "riscv64" => EasytierFiles {
+                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-riscv64-{V}.zip",
+                files: vec!["easytier-linux-riscv64/easytier-core"],
+                entry: "easytier-core",
+                desc: "linux-riscv64",
+            },
+            "loongarch64" => EasytierFiles {
+                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-loongarch64-{V}.zip",
+                files: vec!["easytier-linux-loongarch64/easytier-core"],
+                entry: "easytier-core",
+                desc: "linux-loongarch64",
             },
             _ => panic!("Unsupported target arch: {}", target_arch),
         },

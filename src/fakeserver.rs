@@ -6,7 +6,7 @@ use std::time::Duration;
 
 pub struct FakeServer {
     pub port: u16,
-    _signal: Sender<()>,
+    signal: Sender<()>,
 }
 
 impl FakeServer {

@@ -38,8 +38,8 @@ jobs:
           fi
       - name: Build
         run: |
-          rustup target add --toolchain nightly x86_64-pc-windows-gnu
-          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-gnu
+          rustup target add --toolchain nightly x86_64-pc-windows-msvc
+          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,panic_immediate_abort,optimize_for_size
@@ -70,7 +70,7 @@ jobs:
           rustup target add --toolchain nightly aarch64-pc-windows-msvc
           rustup component add llvm-tools
           rustup component add rust-src --toolchain nightly-aarch64-pc-windows-msvc
-          cargo +nightly build --release \
+          cargo +nightly xwin build --release --target nightly-aarch64-pc-windows-msvc \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact

@@ -68,4 +68,4 @@ panic = "abort"
 
 [workspace]
 resolver = "3"
-members = ["build", "timestamp"]
+members = ["timestamp"]

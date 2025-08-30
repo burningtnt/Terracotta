@@ -69,7 +69,7 @@ jobs:
           cargo +nightly build --release
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
+          source="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
           cp "target/release/terracotta.exe" "$source"
           tar acvf "$source.tar" "$source"
           cat "$source.tar" | gh-actions-artifact-client.js upload "$source"

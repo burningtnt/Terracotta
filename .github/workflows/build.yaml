@@ -185,7 +185,7 @@ jobs:
             -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
+          source="terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
           
           cp "target/release/terracotta" "$source"
           chmod 755 "$source"
@@ -236,7 +236,7 @@ jobs:
             -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"
+          source="terracotta-${TERRACOTTA_VERSION}-macos-arm64"
           
           cp "target/release/terracotta" "$source"
           chmod 755 "$source"

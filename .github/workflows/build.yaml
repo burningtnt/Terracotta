@@ -38,8 +38,9 @@ jobs:
           fi
       - name: Build
         run: |
+          rustup update nightly
           rustup target add --toolchain nightly x86_64-win7-windows-gnu
-          cargo +nightly build --release
+          cargo +nightly build -Zbuild-std --release
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"

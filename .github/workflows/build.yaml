@@ -97,7 +97,8 @@ jobs:
           source="terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
           
           cp "target/release/terracotta" "$source"
-          tar -cf "$source" "$source.tar"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
           
           wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
@@ -135,7 +136,8 @@ jobs:
           source="terracotta-${TERRACOTTA_VERSION}-linux-arm64"
           
           cp "target/release/terracotta" "$source"
-          tar -cf "$source" "$source.tar"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
           
           wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-aarch64.AppImage
@@ -173,7 +175,8 @@ jobs:
           source="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
           
           cp "target/release/terracotta" "$source"
-          tar -cf "$source" "$source.tar"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
           
           chmod -R 755 build/macos/scripts
@@ -220,7 +223,8 @@ jobs:
           source="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"
           
           cp "target/release/terracotta" "$source"
-          tar -cf "$source" "$source.tar"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
           
           chmod -R 755 build/macos/scripts

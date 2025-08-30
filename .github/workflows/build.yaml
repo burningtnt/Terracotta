@@ -38,8 +38,7 @@ jobs:
           fi
       - name: Build
         run: |
-          rustup update nightly
-          rustup target add --toolchain nightly x86_64-win7-windows-gnu
+          rustup install --target x86_64-win7-windows-gnu nightly
           cargo +nightly build -Zbuild-std --release
       - name: Upload Artifact
         run: |

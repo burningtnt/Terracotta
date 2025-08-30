@@ -39,7 +39,9 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly x86_64-pc-windows-gnu
-          cargo +nightly build --release
+          cargo +nightly build --release \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
@@ -66,7 +68,9 @@ jobs:
           cargo install cargo-xwin
           rustup component add llvm-tools
           rustup target add --toolchain nightly aarch64-pc-windows-msvc
-          cargo +nightly build --release
+          cargo +nightly build --release \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
@@ -91,7 +95,9 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly x86_64-unknown-linux-gnu
-          cargo +nightly build --release
+          cargo +nightly build --release \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
@@ -130,7 +136,9 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly aarch64-unknown-linux-gnu
-          cargo +nightly build --release
+          cargo +nightly build --release \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-arm64"
@@ -169,7 +177,9 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly x86_64-apple-darwin
-          cargo +nightly build --release
+          cargo +nightly build --release \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-macos-x86_64.tar"
@@ -217,7 +227,9 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly aarch64-apple-darwin
-          cargo +nightly build --release
+          cargo +nightly build --release \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-macos-arm64.tar"

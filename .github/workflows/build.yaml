@@ -109,7 +109,7 @@ jobs:
             -e "target/release/terracotta" \
             --output=appimage
           
-          mv "Terracotta-aarch64.AppImage" "$source.AppImage"
+          mv "Terracotta-x86_64.AppImage" "$source.AppImage"
           chmod 755 "$source.AppImage"
           zip -q - "$source.AppImage" | gh-actions-artifact-client.js upload "$source.AppImage"
   linux-arm64:

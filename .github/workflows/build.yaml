@@ -50,7 +50,7 @@ jobs:
           tar acvf "$source.tar" "$source"
           cat "$source.tar" | gh-actions-artifact-client.js upload "$source"
   windows-arm64:
-    runs-on: windows-latest
+    runs-on: windows-11-arm
     name: Build for Windows arm64
     steps:
       - name: Checkout
@@ -66,11 +66,9 @@ jobs:
           fi
       - name: Build
         run: |
-          cargo install cargo-xwin
           rustup target add --toolchain nightly aarch64-pc-windows-msvc
-          rustup component add llvm-tools
           rustup component add rust-src --toolchain nightly-aarch64-pc-windows-msvc
-          cargo +nightly xwin build --release --target nightly-aarch64-pc-windows-msvc \
+          cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,panic_immediate_abort,optimize_for_size
       - name: Upload Artifact

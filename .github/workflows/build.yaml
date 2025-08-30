@@ -181,7 +181,7 @@ jobs:
             "$PKG_OUTPUT"
           zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg"
   macos-arm64:
-    runs-on: macos-14
+    runs-on: macos-latest
     name: Build for MacOS arm64
     steps:
       - name: Checkout

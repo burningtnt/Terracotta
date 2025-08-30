@@ -38,7 +38,7 @@ jobs:
           fi
       - name: Build
         run: |
-          rustup install --target x86_64-win7-windows-gnu nightly
+          rustup install --target x86_64-win7-windows-gnu --component rust-src,cargorust-mingw,rustc nightly
           cargo +nightly build -Zbuild-std --release
       - name: Upload Artifact
         run: |

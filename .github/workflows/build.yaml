@@ -36,6 +36,8 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
+      - name: Install 7z
+        run: choco install 7zip
       - name: Build
         run: |
           rustup target add --toolchain nightly x86_64-pc-windows-msvc
@@ -47,7 +49,7 @@ jobs:
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
           cp "target/release/terracotta.exe" "$source"
-          tar acvf "$source.zip" "$source"
+          7z a "$source.zip" "$source"
           cat "$source.zip" | gh-actions-artifact-client.js upload "$source"
   build-windows-arm64:
     runs-on: windows-11-arm
@@ -71,11 +73,13 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,panic_immediate_abort,optimize_for_size
+      - name: Install 7z
+        run: choco install 7zip
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
           cp "target/release/terracotta.exe" "$source"
-          tar acvf "$source.zip" "$source"
+          7z a "$source.zip" "$source"
           cat "$source.zip" | gh-actions-artifact-client.js upload "$source"
   build-linux-x86_64:
     runs-on: ubuntu-latest

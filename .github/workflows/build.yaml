@@ -296,7 +296,7 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
           )
           
-          file=$(mktemp)
+          file=$(mktemp xxxxxx.zip)
           for artifact in "${artifacts_direct[@]}"; do
             gh-actions-artifact-client.js download "$artifact" > "$file"
             unzip -p "$file" > "$artifact"

@@ -298,12 +298,12 @@ jobs:
           
           file=$(mktemp)
           for artifact in "${artifacts_direct[@]}"; do
-            gh-actions-artifact-client.js download "$artifact" >> "$file"
-            unzip -p "$file" >> "$artifact"
+            gh-actions-artifact-client.js download "$artifact" > "$file"
+            unzip -p "$file" > "$artifact"
           done
           for artifact in "${artifacts_tar[@]}"; do
-            gh-actions-artifact-client.js download "$artifact.tar" >> "$file"
-            unzip -p "$file" | tar -xOf - >> "$artifact"
+            gh-actions-artifact-client.js download "$artifact.tar" > "$file"
+            unzip -p "$file" | tar -xOf - > "$artifact"
           done
           
           chmod 755 ./*

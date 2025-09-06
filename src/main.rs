@@ -56,9 +56,11 @@ pub mod lock_windows;
 use lock_windows::State as Lock;
 #[cfg(target_family = "unix")]
 pub mod lock_unix;
-
 #[cfg(target_family = "unix")]
 use lock_unix::State as Lock;
+
+#[cfg(target_family = "windows")]
+mod win7;
 
 lazy_static::lazy_static! {
     static ref ADDRESSES: Vec<IpAddr> = {
@@ -144,6 +146,9 @@ async fn main() {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Full);
         }
     }
+
+    #[cfg(target_family = "windows")]
+    lazy_static::initialize(&win7::WIN7);
 
     #[cfg(target_family = "windows")]
     {

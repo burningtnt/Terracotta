@@ -1,6 +1,6 @@
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
-use crate::easytier;
+use crate::{easytier, win7};
 use crate::fakeserver::FakeServer;
 use crate::scaffolding::client::ClientSession;
 use crate::scaffolding::profile::{Profile, ProfileKind, ProfileSnapshot};
@@ -586,6 +586,11 @@ fn compute_arguments(room: &Room) -> Vec<String> {
     for arg in DEFAULT_ARGUMENTS {
         args.push(arg.to_string());
     }
+    #[cfg(target_family = "windows")]
+    if *win7::WIN7 {
+        args.push("--disable-quic-input".to_string());
+    }
+
     args
 }
 

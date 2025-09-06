@@ -313,5 +313,5 @@ jobs:
           done
           
           chmod 755 terracotta-${TERRACOTTA_VERSION}-*
-          7z a -ms=on -m0=LZMA2 -m1=BCJ:x86 -m1=BCJ:ARM -mx=9 terracotta.7z terracotta-${TERRACOTTA_VERSION}-*
+          7z a -ms=on -m0=LZMA2 -m1=BCJ:x86 -m2=BCJ:ARM -mx=9 terracotta.7z terracotta-${TERRACOTTA_VERSION}-*
           zip -r - terracotta.7z | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-all"

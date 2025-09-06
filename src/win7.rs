@@ -1,6 +1,5 @@
 use std::mem::zeroed;
 use std::process::exit;
-use lazy_static::lazy_static;
 use winapi::shared::minwindef::{DWORD, WORD};
 use winapi::um::winbase::VerifyVersionInfoW;
 use winapi::um::winnt::{VerSetConditionMask, VER_GREATER_EQUAL, VER_MAJORVERSION, VER_MINORVERSION, VER_SERVICEPACKMAJOR};

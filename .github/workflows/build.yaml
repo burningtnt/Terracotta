@@ -265,7 +265,7 @@ jobs:
           zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload "$source.pkg"
   assemble-packages:
     runs-on: ubuntu-latest
-    name: Build for Linux x86_64
+    name: Assemble Artifact
     needs: [build-windows-x86_64, build-windows-arm64, build-linux-x86_64, build-linux-arm64, build-macos-x86_64, build-macos-arm64]
     steps:
       - name: Checkout
@@ -296,13 +296,12 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
           )
           
+          file=$(mktemp)
           for artifact in "${artifacts_direct[@]}"; do
-            file=$(mktemp)
             gh-actions-artifact-client.js download "$artifact" >> "$file"
             unzip -p "$file" >> "$artifact"
           done
           for artifact in "${artifacts_tar[@]}"; do
-            file=$(mktemp)
             gh-actions-artifact-client.js download "$artifact.tar" >> "$file"
             unzip -p "$file" | tar -xOf - >> "$artifact"
           done

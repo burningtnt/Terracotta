@@ -61,7 +61,7 @@ fn check() {
 }
 
 fn fail<T: AsRef<str>>(ok: bool, error: T) {
-    if !ok {
+    if ok {
         return;
     }
 

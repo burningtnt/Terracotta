@@ -148,9 +148,6 @@ async fn main() {
     }
 
     #[cfg(target_family = "windows")]
-    lazy_static::initialize(&win7::WIN7);
-
-    #[cfg(target_family = "windows")]
     {
         if unsafe { winapi::um::wincon::AttachConsole(u32::MAX) } != 0 {
             unsafe fn get_parent_id() -> u32 {

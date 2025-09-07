@@ -6,7 +6,9 @@ use winapi::shared::minwindef::{FARPROC, HMODULE};
 use winapi::shared::ntdef::{UNICODE_STRING, HANDLE, PVOID, ULONG, NTSTATUS};
 use winapi::um::libloaderapi::{FreeLibrary, GetProcAddress, LoadLibraryW};
 use winapi::um::winnt::LPCSTR;
+use crate::win7::fail;
 
+#[allow(dead_code)]
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum KexWinVerSpoof {
@@ -54,16 +56,13 @@ pub struct KexProcessData {
 
 pub fn kex_data_initialize() -> Option<KexProcessData> {
     unsafe {
-        let path: Vec<u16> = OsStr::new("KexDll.dll").encode_wide().collect();
+        let path: Vec<u16> = OsStr::new("kexdll.dll\0").encode_wide().collect();
         let module: HMODULE = LoadLibraryW(path.as_ptr());
         if module.is_null() {
             return None;
         }
-        let initialize: FARPROC = GetProcAddress(module, b"KexDataInitialize".as_ptr() as LPCSTR);
-        if initialize.is_null() {
-            FreeLibrary(module);
-            return None;
-        }
+        let initialize: FARPROC = GetProcAddress(module, c"KexDataInitialize".as_ptr() as LPCSTR);
+        fail(!initialize.is_null(), "KEX_INCOMPLETE: VxKex 不完整");
         let initialize: unsafe extern "system" fn(*mut KexProcessData) -> NTSTATUS = transmute(initialize);
 
         let mut data: KexProcessData = zeroed();

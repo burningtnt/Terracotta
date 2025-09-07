@@ -139,6 +139,9 @@ enum Mode {
 
 #[rocket::main]
 async fn main() {
+    #[cfg(target_os = "windows")]
+    lazy_static::initialize(&crate::win7::WIN7);
+
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);

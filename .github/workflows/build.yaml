@@ -321,7 +321,7 @@ jobs:
           zip -r - terracotta.7z | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-all.7z"
           
           if [ ! -z "${{ github.event.inputs.version }}" ]; then
-            gh release create v"${{ github.event.inputs.version }}" --draft --generate-notes terracotta-${TERRACOTTA_VERSION}-*
+            gh release create v"${{ github.event.inputs.version }}" -R "${{ github.repository }}" --draft --generate-notes terracotta-${TERRACOTTA_VERSION}-*
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

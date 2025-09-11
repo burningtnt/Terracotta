@@ -11,6 +11,9 @@ on:
         description: Terracotta Version
         type: string
 
+permissions:
+  contents: write
+
 env:
   CARGO_TERM_COLOR: always
   name: "terracotta"
@@ -311,7 +314,15 @@ jobs:
             gh-actions-artifact-client.js download "$artifact.tar" > "$file"
             unzip -p "$file" | tar -xOf - > "$artifact"
           done
+          rm "$file"
           
           chmod 755 terracotta-${TERRACOTTA_VERSION}-*
           7z -m0=LZMA2 -mx=9 -ms=on a terracotta.7z terracotta-${TERRACOTTA_VERSION}-*
           zip -r - terracotta.7z | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-all.7z"
+          
+          if [ ! -z "${{ github.event.inputs.version }}" ]; then
+            gh release create v"${{ github.event.inputs.version }}" --draft --generate-notes terracotta-${TERRACOTTA_VERSION}-*
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

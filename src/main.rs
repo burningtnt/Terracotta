@@ -56,9 +56,11 @@ pub mod lock_windows;
 use lock_windows::State as Lock;
 #[cfg(target_family = "unix")]
 pub mod lock_unix;
-
 #[cfg(target_family = "unix")]
 use lock_unix::State as Lock;
+
+#[cfg(target_family = "windows")]
+mod win7;
 
 lazy_static::lazy_static! {
     static ref ADDRESSES: Vec<IpAddr> = {
@@ -137,6 +139,9 @@ enum Mode {
 
 #[rocket::main]
 async fn main() {
+    #[cfg(target_os = "windows")]
+    lazy_static::initialize(&crate::win7::WIN7);
+
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);

@@ -1,3 +1,5 @@
+use crate::controller::experimental::{MACHINE_ID, VENDOR};
+use crate::controller::rooms::legacy;
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
@@ -5,15 +7,13 @@ use crate::fakeserver::FakeServer;
 use crate::scaffolding::client::ClientSession;
 use crate::scaffolding::profile::{Profile, ProfileKind, ProfileSnapshot};
 use crate::scaffolding::PacketResponse;
+use rand_chacha::ChaCha12Rng;
 use rand_core::{OsRng, RngCore, SeedableRng, TryRngCore};
 use serde_json::{json, Value};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, TcpListener};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::{io, thread};
-use rand_chacha::ChaCha12Rng;
-use crate::controller::experimental::{MACHINE_ID, VENDOR};
-use crate::controller::rooms::legacy;
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 
@@ -588,6 +588,11 @@ fn compute_arguments(room: &Room) -> Vec<String> {
     for arg in DEFAULT_ARGUMENTS {
         args.push(arg.to_string());
     }
+    #[cfg(target_family = "windows")]
+    if *crate::win7::WIN7 {
+        args.push("--disable-quic-input".to_string());
+    }
+
     args
 }
 

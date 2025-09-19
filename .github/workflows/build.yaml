@@ -320,15 +320,15 @@ jobs:
           7z -m0=LZMA2 -mx=9 -ms=on a terracotta.7z terracotta-${TERRACOTTA_VERSION}-*
           zip -r - terracotta.7z | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-all.7z"
           
-          tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe
-          tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe
-          tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-x86_64
-          tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
-          
-          tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
-          tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg
-          
           if [ ! -z "${{ github.event.inputs.version }}" ]; then
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-x86_64
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
+          
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg
+          
             gh release create v"${{ github.event.inputs.version }}" -R "${{ github.repository }}" --draft --generate-notes terracotta-${TERRACOTTA_VERSION}-*
           fi
         env:

@@ -48,6 +48,8 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
+        env:
+          RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
@@ -76,6 +78,8 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
+        env:
+          RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Install 7z
         run: choco install 7zip
       - name: Upload Artifact
@@ -106,6 +110,8 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
+        env:
+          RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
@@ -148,6 +154,8 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
+        env:
+          RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-arm64"
@@ -190,6 +198,8 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
+        env:
+          RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
@@ -241,6 +251,8 @@ jobs:
           cargo +nightly build --release \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
+        env:
+          RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-macos-arm64"

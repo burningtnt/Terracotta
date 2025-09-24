@@ -64,7 +64,7 @@ strip = true
 opt-level = "z"
 lto = true
 codegen-units = 1
-panic = "immediate-abort"
+panic = "abort"
 
 [workspace]
 resolver = "3"

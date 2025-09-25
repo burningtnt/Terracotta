@@ -107,7 +107,7 @@ jobs:
         run: |
           rustup target add --toolchain nightly x86_64-unknown-linux-gnu
           rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
-          cargo +nightly build --release \
+          cargo +nightly build --release --target $(rustc --print host-tuple) \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
         env:

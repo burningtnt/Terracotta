@@ -555,14 +555,12 @@ static FALLBACK_SERVERS: [&str; 2] = [
 ];
 
 fn compute_arguments(room: &Room) -> Vec<String> {
-    static DEFAULT_ARGUMENTS: [&str; 7] = [
+    static DEFAULT_ARGUMENTS: [&str; 5] = [
         "--no-tun",
         "--compression=zstd",
         "--multi-thread",
         "--latency-first",
         "--enable-kcp-proxy",
-        "--port-forward",
-        "tcp://0.0.0.0:0/127.0.0.1:1"
     ];
 
     let mut args = vec![

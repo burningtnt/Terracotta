@@ -177,7 +177,7 @@ jobs:
           chmod 755 "$source.AppImage"
           zip -q - "$source.AppImage" | gh-actions-artifact-client.js upload "$source.AppImage"
   build-macos-x86_64:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     name: Build for MacOS x86_64
     steps:
       - name: Checkout

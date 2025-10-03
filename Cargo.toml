@@ -7,6 +7,10 @@ build = "build.rs"
 [package.metadata.easytier]
 version = "v2.4.5"
 
+[workspace]
+resolver = "3"
+members = ["timestamp"]
+
 [workspace.package]
 version = "0.0.0-snapshot"
 
@@ -59,13 +63,30 @@ toml = "0.9.4"
 [profile.dev]
 panic = "abort"
 
+[profile.dev-fast]
+inherits = "dev"
+debug = false
+strip = "debuginfo"
+
 [profile.release]
-strip = true
 opt-level = "z"
+strip = true
 lto = true
 codegen-units = 1
 panic = "abort"
+debug = false
+split-debuginfo = '...'  # Platform-specific.
+debug-assertions = false
+overflow-checks = false
+incremental = false
+rpath = false
 
-[workspace]
-resolver = "3"
-members = ["timestamp"]
+[profile.release.package."*"]
+opt-level = "z"
+strip = true
+codegen-units = 1
+debug = false
+split-debuginfo = '...'  # Platform-specific.
+debug-assertions = false
+overflow-checks = false
+incremental = false

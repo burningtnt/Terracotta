@@ -1,6 +1,6 @@
 site_name: Terracotta
 site_description: Terracotta
-site_dir: sites
+site_dir: docs
 repo_url: https://github.com/burningtnt/Terracotta
 repo_name: Terracotta
 theme:

@@ -6,8 +6,10 @@
     <string>en</string>
     <key>CFBundleExecutable</key>
     <string>terracotta</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIconFile</key>
-    <string>icon-mac.png</string>
+    <string>AppIcon.icns</string>
     <key>CFBundleIdentifier</key>
     <string>net.burningtnt.terracotta</string>
     <key>CFBundleInfoDictionaryVersion</key>

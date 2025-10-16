@@ -1,5 +1,8 @@
+use crate::ports::PortRequest;
 use crate::EASYTIER_DIR;
-use std::net::{Ipv4Addr, SocketAddr, TcpListener};
+use parking_lot::Mutex;
+use std::fmt::Write;
+use std::net::{Ipv4Addr, SocketAddr};
 use std::str::FromStr;
 use std::{
     env, fs,
@@ -10,9 +13,6 @@ use std::{
     thread,
     time::Duration,
 };
-use std::fmt::Write;
-use parking_lot::Mutex;
-use crate::ports::PortRequest;
 
 static EASYTIER_ARCHIVE: (&str, &str, &[u8]) = (
     include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")),
@@ -228,6 +228,14 @@ impl Easytier {
         let mut processes = Vec::with_capacity(forwards.len() * KINDS.len());
         for (local_socket, remote_socket) in forwards {
             for kind in KINDS {
+                processes.push((local_socket, remote_socket, kind, None));
+            }
+        }
+
+        for time in 0..3 {
+            for (
+                local_socket, remote_socket, kind, process_holder
+            ) in processes.iter_mut() {
                 let mut process = match self.start_cli().args([
                     "-p", &format!("127.0.0.1:{}", self.rpc), "port-forward", "add",
                     kind, &local_socket.to_string(), &remote_socket.to_string(),
@@ -238,21 +246,37 @@ impl Easytier {
                         return false;
                     }
                 };
-
                 forward_std(&mut process, |line| {
                     logging!("EasyTier CLI", "{}", line);
                 });
 
-                processes.push(process);
+                process_holder.replace(process);
             }
+
+            for i in (0..processes.len()).rev() {
+                if processes[i].3.as_mut().unwrap().wait().is_ok_and(|status| status.success()) {
+                    processes.swap_remove(i);
+                }
+            }
+
+            if processes.is_empty() {
+                return true;
+            }
+
+            thread::sleep(Duration::from_millis(time * 1000 + 500))
         }
 
-        for mut process in processes {
-            if !process.wait().is_ok_and(|status| status.success()) {
-                return false;
+        if !processes.is_empty() {
+            let mut msg = "Cannot adding port-forward rules: ".to_string();
+            for (i, (local_socket, remote_socket, kind, _)) in processes.iter().enumerate() {
+                write!(&mut msg, "{} -> {} ({})", local_socket, remote_socket, kind).unwrap();
+                if i != processes.len() - 1 {
+                    msg.push_str(", ");
+                }
             }
+            logging!("EasyTier CLI", "{}", msg);
+            return false;
         }
-
         true
     }
 

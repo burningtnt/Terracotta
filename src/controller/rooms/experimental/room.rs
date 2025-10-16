@@ -14,6 +14,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6, TcpListen
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::{io, thread};
+use crate::ports::PortRequest;
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 
@@ -247,13 +248,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                 if hostname.starts_with("scaffolding-mc-server-") && let Ok(port) = u16::from_str(&hostname["scaffolding-mc-server-".len()..]) {
                     logging!("RoomExperiment", "Scaffolding Server is at {}:{}", ip, port);
 
-                    let local_port = if let Ok(socket) = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0))
-                        && let Ok(address) = socket.local_addr()
-                    {
-                        address.port()
-                    } else {
-                        35782
-                    };
+                    let local_port = PortRequest::Scaffolding.request();
 
                     if !easytier.add_port_forward(&[(
                         SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
@@ -347,11 +342,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             unreachable!();
         };
 
-        let local_port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
-            .and_then(|socket| socket.local_addr())
-            .map(|address| address.port())
-            .unwrap_or(35783);
-
+        let local_port = PortRequest::Minecraft.request();
 
         if !easytier.add_port_forward(&[(
             SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),

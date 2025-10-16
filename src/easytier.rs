@@ -12,6 +12,7 @@ use std::{
 };
 use std::fmt::Write;
 use parking_lot::Mutex;
+use crate::ports::PortRequest;
 
 static EASYTIER_ARCHIVE: (&str, &str, &[u8]) = (
     include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")),
@@ -74,10 +75,7 @@ impl EasytierFactory {
     pub fn create(&self, args: Vec<String>) -> Easytier {
         fs::metadata(&self.exe).unwrap();
 
-        let rpc = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
-            .and_then(|socket| socket.local_addr())
-            .map(|address| address.port())
-            .unwrap_or(35785);
+        let rpc = PortRequest::EasyTierRPC.request();
 
         logging!("Easytier", "Starting easytier: {:?}, rpc={}", args, rpc);
 

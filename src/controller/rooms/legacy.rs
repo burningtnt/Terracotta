@@ -8,6 +8,7 @@ use std::mem::MaybeUninit;
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 use std::thread;
 use std::time::{Duration, SystemTime};
+use crate::ports::PortRequest;
 
 pub fn parse(code: &str) -> Option<Room> {
     let chars: Vec<char> = code.to_ascii_uppercase().chars().collect();
@@ -194,13 +195,7 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
         args.push(arg.to_string());
     }
 
-    let local_port = if let Ok(socket) = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0))
-        && let Ok(address) = socket.local_addr()
-    {
-        address.port()
-    } else {
-        35781
-    };
+    let local_port = PortRequest::Minecraft.request();
 
     let (host_ip, remote_port) = match room.kind {
         RoomKind::TerracottaLegacy { mc_port, .. } => ("10.144.144.1", mc_port),

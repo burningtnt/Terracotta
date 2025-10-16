@@ -55,6 +55,7 @@ use lock_windows::State as Lock;
 #[cfg(target_family = "unix")]
 pub mod lock_unix;
 mod mc;
+mod ports;
 
 #[cfg(target_family = "unix")]
 use lock_unix::State as Lock;

@@ -2,8 +2,27 @@ export async function main({context, octokit, require}) {
     const {Readable, PassThrough, promises: {pipeline}} = require('node:stream') as typeof import('node:stream');
     const {Buffer} = require('node:buffer') as typeof import('node:buffer');
 
-    const {default: got} = require('got') as typeof import('got', {with: {"resolution-mode": "import"}});
+    const _got = require('got') as typeof import('got', {with: {"resolution-mode": "import"}});
     const FormData = require('form-data') as typeof import('form-data');
+
+    // Hacky way to enable async-stack tracking.
+    const got = _got.default.extend({
+        handlers: [
+            (options, next) => {
+                Error.captureStackTrace(options.context);
+                return next(options);
+            }
+        ],
+        hooks: {
+            beforeError: [
+                error => {
+                    // @ts-ignore
+                    error.source = error.options.context.stack.split('\n');
+                    return error;
+                }
+            ]
+        }
+    });
 
     const pushUploadingJob = (function () {
         let jobs = new Map<string, { progress: number, estimated: number }>();

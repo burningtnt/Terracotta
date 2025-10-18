@@ -85,18 +85,16 @@ export async function main({context, octokit, require}) {
 
     await Promise.all([
         (async () => {
-            let form = new FormData();
-            form.append("access_token", process.env.GITEE_TOKEN);
-            form.append("tag_name", tagName);
-            form.append("name", name);
-            form.append("body", body);
-            form.append("prerelease", prerelease.toString());
-            form.append("target_commitish", process.env.GITEE_TARGET_COMMITISH);
-
             const {id} = await got(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases`, {
                 method: "POST",
-                headers: form.getHeaders(),
-                body: form
+                form: {
+                    access_token: process.env.GITEE_TOKEN,
+                    tag_name: tagName,
+                    name: name,
+                    body: body,
+                    prerelease: prerelease,
+                    target_commitish: process.env.GITEE_TARGET_COMMITISH
+                }
             }).json<{ id: string }>();
 
             return Promise.all(assets.map(async (asset) => {

@@ -2,10 +2,8 @@ export async function main({context, octokit, require}) {
     const {Readable, PassThrough, promises: {pipeline}} = require('node:stream') as typeof import('node:stream');
     const {Buffer} = require('node:buffer') as typeof import('node:buffer');
 
-    const {got} = require('got') as typeof import('got', {with: {"resolution-mode": "import"}});
-
+    const {default: got} = require('got') as typeof import('got', {with: {"resolution-mode": "import"}});
     const FormData = require('form-data') as typeof import('form-data');
-    type FormData = typeof FormData.prototype;
 
     const pushUploadingJob = (function () {
         let jobs = new Map<string, { progress: number, estimated: number }>();

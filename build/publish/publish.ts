@@ -90,7 +90,7 @@ export async function main({context, octokit, require}) {
             form.append("tag_name", tagName);
             form.append("name", name);
             form.append("body", body);
-            form.append("prerelease", prerelease);
+            form.append("prerelease", prerelease.toString());
             form.append("target_commitish", process.env.GITEE_TARGET_COMMITISH);
 
             const {id} = await got(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases`, {

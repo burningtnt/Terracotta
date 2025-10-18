@@ -1,9 +1,9 @@
-name: Sync GitHub Release to Gitee
+name: Publish Releases to Mirrors
 
 on:
   workflow_dispatch:
   release:
-    types: [published]
+    types: [ published ]
 
 env:
   GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
@@ -11,93 +11,22 @@ env:
   GITEE_REPO: ${{ vars.GITEE_REPO }}
   GITEE_TARGET_COMMITISH: ${{ vars.GITEE_TARGET_COMMITISH }}
 
+  CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+  CNB_OWNER: ${{ vars.CNB_OWNER }}
+  CNB_REPO: ${{ vars.CNB_REPO }}
+  CNB_TARGET_COMMITISH: ${{ vars.CNB_TARGET_COMMITISH }}
+
 jobs:
-  sync-release-to-gitee:
+  publish-releases:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Get release info
-      id: release
-      run: |
-        # Get latest release info
-        release_url="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases/latest"
-        
-        response=$(curl -sL \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "${release_url}")
-        
-        formatted_response=$(echo "$response" | jq -c '{
-          tag_name: .tag_name,
-          name: .name,
-          body: .body,
-          prerelease: .prerelease,
-          assets: [.assets[] | {name: .name, url: .browser_download_url}],
-          html_url: .html_url
-        }')
-        
-        echo "$formatted_response" > release_info.json
-        
-        echo "Release info:"
-        echo "$formatted_response"
-      shell: bash
-
-    - name: Download all release assets
-      run: |
-        mkdir assets
-        while IFS= read -r url; do
-          fname=$(basename "$url")
-          echo "=== Downloading $fname ==="
-          curl -L -o "assets/$fname" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$url"
-          echo "=== Downloaded $fname successfully ==="
-        done < <(jq -r '.assets[].url' release_info.json)
-      shell: bash
-
-    - name: Create Gitee Release
-      id: gitee_release
-      run: |
-        release_info=$(cat release_info.json)
-        tag_name=$(echo "$release_info" | jq -r '.tag_name')
-        name=$(echo "$release_info" | jq -r '.name')
-        body=$(echo "$release_info" | jq -r '.body')
-        html_url=$(echo "$release_info" | jq -r '.html_url')
-        prerelease=$(echo "$release_info" | jq -r '.prerelease')
-        
-        # Combine original body with GitHub release URL
-        body="${body}
-        GitHub Release: ${html_url}"
-        
-        response=$(curl -s -X POST "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases" \
-          -d "access_token=${GITEE_TOKEN}" \
-          -d "tag_name=${tag_name}" \
-          -d "name=${name}" \
-          -d "body=${body}" \
-          -d "prerelease=${prerelease}" \
-          -d "target_commitish=${GITEE_TARGET_COMMITISH}")
-        echo "$response"
-        
-        echo "$response" | jq -r '.id' > release_id.txt
-      shell: bash
-
-    - name: Upload assets to Gitee Release
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y parallel
-        release_id=$(cat release_id.txt)
-        export GITEE_TOKEN=${GITEE_TOKEN}
-        export GITEE_OWNER=${GITEE_OWNER}
-        export GITEE_REPO=${GITEE_REPO}
-        export release_id=${release_id}
-        
-        upload_file() {
-          local file="$1"
-          echo "=== Uploading $file to Gitee release $release_id ==="
-          curl -X POST "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${release_id}/attach_files" \
-            -F "access_token=${GITEE_TOKEN}" \
-            -F "file=@${file}"
-          echo "=== Uploaded $file successfully ==="
-        }
-        export -f upload_file
-        
-        find assets -type f | parallel -j 5 upload_file
-      shell: bash
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install NPM Dependencies
+        run: npm install --no-save got form-data
+      - name: Publish Releases to Mirrors
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const publish = require('./build/publish/publish.ts');
+            await publish.main({ context, octokit, require });

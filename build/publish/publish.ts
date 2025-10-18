@@ -110,7 +110,8 @@ export async function main({context, octokit, require}) {
                 });
 
                 const request = got.stream(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases/${id}/attach_files`, {
-                    method: "POST"
+                    method: "POST",
+                    headers: form.getHeaders()
                 });
                 const startTime = Date.now();
                 request.on('uploadprogress', () => {
@@ -172,7 +173,8 @@ export async function main({context, octokit, require}) {
                 });
 
                 const request = got.stream(uploadURL, {
-                    method: "POST"
+                    method: "POST",
+                    headers: form.getHeaders()
                 });
                 const startTime = Date.now();
                 request.on('uploadprogress', () => {

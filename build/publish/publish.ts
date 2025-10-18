@@ -1,10 +1,10 @@
 export async function main({context, octokit, require}) {
-    const axios = require('axios') as typeof import('axios').default;
-    const http = require('http') as typeof import('http');
-    const https = require('https') as typeof import('https');
+    const {Readable, PassThrough, promises: {pipeline}} = require('node:stream') as typeof import('node:stream');
+    const {Buffer} = require('node:buffer') as typeof import('node:buffer');
 
-    axios.defaults.httpAgent = new http.Agent({ timeout: 60000 })
-    axios.defaults.httpsAgent = new https.Agent({ timeout: 60000 })
+    const got = require('got') as typeof import('got').default;
+    const FormData = require('form-data') as typeof import('form-data');
+    type FormData = typeof FormData.prototype;
 
     const pushUploadingJob = (function () {
         let jobs = new Map<string, { progress: number, estimated: number }>();
@@ -44,7 +44,7 @@ export async function main({context, octokit, require}) {
         assets: _assets
     } = (await octokit.rest.repos.getLatestRelease(context.repo)).data;
 
-    let assets: { name: string, data: Blob }[] = await Promise.all(_assets.map(async (asset) => {
+    let assets: { name: string, data: Buffer }[] = await Promise.all(_assets.map(async (asset) => {
         const response = await fetch(asset.url, {
             "headers": {
                 "Accept": "application/octet-stream"
@@ -58,17 +58,16 @@ export async function main({context, octokit, require}) {
             return undefined;
         }
 
-        return {name: asset.name, data: await response.blob()};
+        return {name: asset.name, data: Buffer.from(await response.arrayBuffer())};
     })).then(l => l.filter(e => e));
     console.log(`Gathered ${assets.length} assets`);
     for (let asset of assets) {
-        console.log(`- ${asset.name.padEnd(52, ' ')}: ${asset.data.size} bytes`);
+        console.log(`- ${asset.name.padEnd(52, ' ')}: ${asset.data.length} bytes`);
     }
 
     await Promise.all([
         (async () => {
-            const {id} = await fetch(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases`, {
-                method: "POST",
+            const {id} = await got.post(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases`, {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
@@ -80,68 +79,89 @@ export async function main({context, octokit, require}) {
                     prerelease: prerelease,
                     target_commitish: process.env.GITEE_TARGET_COMMITISH
                 }).toString()
-            }).then(r => r.json());
-            if (!id) {
-                return;
-            }
+            }).json<{ id: string }>();
 
             return Promise.all(assets.map(async (asset) => {
                 let form = new FormData();
                 form.append("access_token", process.env.GITEE_TOKEN);
-                form.append("file", asset.data, asset.name);
+                form.append("file", asset.data, {
+                    "filename": asset.name,
+                    "contentType": "application/gzip",
+                    "knownLength": asset.data.length
+                });
 
-                await axios.postForm(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases/${id}/attach_files`, form, {
-                    "onUploadProgress": ({progress, estimated}) => {
-                        pushUploadingJob(`[GTE] ${asset.name}`, {progress, estimated});
-                    }
+                const request = got.stream.post(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases/${id}/attach_files`);
+                const startTime = Date.now();
+                request.on('uploadprogress', () => {
+                    const {percent: progress} = request.uploadProgress;
+                    const estimated = (Date.now() - startTime) / 1000 / progress * (1 - progress);
+                    pushUploadingJob(`[GTE] ${asset.name}`, {progress, estimated});
                 })
+                await pipeline(
+                    Readable.from(form.getBuffer()),
+                    request,
+                    new PassThrough()
+                );
             }));
         })(),
         (async () => {
-            const {id} = await axios.post(`https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases`, {
-                "body": body,
-                "draft": false,
-                "make_latest": name,
-                "name": name,
-                "prerelease": prerelease,
-                "tag_name": tagName,
-                "target_commitish": process.env.CNB_TARGET_COMMITISH
-            }, {
+            const {id} = await got.post(`https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases`, {
+                "json": {
+                    "body": body,
+                    "draft": false,
+                    "make_latest": name,
+                    "name": name,
+                    "prerelease": prerelease,
+                    "tag_name": tagName,
+                    "target_commitish": process.env.CNB_TARGET_COMMITISH
+                },
                 "headers": {
                     "Authorization": "Bearer " + process.env.CNB_TOKEN,
                     "Accept": "application/json",
                     "Content-Type": "application/json;charset=UTF-8"
                 }
-            }).then(r => r.data);
-            if (!id) {
-                return;
-            }
+            }).json<{ id: string }>();
 
             return Promise.all(assets.map(async (asset) => {
-                const { upload_url: uploadURL, verify_url: verifyURL }: { upload_url: string, verify_url: string} = await axios.post(`https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases/${id}/asset-upload-url`, {
-                    "asset_name": asset.name,
-                    "overwrite": true,
-                    "size": asset.data.size
-                }, {
-                    "headers": {
-                        "Authorization": "Bearer " + process.env.CNB_TOKEN,
-                        "Accept": "application/json", // Fucking CNB API force Accept to be exact 'application/json'.
-                        "Content-Type": "application/json;charset=UTF-8"
+                const {upload_url: uploadURL, verify_url: verifyURL} = await got.post(
+                    `https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases/${id}/asset-upload-url`, {
+                        "json": {
+                            "asset_name": asset.name,
+                            "overwrite": true,
+                            "size": asset.data.length
+                        },
+                        "headers": {
+                            "Authorization": "Bearer " + process.env.CNB_TOKEN,
+                            "Accept": "application/json", // Fucking CNB API force Accept to be exact 'application/json'.
+                            "Content-Type": "application/json;charset=UTF-8"
+                        }
                     }
-                }).then(r => r.data);
+                ).json<{
+                    upload_url: string,
+                    verify_url: string
+                }>();
 
                 let form = new FormData();
-                form.append("file", asset.data, asset.name);
-                await axios.postForm(uploadURL, form, {
-                    "headers": {
-                        "Authorization": "Bearer " + process.env.CNB_TOKEN,
-                    },
-                    "onUploadProgress": ({progress, estimated}) => {
-                        pushUploadingJob(`[CNB] ${asset.name}`, {progress, estimated});
-                    }
+                form.append("file", asset.data, {
+                    "filename": asset.name,
+                    "contentType": "application/gzip",
+                    "knownLength": asset.data.length
                 });
 
-                await axios.post(verifyURL, {}, {
+                const request = got.stream.post(uploadURL);
+                const startTime = Date.now();
+                request.on('uploadprogress', () => {
+                    const {percent: progress} = request.uploadProgress;
+                    const estimated = (Date.now() - startTime) / 1000 / progress * (1 - progress);
+                    pushUploadingJob(`[GTE] ${asset.name}`, {progress, estimated});
+                })
+                await pipeline(
+                    Readable.from(form.getBuffer()),
+                    request,
+                    new PassThrough()
+                );
+
+                await got.post(verifyURL, {
                     "headers": {
                         "Authorization": "Bearer " + process.env.CNB_TOKEN,
                         "Accept": "application/json", // Fucking CNB API force Accept to be exact 'application/json'.

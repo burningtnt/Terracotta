@@ -2,7 +2,7 @@ export async function main({context, octokit, require}) {
     const {Readable, PassThrough, promises: {pipeline}} = require('node:stream') as typeof import('node:stream');
     const {Buffer} = require('node:buffer') as typeof import('node:buffer');
 
-    const got = require('got') as typeof import('got').default;
+    const got = require('got') as typeof import('got', {with: {"resolution-mode": "import"}}).default;
     const FormData = require('form-data') as typeof import('form-data');
     type FormData = typeof FormData.prototype;
 
@@ -67,7 +67,8 @@ export async function main({context, octokit, require}) {
 
     await Promise.all([
         (async () => {
-            const {id} = await got.post(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases`, {
+            const {id} = await got(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
@@ -90,7 +91,9 @@ export async function main({context, octokit, require}) {
                     "knownLength": asset.data.length
                 });
 
-                const request = got.stream.post(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases/${id}/attach_files`);
+                const request = got.stream(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases/${id}/attach_files`, {
+                    method: "POST"
+                });
                 const startTime = Date.now();
                 request.on('uploadprogress', () => {
                     const {percent: progress} = request.uploadProgress;
@@ -105,7 +108,8 @@ export async function main({context, octokit, require}) {
             }));
         })(),
         (async () => {
-            const {id} = await got.post(`https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases`, {
+            const {id} = await got(`https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases`, {
+                method: "POST",
                 "json": {
                     "body": body,
                     "draft": false,
@@ -123,8 +127,9 @@ export async function main({context, octokit, require}) {
             }).json<{ id: string }>();
 
             return Promise.all(assets.map(async (asset) => {
-                const {upload_url: uploadURL, verify_url: verifyURL} = await got.post(
+                const {upload_url: uploadURL, verify_url: verifyURL} = await got(
                     `https://api.cnb.cool/${process.env.CNB_OWNER}/${process.env.CNB_REPO}/-/releases/${id}/asset-upload-url`, {
+                        method: "POST",
                         "json": {
                             "asset_name": asset.name,
                             "overwrite": true,
@@ -148,7 +153,9 @@ export async function main({context, octokit, require}) {
                     "knownLength": asset.data.length
                 });
 
-                const request = got.stream.post(uploadURL);
+                const request = got.stream(uploadURL, {
+                    method: "POST"
+                });
                 const startTime = Date.now();
                 request.on('uploadprogress', () => {
                     const {percent: progress} = request.uploadProgress;
@@ -161,7 +168,8 @@ export async function main({context, octokit, require}) {
                     new PassThrough()
                 );
 
-                await got.post(verifyURL, {
+                await got(verifyURL, {
+                    method: "POST",
                     "headers": {
                         "Authorization": "Bearer " + process.env.CNB_TOKEN,
                         "Accept": "application/json", // Fucking CNB API force Accept to be exact 'application/json'.

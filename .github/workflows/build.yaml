@@ -89,13 +89,19 @@ jobs:
           7z a "$source.zip" "$source"
           cat "$source.zip" | gh-actions-artifact-client.js upload "$source"
   build-linux-x86_64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Build for Linux x86_64
+    env:
+      TARGET: x86_64-unknown-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2
+      - name: Install musl libc
+        run: |
+          sudo apt update
+          sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -105,9 +111,10 @@ jobs:
           fi
       - name: Build
         run: |
-          rustup target add --toolchain nightly x86_64-unknown-linux-gnu
-          rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
-          cargo +nightly build --release --target $(rustc --print host-tuple) \
+          rustup target add --toolchain nightly "$TARGET"
+          rustup component add rust-src --toolchain "nightly-$TARGET"
+          rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
+          cargo +nightly build --release --target "$TARGET" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
         env:
@@ -116,18 +123,24 @@ jobs:
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
           
-          cp "target/$(rustc --print host-tuple)/release/terracotta" "$source"
+          cp "target/$TARGET/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
   build-linux-arm64:
     runs-on: ubuntu-24.04-arm
     name: Build for Linux arm64
+    env:
+      TARGET: aarch64-unknown-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2
+      - name: Install musl libc
+        run: |
+          sudo apt update
+          sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -137,9 +150,10 @@ jobs:
           fi
       - name: Build
         run: |
-          rustup target add --toolchain nightly aarch64-unknown-linux-gnu
-          rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
-          cargo +nightly build --release --target $(rustc --print host-tuple) \
+          rustup target add --toolchain nightly "$TARGET"
+          rustup component add rust-src --toolchain "nightly-$TARGET"
+          rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
+          cargo +nightly build --release --target "$TARGET" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
         env:
@@ -148,7 +162,7 @@ jobs:
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-arm64"
           
-          cp "target/$(rustc --print host-tuple)/release/terracotta" "$source"
+          cp "target/$TARGET/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"

@@ -81,14 +81,14 @@ export async function main({context, octokit, require}) {
                 estimated
             }]) => {
                 let count = Math.floor(progress * 10);
-                let p = `${name.padEnd(55, ' ')}  ${'\u{1F7E9}'.repeat(count)}${'\u{3000}'.repeat(10 - count)}  ${(progress * 100).toFixed(2)}%`;
+                let p = `${name.padEnd(55, ' ')}  ${'\u{1F7E9}'.repeat(count)}${'\u{1F537}'.repeat(10 - count)}  ${(progress * 100).toFixed(2)}%`;
                 if (progress !== 1) {
-                    p += ` ~${String(estimated).padStart(4, '0')}s left`
+                    p += ` ~${estimated.toFixed(2).padStart(3, ' ')}s left`
                 }
 
                 return p;
             }).join('\n') + "\n" + "=".repeat(10));
-        }, 5000).unref();
+        }, 15_000).unref();
 
         return (name: string, cfg: { progress: number, estimated: number }) => {
             changed = true;

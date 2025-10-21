@@ -120,18 +120,6 @@ jobs:
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
-          
-          wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          chmod +x linux-deploy.AppImage
-          ./linux-deploy.AppImage --appdir="$(mktemp -d)" \
-            --desktop-file=build/linux/terracotta.desktop \
-            --icon-file=build/linux/icon.png \
-            -e "target/$(rustc --print host-tuple)/release/terracotta" \
-            --output=appimage
-          
-          mv "Terracotta-x86_64.AppImage" "$source.AppImage"
-          chmod 755 "$source.AppImage"
-          zip -q - "$source.AppImage" | gh-actions-artifact-client.js upload "$source.AppImage"
   build-linux-arm64:
     runs-on: ubuntu-24.04-arm
     name: Build for Linux arm64
@@ -164,18 +152,6 @@ jobs:
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
-          
-          wget -O linux-deploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-aarch64.AppImage
-          chmod +x linux-deploy.AppImage
-          ./linux-deploy.AppImage --appdir="$(mktemp -d)" \
-            --desktop-file=build/linux/terracotta.desktop \
-            --icon-file=build/linux/icon.png \
-            -e "target/$(rustc --print host-tuple)/release/terracotta" \
-            --output=appimage
-         
-          mv "Terracotta-aarch64.AppImage" "$source.AppImage"
-          chmod 755 "$source.AppImage"
-          zip -q - "$source.AppImage" | gh-actions-artifact-client.js upload "$source.AppImage"
   build-macos-x86_64:
     runs-on: macos-15-intel
     name: Build for MacOS x86_64
@@ -303,8 +279,6 @@ jobs:
       - name: Assemble Artifacts
         run: |
           artifacts_direct=(
-            "terracotta-${TERRACOTTA_VERSION}-linux-x86_64.AppImage"
-            "terracotta-${TERRACOTTA_VERSION}-linux-arm64.AppImage"
             "terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
             "terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg"

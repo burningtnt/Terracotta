@@ -26,11 +26,23 @@
 */
 
 export async function main({context, octokit, require}) {
-    const {Readable, PassThrough, promises: {pipeline}} = require('node:stream') as typeof import('node:stream');
     const {Buffer} = require('node:buffer') as typeof import('node:buffer');
 
     const _got = require('got') as typeof import('got', {with: {"resolution-mode": "import"}});
     const FormData = require('form-data') as typeof import('form-data');
+    type FormData = typeof FormData.prototype;
+    const {chunk: _chunk} = require('chunk-data') as typeof import('chunk-data', {with: {"resolution-mode": "import"}});
+
+    const ofChunkedRequest = (form: FormData) => {
+        const buffer = form.getBuffer();
+        return {
+            headers: {
+                'content-length': buffer.byteLength.toString(),
+                ...form.getHeaders()
+            },
+            body: _chunk(buffer, 65536),
+        }
+    };
 
     // Hacky way to enable async-stack tracking.
     const got = _got.default.extend({
@@ -102,7 +114,7 @@ export async function main({context, octokit, require}) {
             throw new Error(`HTTP error: ${response.status}`);
         }
 
-        if (!asset.name.endsWith("-pkg.tar.gz")) {
+        if (asset.name.endsWith("-pkg.tar.gz")) {
             return undefined;
         }
 
@@ -138,8 +150,7 @@ export async function main({context, octokit, require}) {
 
                 const request = got(`https://gitee.com/api/v5/repos/${process.env.GITEE_OWNER}/${process.env.GITEE_REPO}/releases/${id}/attach_files`, {
                     method: "POST",
-                    headers: form.getHeaders(),
-                    body: Readable.from(form.getBuffer())
+                    ...ofChunkedRequest(form)
                 });
                 const startTime = Date.now();
                 request.on('uploadProgress', ({percent: progress}) => {
@@ -198,8 +209,7 @@ export async function main({context, octokit, require}) {
 
                 const request = got(uploadURL, {
                     method: "POST",
-                    headers: form.getHeaders(),
-                    body: Readable.from(form.getBuffer())
+                    ...ofChunkedRequest(form)
                 });
                 const startTime = Date.now();
                 request.on('uploadProgress', ({percent: progress}) => {

@@ -48,7 +48,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install NPM Dependencies
-        run: npm install --no-save got form-data
+        run: npm install --no-save got form-data chunk-data
       - name: Publish Releases to Mirrors
         uses: actions/github-script@v8
         with:

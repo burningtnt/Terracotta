@@ -4,17 +4,17 @@ use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
 use crate::mc::fakeserver::FakeServer;
+use crate::ports::PortRequest;
 use crate::scaffolding::client::ClientSession;
 use crate::scaffolding::profile::{Profile, ProfileKind, ProfileSnapshot};
 use crate::scaffolding::PacketResponse;
 use rand_chacha::ChaCha12Rng;
 use rand_core::{OsRng, RngCore, SeedableRng, TryRngCore};
 use serde_json::{json, Value};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6, TcpListener};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::{io, thread};
-use crate::ports::PortRequest;
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 

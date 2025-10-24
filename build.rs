@@ -85,94 +85,83 @@ fn download_easytier() {
         input.get("version").unwrap().as_str().unwrap().to_string()
     };
 
-    let target_os = get_var("CARGO_CFG_TARGET_OS").unwrap().to_string();
-    let target_arch = get_var("CARGO_CFG_TARGET_ARCH").unwrap().to_string();
-    let conf = match target_os.as_str() {
-        "windows" => match target_arch.as_str() {
-            "x86_64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-windows-x86_64-{V}.zip",
-                files: vec![
-                    "easytier-windows-x86_64/easytier-core.exe",
-                    "easytier-windows-x86_64/easytier-cli.exe",
-                    "easytier-windows-x86_64/Packet.dll",
-                ],
-                entry: "easytier-core.exe",
-                cli: "easytier-cli.exe",
-                desc: "windows-x86_64",
-            },
-            "aarch64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-windows-arm64-{V}.zip",
-                files: vec![
-                    "easytier-windows-arm64/easytier-core.exe",
-                    "easytier-windows-arm64/easytier-cli.exe",
-                    "easytier-windows-arm64/Packet.dll",
-                ],
-                entry: "easytier-core.exe",
-                cli: "easytier-cli.exe",
-                desc: "windows-arm64",
-            },
-            _ => panic!("Unsupported target arch: {}", target_arch),
+    let target_os = get_var("CARGO_CFG_TARGET_OS").unwrap();
+    let target_arch = get_var("CARGO_CFG_TARGET_ARCH").unwrap();
+
+    let conf = match (target_os.as_str(), target_arch.as_str()) {
+        ("windows", "x86_64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-windows-x86_64-{V}.zip",
+            files: vec![
+                "easytier-windows-x86_64/easytier-core.exe",
+                "easytier-windows-x86_64/easytier-cli.exe",
+                "easytier-windows-x86_64/Packet.dll",
+            ],
+            entry: "easytier-core.exe",
+            cli: "easytier-cli.exe",
+            desc: "windows-x86_64",
         },
-        "linux" => match target_arch.as_str() {
-            "x86_64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-x86_64-{V}.zip",
-                files: vec![
-                    "easytier-linux-x86_64/easytier-core",
-                    "easytier-linux-x86_64/easytier-cli",
-                ],
-                entry: "easytier-core",
-                cli: "easytier-cli",
-                desc: "linux-x86_64",
-            },
-            "aarch64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-aarch64-{V}.zip",
-                files: vec![
-                    "easytier-linux-aarch64/easytier-core",
-                    "easytier-linux-aarch64/easytier-cli",
-                ],
-                entry: "easytier-core",
-                cli: "easytier-cli",
-                desc: "linux-arm64",
-            },
-            _ => panic!("Unsupported target arch: {}", target_arch),
+        ("windows", "aarch64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-windows-arm64-{V}.zip",
+            files: vec![
+                "easytier-windows-arm64/easytier-core.exe",
+                "easytier-windows-arm64/easytier-cli.exe",
+                "easytier-windows-arm64/Packet.dll",
+            ],
+            entry: "easytier-core.exe",
+            cli: "easytier-cli.exe",
+            desc: "windows-arm64",
         },
-        "macos" => match target_arch.as_str() {
-            "x86_64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-x86_64-{V}.zip",
-                files: vec![
-                    "easytier-macos-x86_64/easytier-core",
-                    "easytier-macos-x86_64/easytier-cli",
-                ],
-                entry: "easytier-core",
-                cli: "easytier-cli",
-                desc: "macos-x86_64",
-            },
-            "aarch64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-aarch64-{V}.zip",
-                files: vec![
-                    "easytier-macos-aarch64/easytier-core",
-                    "easytier-macos-aarch64/easytier-cli",
-                ],
-                entry: "easytier-core",
-                cli: "easytier-cli",
-                desc: "macos-arm64",
-            },
-            _ => panic!("Unsupported target arch: {}", target_arch),
+        ("linux", "x86_64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-x86_64-{V}.zip",
+            files: vec![
+                "easytier-linux-x86_64/easytier-core",
+                "easytier-linux-x86_64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "linux-x86_64",
         },
-        "freebsd" => match target_arch.as_str() {
-            "x86_64" => EasytierFiles {
-                url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-freebsd-13.2-x86_64-{V}.zip",
-                files: vec![
-                    "easytier-freebsd-13.2-x86_64/easytier-core",
-                    "easytier-freebsd-13.2-x86_64/easytier-cli",
-                ],
-                entry: "easytier-core",
-                cli: "easytier-cli",
-                desc: "freebsd-x86_64",
-            },
-            _ => panic!("Unsupported target arch: {}", target_arch),
+        ("linux", "aarch64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-aarch64-{V}.zip",
+            files: vec![
+                "easytier-linux-aarch64/easytier-core",
+                "easytier-linux-aarch64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "linux-arm64",
         },
-        _ => panic!("Unsupported target os: {}", target_os),
+        ("macos", "x86_64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-x86_64-{V}.zip",
+            files: vec![
+                "easytier-macos-x86_64/easytier-core",
+                "easytier-macos-x86_64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "macos-x86_64",
+        },
+        ("macos", "aarch64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-aarch64-{V}.zip",
+            files: vec![
+                "easytier-macos-aarch64/easytier-core",
+                "easytier-macos-aarch64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "macos-arm64",
+        },
+        ("freebsd", "x86_64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-freebsd-13.2-x86_64-{V}.zip",
+            files: vec![
+                "easytier-freebsd-13.2-x86_64/easytier-core",
+                "easytier-freebsd-13.2-x86_64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "freebsd-x86_64",
+        },
+        _ => panic!("Cannot compile Terracotta on {}-{}: Cannot find valid EasyTier binary.", target_os, target_arch)
     };
 
     let base = Path::new(&get_var("CARGO_MANIFEST_DIR").unwrap())

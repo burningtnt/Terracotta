@@ -47,7 +47,7 @@ jobs:
           rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
           cargo +nightly build --release --target $(rustc --print host-tuple) \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
-            -Z build-std-features=default,optimize_for_size
+            -Z build-std-features=optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
@@ -77,7 +77,7 @@ jobs:
           rustup component add rust-src --toolchain nightly-aarch64-pc-windows-msvc
           cargo +nightly build --release --target $(rustc --print host-tuple) \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
-            -Z build-std-features=default,optimize_for_size
+            -Z build-std-features=optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Install 7z
@@ -116,7 +116,7 @@ jobs:
           rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
           cargo +nightly build --release --target "$TARGET" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
-            -Z build-std-features=default,optimize_for_size
+            -Z build-std-features=optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
@@ -155,7 +155,7 @@ jobs:
           rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
           cargo +nightly build --release --target "$TARGET" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
-            -Z build-std-features=default,optimize_for_size
+            -Z build-std-features=optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
@@ -187,7 +187,7 @@ jobs:
           rustup component add rust-src --toolchain nightly-x86_64-apple-darwin
           cargo +nightly build --release --target $(rustc --print host-tuple) \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
-            -Z build-std-features=default,optimize_for_size
+            -Z build-std-features=optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
@@ -240,7 +240,7 @@ jobs:
           rustup component add rust-src --toolchain nightly-aarch64-apple-darwin
           cargo +nightly build --release --target $(rustc --print host-tuple) \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
-            -Z build-std-features=default,optimize_for_size
+            -Z build-std-features=optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact

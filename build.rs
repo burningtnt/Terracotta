@@ -131,6 +131,26 @@ fn download_easytier() {
             cli: "easytier-cli",
             desc: "linux-arm64",
         },
+        ("linux", "riscv64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-riscv64-{V}.zip",
+            files: vec![
+                "easytier-linux-riscv64/easytier-core",
+                "easytier-linux-riscv64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "linux-riscv64",
+        },
+        ("linux", "loongarch64") => EasytierFiles {
+            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-loongarch64-{V}.zip",
+            files: vec![
+                "easytier-linux-loongarch64/easytier-core",
+                "easytier-linux-loongarch64/easytier-cli",
+            ],
+            entry: "easytier-core",
+            cli: "easytier-cli",
+            desc: "linux-loongarch64",
+        },
         ("macos", "x86_64") => EasytierFiles {
             url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-x86_64-{V}.zip",
             files: vec![
@@ -218,7 +238,8 @@ fn download_easytier() {
         method: match target_arch.as_str() {
             "x86_64" => EncoderMethod::BCJ_X86_FILTER,
             "aarch64" => EncoderMethod::BCJ_ARM64_FILTER,
-            _ => panic!("Cannot determine BCJ Filter Type."),
+            "riscv64" => EncoderMethod::BCJ_RISCV_FILTER,
+            _ => EncoderMethod::COPY
         },
         options: None,
     }]);

@@ -166,6 +166,51 @@ jobs:
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
+  build-linux-cross:
+    runs-on: ubuntu-24.04
+    name: Build for Linux LoongArch64/RISC-V 64
+    env:
+      targets: >-
+        loongarch64-unknown-linux-gnu.2.36
+        riscv64gc-unknown-linux-gnu.2.27
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install GitHub Artifact Client
+        uses: lhotari/gh-actions-artifact-client@v2
+      - name: Install musl libc
+        run: |
+          sudo apt update
+          sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild --force
+      - name: Install Rust Toolchains
+        run: |
+          rustup target add --toolchain nightly $(echo "$targets" | sed 's/\.2\.[0-9]\+//g' | tr '\n' ' ')
+      - name: Build
+        run: |
+          cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+        env:
+          RUSTFLAGS: -Cpanic=abort
+      - name: Upload Artifact
+        run: |
+          # RISC-V 64
+          source="terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
+
+          cp "target/riscv64gc-unknown-linux-gnu/release/terracotta" "$source"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
+          zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
+          
+          # LoongArch64
+          source="terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
+
+          cp "target/loongarch64-unknown-linux-gnu/release/terracotta" "$source"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
+          zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
   build-macos-x86_64:
     runs-on: macos-15-intel
     name: Build for MacOS x86_64
@@ -275,7 +320,7 @@ jobs:
   assemble-packages:
     runs-on: ubuntu-latest
     name: Assemble Artifact
-    needs: [build-windows-x86_64, build-windows-arm64, build-linux-x86_64, build-linux-arm64, build-macos-x86_64, build-macos-arm64]
+    needs: [ build-windows-x86_64, build-windows-arm64, build-linux-x86_64, build-linux-arm64, build-macos-x86_64, build-macos-arm64 ]
     steps:
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2

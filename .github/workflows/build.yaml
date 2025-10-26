@@ -191,9 +191,7 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly "$TARGET"
-          cargo +nightly zigbuild --release --target "$TARGET.$GLIBC_VERSION"
-        env:
-          RUSTFLAGS: -Cpanic=abort
+          cargo zigbuild --release --target "$TARGET.$GLIBC_VERSION"
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
@@ -227,9 +225,7 @@ jobs:
       - name: Build
         run: |
           rustup target add --toolchain nightly "$TARGET"
-          cargo +nightly zigbuild --release --target "$TARGET.$GLIBC_VERSION"
-        env:
-          RUSTFLAGS: -Cpanic=abort
+          cargo zigbuild --release --target "$TARGET.$GLIBC_VERSION"
       - name: Upload Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"

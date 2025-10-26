@@ -347,7 +347,7 @@ jobs:
   assemble-packages:
     runs-on: ubuntu-latest
     name: Assemble Artifact
-    needs: [ build-windows-x86_64, build-windows-arm64, build-linux-x86_64, build-linux-arm64, build-macos-x86_64, build-macos-arm64 ]
+    needs: [ build-windows-x86_64, build-windows-arm64, build-linux-x86_64, build-linux-arm64, build-linux-riscv64, build-linux-loongarch64, build-macos-x86_64, build-macos-arm64 ]
     steps:
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2
@@ -373,6 +373,8 @@ jobs:
           artifacts_tar=(
             "terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-linux-arm64"
+            "terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
+            "terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
           )
@@ -397,6 +399,8 @@ jobs:
             tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-x86_64
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-riscv64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-riscv64
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-loongarch64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-loongarch64
           
             tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
             tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg

@@ -166,13 +166,12 @@ jobs:
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
-  build-linux-cross:
+  build-linux-riscv64:
     runs-on: ubuntu-24.04
-    name: Build for Linux LoongArch64/RISC-V 64
+    name: Build for Linux RISC-V 64
     env:
-      targets: >-
-        loongarch64-unknown-linux-gnu.2.36
-        riscv64gc-unknown-linux-gnu.2.27
+      TARGET: riscv64gc-unknown-linux-gnu
+      GLIBC_VERSION: 2.27
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -187,51 +186,55 @@ jobs:
           fi
       - name: Install Zig
         uses: mlugg/setup-zig@v2
-      - name: Generate Cache Key
-        run: cargo generate-lockfile
-      - name: Restore Cargo Cache
-        id: restore-cargo-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-            .easytier
-          key: cargo-targets
       - name: Install cargo-zigbuild
         run: cargo install cargo-zigbuild --force
-      - name: Install Rust Toolchains
-        run: |
-          rustup target add --toolchain nightly $(echo "$targets" | sed 's/\.2\.[0-9]\+//g' | tr '\n' ' ')
       - name: Build
         run: |
-          cargo +nightly zigbuild --release --target $(echo $(echo "$targets" | tr '\n' ' ') | sed 's/ / --target /g')
+          rustup target add --toolchain nightly "$TARGET"
+          cargo +nightly zigbuild --release --target "$TARGET.$GLIBC_VERSION"
         env:
           RUSTFLAGS: -Cpanic=abort
-      - name: Generate Cargo Cache
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-            .easytier
-          key: ${{ steps.restore-cargo-cache.outputs.cache-primary-key }}
       - name: Upload Artifact
         run: |
-          # RISC-V 64
           source="terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
 
-          cp "target/riscv64gc-unknown-linux-gnu/release/terracotta" "$source"
+          cp "target/$TARGET/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
-          
-          # LoongArch64
+  build-linux-loongarch64:
+    runs-on: ubuntu-24.04
+    name: Build for Linux LoongArch64
+    env:
+      TARGET: loongarch64-unknown-linux-gnu
+      GLIBC_VERSION: 2.36
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install GitHub Artifact Client
+        uses: lhotari/gh-actions-artifact-client@v2
+      - name: Compute Version
+        run: |
+          if [ -z "${{ github.event.inputs.version }}" ]; then
+            echo "TERRACOTTA_VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          else
+            echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          fi
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild --force
+      - name: Build
+        run: |
+          rustup target add --toolchain nightly "$TARGET"
+          cargo +nightly zigbuild --release --target "$TARGET.$GLIBC_VERSION"
+        env:
+          RUSTFLAGS: -Cpanic=abort
+      - name: Upload Artifact
+        run: |
           source="terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
 
-          cp "target/loongarch64-unknown-linux-gnu/release/terracotta" "$source"
+          cp "target/$TARGET/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"

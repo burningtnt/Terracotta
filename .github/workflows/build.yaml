@@ -234,6 +234,47 @@ jobs:
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
+  build-freebsd-x86_64:
+    runs-on: ubuntu-24.04
+    name: Build for FreeBSD x86-64
+    env:
+      TARGET: x86_64-unknown-freebsd
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install GitHub Artifact Client
+        uses: lhotari/gh-actions-artifact-client@v2
+      - name: Compute Version
+        run: |
+          if [ -z "${{ github.event.inputs.version }}" ]; then
+            echo "TERRACOTTA_VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          else
+            echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          fi
+      - uses: cross-platform-actions/action@v0.29.0
+        with:
+          operating_system: freebsd
+          version: '13.2'
+          shell: 'bash'
+          environment_variables: 'TARGET'
+          run: |
+            sudo pkg install -y llvm-devel curl
+            curl --proto 'https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            
+            export CC=clang
+            export CXX=clang++
+            . $HOME/.cargo/env
+
+            rustup target add --toolchain nightly "$TARGET"
+            cargo +nightly build --release --target "$TARGET"
+      - name: Upload Artifact
+        run: |
+          source="terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64"
+
+          cp "target/$TARGET/release/terracotta" "$source"
+          chmod 755 "$source"
+          tar -cf "$source.tar" "$source"
+          zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
   build-macos-x86_64:
     runs-on: macos-15-intel
     name: Build for MacOS x86_64
@@ -371,6 +412,7 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-linux-arm64"
             "terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
             "terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
+            "terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
           )
@@ -397,6 +439,7 @@ jobs:
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-riscv64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-riscv64
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-loongarch64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-loongarch64
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64
           
             tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
             tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg

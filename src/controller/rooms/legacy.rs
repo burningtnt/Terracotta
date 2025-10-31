@@ -1,16 +1,16 @@
-use std::borrow::Cow;
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind};
 use crate::easytier;
+use crate::easytier::argument::{Argument, Proto};
 use crate::mc::fakeserver::FakeServer;
 use crate::ports::PortRequest;
 use num_bigint::BigUint;
 use socket2::{Domain, SockAddr, Socket, Type};
+use std::borrow::Cow;
 use std::mem::MaybeUninit;
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::thread;
 use std::time::{Duration, SystemTime};
-use crate::easytier::argument::{Argument, Proto};
 
 pub fn parse(code: &str) -> Option<Room> {
     let chars: Vec<char> = code.to_ascii_uppercase().chars().collect();

@@ -67,7 +67,7 @@ jobs:
           cp "target/${{ matrix.target }}/release/terracotta.exe" "$source"
           7z a "$source.zip" "$source"
           cat "$source.zip" | gh-actions-artifact-client.js upload "$source"
-  build-linux:
+  build-unix:
     strategy:
       fail-fast: false
       matrix:
@@ -226,7 +226,7 @@ jobs:
     name: Assemble Artifact
     needs:
       - build-windows
-      - build-linux
+      - build-unix
       - build-macos
     steps:
       - name: Install GitHub Artifact Client

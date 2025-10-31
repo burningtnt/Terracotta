@@ -384,7 +384,16 @@ jobs:
   assemble-packages:
     runs-on: ubuntu-latest
     name: Assemble Artifact
-    needs: [ build-windows-x86_64, build-windows-arm64, build-linux-x86_64, build-linux-arm64, build-linux-riscv64, build-linux-loongarch64, build-macos-x86_64, build-macos-arm64 ]
+    needs: 
+      - build-windows-x86_64
+      - build-windows-arm64
+      - build-linux-x86_64
+      - build-linux-arm64
+      - build-linux-riscv64
+      - build-linux-loongarch64
+      - build-freebsd-x86_64
+      - build-macos-x86_64
+      - build-macos-arm64
     steps:
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2

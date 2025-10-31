@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind};
 use crate::easytier;
@@ -6,9 +7,10 @@ use crate::ports::PortRequest;
 use num_bigint::BigUint;
 use socket2::{Domain, SockAddr, Socket, Type};
 use std::mem::MaybeUninit;
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::thread;
 use std::time::{Duration, SystemTime};
+use crate::easytier::argument::{Argument, Proto};
 
 pub fn parse(code: &str) -> Option<Room> {
     let chars: Vec<char> = code.to_ascii_uppercase().chars().collect();
@@ -167,51 +169,47 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
         "tcp://et.01130328.xyz:11010",
         "tcp://et.gbc.moe:11011",
     ];
-    static DEFAULT_ARGUMENTS: [&'static str; 5] = [
-        "--no-tun",
-        "--compression=zstd",
-        "--multi-thread",
-        "--latency-first",
-        "--enable-kcp-proxy",
+    static DEFAULT_ARGUMENTS: [Argument; 5] = [
+        Argument::NoTun,
+        Argument::Compression(Cow::Borrowed("zstd")),
+        Argument::MultiThread,
+        Argument::LatencyFirst,
+        Argument::EnableKcpProxy,
     ];
 
     let mut args = vec![
-        "--network-name".to_string(),
-        room.network_name.clone(),
-        "--network-secret".to_string(),
-        room.network_secret.clone(),
+        Argument::NetworkName(Cow::Owned(room.network_name.clone())),
+        Argument::NetworkSecret(Cow::Owned(room.network_secret.clone())),
     ];
 
     if matches!(room.kind, RoomKind::PCL2CE { .. }) {
-        args.push("-p".to_string());
-        args.push("tcp://43.139.42.188:11010".to_string())
+        args.push(Argument::PublicServer(Cow::Borrowed("tcp://43.139.42.188:11010")));
     }
 
     for replay in REPLAY_SERVERS.iter() {
-        args.push("-p".to_string());
-        args.push(replay.to_string());
+        args.push(Argument::PublicServer(Cow::Borrowed(&replay)));
     }
-    for arg in DEFAULT_ARGUMENTS.iter() {
-        args.push(arg.to_string());
-    }
+    args.extend_from_slice(&DEFAULT_ARGUMENTS);
 
     let local_port = PortRequest::Minecraft.request();
 
     let (host_ip, remote_port) = match room.kind {
-        RoomKind::TerracottaLegacy { mc_port, .. } => ("10.144.144.1", mc_port),
-        RoomKind::PCL2CE { mc_port, .. } => ("10.114.51.41", mc_port),
+        RoomKind::TerracottaLegacy { mc_port, .. } => (Ipv4Addr::new(10, 144, 144, 1), mc_port),
+        RoomKind::PCL2CE { mc_port, .. } => (Ipv4Addr::new(10, 144, 51, 41), mc_port),
         _ => panic!("Should NOT be here"),
     };
 
-    args.push("-d".to_string());
-    args.push(format!(
-        "--port-forward=tcp://[::0]:{}/{}:{}",
-        local_port, host_ip, remote_port
-    ));
-    args.push(format!(
-        "--port-forward=tcp://0.0.0.0:{}/{}:{}",
-        local_port, host_ip, remote_port
-    ));
+    args.push(Argument::DHCP);
+    args.push(Argument::PortForward {
+        local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
+        remote: SocketAddrV4::new(host_ip, remote_port).into(),
+        proto: Proto::TCP,
+    });
+    args.push(Argument::PortForward {
+        local: SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, local_port, 0, 0).into(),
+        remote: SocketAddrV4::new(host_ip, remote_port).into(),
+        proto: Proto::TCP,
+    });
 
     let capture = {
         let easytier = easytier::FACTORY.create(args);

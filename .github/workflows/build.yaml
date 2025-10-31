@@ -30,13 +30,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - runs-on: windows-latest
+            os: windows
             arch: x86_64
             target: x86_64-pc-windows-msvc
-          - os: windows-11-arm
+          - runs-on: windows-11-arm
+            os: windows
             arch: arm64
             target: aarch64-pc-windows-msvc
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
@@ -61,7 +63,7 @@ jobs:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-windows-${{ matrix.arch }}.exe"
+          source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.exe"
           cp "target/${{ matrix.target }}/release/terracotta.exe" "$source"
           7z a "$source.zip" "$source"
           cat "$source.zip" | gh-actions-artifact-client.js upload "$source"
@@ -70,29 +72,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
+          - runs-on: ubuntu-24.04
+            os: linux
             arch: x86_64
             target: x86_64-unknown-linux-musl
-          - os: ubuntu-24.04-arm
+          - runs-on: ubuntu-24.04-arm
+            os: linux
             arch: arm64
             target: aarch64-unknown-linux-musl
-          - os: ubuntu-24.04
+          - runs-on: ubuntu-24.04
+            os: linux
             arch: riscv64
             target: riscv64gc-unknown-linux-gnu
             glibc-version: 2.27
-          - os: ubuntu-24.04
+          - runs-on: ubuntu-24.04
+            os: linux
             arch: loongarch64
             target: loongarch64-unknown-linux-gnu
-            glibc-version: 2.36
-    runs-on: ${{ matrix.os }}
+          - runs-on: ubuntu-24.04
+            os: freebsd
+            arch: x86_64
+            target: x86_64-unknown-freebsd
+    runs-on: ${{ matrix.runs-on }}
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2
-      - name: Install musl libc (x86_64 | arm64)
-        if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) }}
+      - name: Install musl libc (linux x86_64 | linux arm64)
+        if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
           sudo apt update
           sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
@@ -103,14 +112,14 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
-      - name: Install Zig (riscv64 | loongarch64)
-        if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) }}
+      - name: Install Zig (linux riscv64 | linux loongarch64)
+        if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         uses: mlugg/setup-zig@v2
-      - name: Install cargo-zigbuild (riscv64 | loongarch64)
-        if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) }}
+      - name: Install cargo-zigbuild (linux riscv64 | linux loongarch64)
+        if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: cargo install cargo-zigbuild --force
-      - name: Build (x86_64 | arm64)
-        if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) }}
+      - name: Build (linux x86_64 | linux arm64)
+        if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
           rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
@@ -119,14 +128,30 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
-      - name: Build (riscv64 | loongarch64)
-        if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) }}
+      - name: Build (linux riscv64 | linux loongarch64)
+        if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
           cargo +nightly zigbuild --release --target "${{ matrix.target }}.${{ matrix.glibc-version }}"
+      - name: Build (freebsd x86_64)
+        if: ${{ contains(fromJSON('["x86_64"]'), matrix.arch) && matrix.os == 'freebsd' }}
+        uses: cross-platform-actions/action@v0.29.0
+        with:
+          operating_system: freebsd
+          architecture: ${{ matrix.arch }}
+          version: '13.2'
+          shell: bash
+          run: |
+            sudo pkg install -y llvm-devel curl
+            curl --proto 'https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            export CC=clang
+            export CXX=clang++
+            . $HOME/.cargo/env
+            rustup target add --toolchain nightly "${{ matrix.target }}"
+            cargo +nightly build --release --target "${{ matrix.target }}"
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-linux-${{ matrix.arch }}"
+          source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           cp "target/${{ matrix.target }}/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
@@ -136,13 +161,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15-intel
+          - runs-on: macos-15-intel
+            os: macos
             arch: x86_64
             target: x86_64-apple-darwin
-          - os: macos-latest
+          - runs-on: macos-latest
+            os: macos
             arch: arm64
             target: aarch64-apple-darwin
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
@@ -167,7 +194,7 @@ jobs:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-macos-${{ matrix.arch }}"
+          source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           
           cp "target/${{ matrix.target }}/release/terracotta" "$source"
           chmod 755 "$source"
@@ -224,6 +251,7 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-linux-arm64"
             "terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
             "terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
+            "terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
           )
@@ -250,6 +278,7 @@ jobs:
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-riscv64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-riscv64
             tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-loongarch64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-loongarch64
+            tar -czvf terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64
           
             tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
             tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg

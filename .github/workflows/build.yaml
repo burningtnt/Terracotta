@@ -66,7 +66,7 @@ jobs:
           source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.exe"
           cp "target/${{ matrix.target }}/release/terracotta.exe" "$source"
           7z a "$source.zip" "$source"
-          cat "$source.zip" | gh-actions-artifact-client.js upload "$source"
+          cat "$source.zip" | gh-actions-artifact-client.js upload -r 90 "$source"
   build-unix:
     strategy:
       fail-fast: false
@@ -155,7 +155,7 @@ jobs:
           cp "target/${{ matrix.target }}/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
-          zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
+          zip -q - "$source.tar" | gh-actions-artifact-client.js upload -r 90 "$source.tar"
   build-macos:
     strategy:
       fail-fast: false
@@ -199,7 +199,7 @@ jobs:
           cp "target/${{ matrix.target }}/release/terracotta" "$source"
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
-          zip -q - "$source.tar" | gh-actions-artifact-client.js upload "$source.tar"
+          zip -q - "$source.tar" | gh-actions-artifact-client.js upload -r 90 "$source.tar"
           
           chmod -R 755 build/macos/scripts
           TEMP_DIR=$(mktemp -d)
@@ -220,7 +220,7 @@ jobs:
             --scripts build/macos/scripts \
             --component-plist build/macos/terracotta.plist \
             "$PKG_OUTPUT"
-          zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload "$source.pkg"
+          zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload -r 90 "$source.pkg"
   assemble-packages:
     runs-on: ubuntu-latest
     name: Assemble Artifact
@@ -269,7 +269,7 @@ jobs:
           
           chmod 755 terracotta-${TERRACOTTA_VERSION}-*
           7z -m0=LZMA2 -mx=9 -ms=on a terracotta.7z terracotta-${TERRACOTTA_VERSION}-*
-          zip -r - terracotta.7z | gh-actions-artifact-client.js upload "terracotta-${TERRACOTTA_VERSION}-all.7z"
+          zip -r - terracotta.7z | gh-actions-artifact-client.js upload -r 90 "terracotta-${TERRACOTTA_VERSION}-all.7z"
           
           if [ ! -z "${{ github.event.inputs.version }}" ]; then
             tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe

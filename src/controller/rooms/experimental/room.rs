@@ -143,7 +143,7 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     args.push("10.144.144.1".to_string());
     args.push(format!("--tcp-whitelist={}", scaffolding));
     args.push(format!("--tcp-whitelist={}", port));
-    args.push(format!("--tcp-whitelist={}", port));
+    args.push(format!("--udp-whitelist={}", port));
 
     let easytier = easytier::FACTORY.create(args);
     let capture = {

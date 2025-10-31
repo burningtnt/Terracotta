@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
+use std::net::{Ipv4Addr, SocketAddr};
 
 type CowString = Cow<'static, str>;
 

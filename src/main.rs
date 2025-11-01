@@ -3,7 +3,7 @@
     all(target_os = "windows"),
     feature(panic_update_hook, internal_output_capture)
 )]
-#![feature(panic_backtrace_config)]
+#![feature(panic_backtrace_config, const_convert, const_trait_impl)]
 
 #[macro_export]
 macro_rules! logging {

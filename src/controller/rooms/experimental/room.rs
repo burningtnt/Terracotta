@@ -3,6 +3,7 @@ use crate::controller::rooms::legacy;
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
+use crate::easytier::argument::{Argument, Proto};
 use crate::mc::fakeserver::FakeServer;
 use crate::ports::PortRequest;
 use crate::scaffolding::client::ClientSession;
@@ -11,6 +12,7 @@ use crate::scaffolding::PacketResponse;
 use rand_chacha::ChaCha12Rng;
 use rand_core::{OsRng, RngCore, SeedableRng, TryRngCore};
 use serde_json::{json, Value};
+use std::borrow::Cow;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -137,13 +139,11 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     let scaffolding = *SCAFFOLDING_PORT;
 
     let mut args = compute_arguments(&room);
-    args.push("--hostname".to_string());
-    args.push(format!("scaffolding-mc-server-{}", scaffolding));
-    args.push("--ipv4".to_string());
-    args.push("10.144.144.1".to_string());
-    args.push(format!("--tcp-whitelist={}", scaffolding));
-    args.push(format!("--tcp-whitelist={}", port));
-    args.push(format!("--udp-whitelist={}", port));
+    args.push(Argument::HostName(Cow::Owned(format!("scaffolding-mc-server-{}", scaffolding))));
+    args.push(Argument::IPv4(Ipv4Addr::new(10, 144, 144, 1)));
+    args.push(Argument::TcpWhitelist(scaffolding));
+    args.push(Argument::TcpWhitelist(port));
+    args.push(Argument::UdpWhitelist(port));
 
     let easytier = easytier::FACTORY.create(args);
     let capture = {
@@ -213,9 +213,9 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
 
 pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture) {
     let mut args = compute_arguments(&room);
-    args.push("-d".to_string());
-    args.push("--tcp-whitelist=0".to_string());
-    args.push("--udp-whitelist=0".to_string());
+    args.push(Argument::DHCP);
+    args.push(Argument::TcpWhitelist(0));
+    args.push(Argument::UdpWhitelist(0));
     let easytier = easytier::FACTORY.create(args);
     let capture = {
         let Some(state) = capture.try_capture() else {
@@ -547,44 +547,40 @@ static FALLBACK_SERVERS: [&str; 2] = [
     "tcp://public2.easytier.cn:54321",
 ];
 
-fn compute_arguments(room: &Room) -> Vec<String> {
-    static DEFAULT_ARGUMENTS: [&str; 7] = [
-        "--no-tun",
-        "--compression=zstd",
-        "--multi-thread",
-        "--latency-first",
-        "--enable-kcp-proxy",
-        "-l",
-        "udp://0.0.0.0:0",
+fn compute_arguments(room: &Room) -> Vec<Argument> {
+    static DEFAULT_ARGUMENTS: [Argument; 6] = [
+        Argument::NoTun,
+        Argument::Compression(Cow::Borrowed("zstd")),
+        Argument::MultiThread,
+        Argument::LatencyFirst,
+        Argument::EnableKcpProxy,
+        Argument::Listener {
+            address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
+            proto: Proto::UDP
+        },
     ];
 
-    let mut args: Vec<String> = Vec::with_capacity(32);
+    let mut args: Vec<Argument> = Vec::with_capacity(32);
     args.extend_from_slice(&[
-        "--network-name".to_string(),
-        room.network_name.clone(),
-        "--network-secret".to_string(),
-        room.network_secret.clone(),
+        Argument::NetworkName(Cow::Owned(room.network_name.clone())),
+        Argument::NetworkSecret(Cow::Owned(room.network_secret.clone())),
     ]);
 
     match fetch_public_nodes(room) {
         Ok(nodes) => {
             for replay in nodes {
-                args.push("-p".to_string());
-                args.push(replay);
+                args.push(Argument::PublicServer(Cow::Owned(replay)));
             }
         }
         Err(e) => {
             logging!("RoomExperiment", "Cannot fetch EasyTier public nodes: {:?}.", e);
             for replay in FALLBACK_SERVERS {
-                args.push("-p".to_string());
-                args.push(replay.to_string());
+                args.push(Argument::PublicServer(Cow::Borrowed(replay)));
             }
         }
     }
 
-    for arg in DEFAULT_ARGUMENTS {
-        args.push(arg.to_string());
-    }
+    args.extend_from_slice(&DEFAULT_ARGUMENTS);
     args
 }
 

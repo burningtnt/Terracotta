@@ -4,8 +4,16 @@ use std::net::{Ipv4Addr, SocketAddr};
 type CowString = Cow<'static, str>;
 
 #[derive(Clone)]
+pub struct PortForward {
+    pub(crate) local: SocketAddr,
+    pub(crate) remote: SocketAddr,
+    pub(crate) proto: Proto,
+}
+
+#[derive(Clone)]
 pub enum Proto {
-    TCP, UDP
+    TCP,
+    UDP,
 }
 
 impl Proto {
@@ -29,13 +37,9 @@ pub enum Argument {
     PublicServer(CowString),
     Listener {
         address: SocketAddr,
-        proto: Proto
-    },
-    PortForward {
-        local: SocketAddr,
-        remote: SocketAddr,
         proto: Proto,
     },
+    PortForward(PortForward),
     DHCP,
     HostName(CowString),
     IPv4(Ipv4Addr),

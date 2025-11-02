@@ -3,7 +3,7 @@ use crate::controller::rooms::legacy;
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
-use crate::easytier::argument::{Argument, Proto};
+use crate::easytier::argument::{Argument, PortForward, Proto};
 use crate::mc::fakeserver::FakeServer;
 use crate::ports::PortRequest;
 use crate::scaffolding::client::ClientSession;
@@ -17,6 +17,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::{io, thread};
+use std::mem::{transmute, MaybeUninit};
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 
@@ -250,10 +251,11 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
 
                     let local_port = PortRequest::Scaffolding.request();
 
-                    if !easytier.add_port_forward(&[(
-                        SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
-                        SocketAddrV4::new(ip, port).into(),
-                    )]) {
+                    if !easytier.add_port_forward(&[PortForward {
+                        local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
+                        remote: SocketAddrV4::new(ip, port).into(),
+                        proto: Proto::TCP
+                    }]) {
                         logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for Scaffolding Connection.", local_port, port);
                         state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });
                         return;
@@ -344,17 +346,31 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
 
         let local_port = PortRequest::Minecraft.request();
 
-        if !easytier.add_port_forward(&[(
-            SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
-            SocketAddrV4::new(Ipv4Addr::new(10, 144, 144, 1), port).into()
-        ), (
-            SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, local_port, 0, 0).into(),
-            SocketAddrV4::new(Ipv4Addr::new(10, 144, 144, 1), port).into()
-        )]) {
+        if !easytier.add_port_forward(&{
+            let locals = [
+                SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
+                SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, local_port, 0, 0).into(),
+            ];
+            let protos = [Proto::TCP, Proto::UDP];
+
+            // TODO: Compute SIZE automatically.
+            const SIZE: usize = 4;
+            assert_eq!(locals.len() * protos.len(), SIZE);
+            let mut forwards: [MaybeUninit<PortForward>; SIZE] = [const { MaybeUninit::uninit() }; _];
+            for (i, local) in locals.into_iter().enumerate() {
+                for (j, proto) in protos.iter().enumerate() {
+                    forwards[i * 2 + j].write(PortForward {
+                        remote: SocketAddrV4::new(Ipv4Addr::new(10, 144, 144, 1), port).into(), local, proto: proto.clone()
+                    });
+                }
+            }
+            // SAFETY: These two types are of the same size and all elements have been properly initialized.
+            unsafe { transmute::<[MaybeUninit<PortForward>; SIZE], [PortForward; SIZE]>(forwards) }
+        }) {
             logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for MC Connection.", local_port, port);
             state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });
             return;
-        }
+        } else {}
 
         local_port
     };

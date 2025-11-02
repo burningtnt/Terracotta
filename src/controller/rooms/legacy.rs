@@ -1,7 +1,7 @@
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind};
 use crate::easytier;
-use crate::easytier::argument::{Argument, Proto};
+use crate::easytier::argument::{Argument, PortForward, Proto};
 use crate::mc::fakeserver::FakeServer;
 use crate::ports::PortRequest;
 use num_bigint::BigUint;
@@ -200,16 +200,16 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
     };
 
     args.push(Argument::DHCP);
-    args.push(Argument::PortForward {
+    args.push(Argument::PortForward(PortForward {
         local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
         remote: SocketAddrV4::new(host_ip, remote_port).into(),
         proto: Proto::TCP,
-    });
-    args.push(Argument::PortForward {
+    }));
+    args.push(Argument::PortForward(PortForward {
         local: SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, local_port, 0, 0).into(),
         remote: SocketAddrV4::new(host_ip, remote_port).into(),
         proto: Proto::TCP,
-    });
+    }));
 
     let capture = {
         let easytier = easytier::FACTORY.create(args);

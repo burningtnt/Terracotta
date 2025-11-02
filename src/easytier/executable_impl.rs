@@ -1,10 +1,10 @@
-use crate::easytier::argument::Argument;
+use crate::easytier::argument::{Argument, PortForward};
 use crate::ports::PortRequest;
 use crate::EASYTIER_DIR;
 use parking_lot::Mutex;
 use std::ffi::OsString;
 use std::fmt::Write;
-use std::net::{Ipv4Addr, SocketAddr};
+use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::{
     env, fs,
@@ -94,7 +94,9 @@ impl EasytierFactory {
                     Argument::NetworkName(name) => push!["--network-name", name.as_ref()],
                     Argument::NetworkSecret(secret) => push!["--network-secret", secret.as_ref()],
                     Argument::Listener { address, proto } => push!["-l", format!("{}://{}", proto.name(), address)],
-                    Argument::PortForward { local, remote, proto} => push![format!("--port-forward={}://{}/{}", proto.name(), local, remote)],
+                    Argument::PortForward(PortForward { local, remote, proto }) => push![
+                        format!("--port-forward={}://{}/{}", proto.name(), local, remote)
+                    ],
                     Argument::DHCP => push!["-d"],
                     Argument::HostName(name) => push!["--hostname", name.as_ref()],
                     Argument::IPv4(address) => push!["--ipv4", address.to_string()],
@@ -249,24 +251,15 @@ impl Easytier {
 
     pub fn add_port_forward(
         &mut self,
-        forwards: &[(SocketAddr, SocketAddr)],
+        forwards: &[PortForward],
     ) -> bool {
-        const KINDS: [&str; 2] = ["tcp", "udp"];
-
-        let mut processes = Vec::with_capacity(forwards.len() * KINDS.len());
-        for (local_socket, remote_socket) in forwards {
-            for kind in KINDS {
-                processes.push((local_socket, remote_socket, kind, None));
-            }
-        }
+        let mut processes: Vec<(&PortForward, Option<Child>)> = forwards.iter().map(|forward| (forward, None)).collect();
 
         for time in 0..3 {
-            for (
-                local_socket, remote_socket, kind, process_holder
-            ) in processes.iter_mut() {
+            for (PortForward { local, remote, proto}, process_holder) in processes.iter_mut() {
                 let mut process = match self.start_cli().args([
                     "-p", &format!("127.0.0.1:{}", self.rpc), "port-forward", "add",
-                    kind, &local_socket.to_string(), &remote_socket.to_string(),
+                    proto.name(), &local.to_string(), &remote.to_string(),
                 ]).spawn() {
                     Ok(v) => v,
                     Err(e) => {
@@ -282,7 +275,7 @@ impl Easytier {
             }
 
             for i in (0..processes.len()).rev() {
-                if processes[i].3.as_mut().unwrap().wait().is_ok_and(|status| status.success()) {
+                if processes[i].1.as_mut().unwrap().wait().is_ok_and(|status| status.success()) {
                     processes.swap_remove(i);
                 }
             }
@@ -296,8 +289,8 @@ impl Easytier {
 
         if !processes.is_empty() {
             let mut msg = "Cannot adding port-forward rules: ".to_string();
-            for (i, (local_socket, remote_socket, kind, _)) in processes.iter().enumerate() {
-                write!(&mut msg, "{} -> {} ({})", local_socket, remote_socket, kind).unwrap();
+            for (i, (PortForward { local, remote, proto}, _)) in processes.iter().enumerate() {
+                write!(&mut msg, "{} -> {} ({})", local, remote, proto.name()).unwrap();
                 if i != processes.len() - 1 {
                     msg.push_str(", ");
                 }

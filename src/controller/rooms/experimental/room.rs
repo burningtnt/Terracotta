@@ -225,7 +225,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
         state.set(AppState::GuestStarting { room, easytier })
     };
 
-    let scaffolding = 'local_port: {
+    let (scaffolding_port, host_ip) = 'local_port: {
         for _ in 0..5 {
             thread::sleep(Duration::from_secs(3));
 
@@ -259,7 +259,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                         return;
                     };
 
-                    break 'local_port local_port;
+                    break 'local_port (local_port, ip);
                 }
             }
         }
@@ -284,7 +284,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             thread::sleep(Duration::from_secs(timeout));
 
             const FINGERPRINT: [u8; 16] = [0x41, 0x57, 0x48, 0x44, 0x86, 0x37, 0x40, 0x59, 0x57, 0x44, 0x92, 0x43, 0x96, 0x99, 0x85, 0x01];
-            if let Ok(mut session) = ClientSession::open(IpAddr::V4(Ipv4Addr::LOCALHOST), scaffolding)
+            if let Ok(mut session) = ClientSession::open(IpAddr::V4(Ipv4Addr::LOCALHOST), scaffolding_port)
                 && let Some(response) = session.send_sync(("c", "ping"), |body| {
                 body.extend_from_slice(&FINGERPRINT);
             })
@@ -342,14 +342,16 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             unreachable!();
         };
 
-        let local_port = PortRequest::Minecraft.request();
+        // To maximum compatibility, try to request the identical port.
+        // If failed, use a dynamic free port instead.
+        let local_port = PortRequest::request_specific(port).unwrap_or_else(|| PortRequest::Minecraft.request());
 
         if !easytier.add_port_forward(&[(
             SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
-            SocketAddrV4::new(Ipv4Addr::new(10, 144, 144, 1), port).into()
+            SocketAddrV4::new(host_ip, port).into()
         ), (
             SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, local_port, 0, 0).into(),
-            SocketAddrV4::new(Ipv4Addr::new(10, 144, 144, 1), port).into()
+            SocketAddrV4::new(host_ip, port).into()
         )]) {
             logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for MC Connection.", local_port, port);
             state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });

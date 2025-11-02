@@ -8,6 +8,13 @@ pub enum PortRequest {
 }
 
 impl PortRequest {
+    pub fn request_specific(port: u16) -> Option<u16> {
+        TcpListener::bind((Ipv4Addr::LOCALHOST, port))
+            .and_then(|socket| socket.local_addr())
+            .map(|address| address.port())
+            .ok()
+    }
+
     pub fn request(self) -> u16 {
         TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
             .and_then(|socket| socket.local_addr())

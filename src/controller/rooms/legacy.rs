@@ -2,13 +2,13 @@ use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind};
 use crate::easytier;
 use crate::mc::fakeserver::FakeServer;
+use crate::ports::PortRequest;
 use num_bigint::BigUint;
 use socket2::{Domain, SockAddr, Socket, Type};
 use std::mem::MaybeUninit;
-use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::thread;
 use std::time::{Duration, SystemTime};
-use crate::ports::PortRequest;
 
 pub fn parse(code: &str) -> Option<Room> {
     let chars: Vec<char> = code.to_ascii_uppercase().chars().collect();

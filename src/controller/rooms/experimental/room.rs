@@ -545,7 +545,6 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
 }
 
 static FALLBACK_SERVERS: [&str; 2] = [
-    "tcp://mc1.easytier.cn:55558",
     "tcp://public.easytier.top:11010",
     "tcp://public2.easytier.cn:54321",
 ];

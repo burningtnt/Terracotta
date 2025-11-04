@@ -545,6 +545,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
 }
 
 static FALLBACK_SERVERS: [&str; 2] = [
+    "tcp://mc1.easytier.cn:55558",
     "tcp://public.easytier.top:11010",
     "tcp://public2.easytier.cn:54321",
 ];
@@ -598,7 +599,7 @@ fn fetch_public_nodes(room: &Room) -> io::Result<Vec<String>> {
             .timeout(Some(Duration::from_secs(10)))
             .build()
             .map_err(io::Error::other)?
-            .get("https://uptime.easytier.cn/api/nodes?page=1&per_page=50&is_active=true")
+            .get("https://uptime.easytier.cn/api/nodes?is_active=true&tags=MC%E4%B8%AD%E7%BB%A7")
             .send()
             .map_err(io::Error::other)?
     ).map_err(io::Error::other)?

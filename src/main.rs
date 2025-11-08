@@ -4,6 +4,7 @@
     feature(panic_update_hook, internal_output_capture)
 )]
 #![feature(panic_backtrace_config, const_convert, const_trait_impl)]
+#![feature(unsafe_cell_access)]
 
 #[macro_export]
 macro_rules! logging {

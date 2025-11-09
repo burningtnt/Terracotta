@@ -607,6 +607,7 @@ fn fetch_public_nodes(room: &Room) -> io::Result<Vec<String>> {
 
     let mut servers: Vec<String> = serde_json::from_reader::<_, Value>(
         reqwest::blocking::Client::builder()
+            .user_agent(format!("Terracotta v{}/s={}", env!("TERRACOTTA_ET_VERSION"), option_env!("TERRACOTTA_U_S").unwrap_or("SNAPSHOT")))
             .timeout(Some(Duration::from_secs(10)))
             .build()
             .map_err(io::Error::other)?

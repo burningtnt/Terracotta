@@ -275,7 +275,6 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg"
-            "terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so"
           )
           artifacts_tar=(
             "terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
@@ -285,6 +284,7 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
+            "terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so"
           )
           
           file=$(mktemp -t XXXXXX.zip)

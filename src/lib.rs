@@ -14,6 +14,7 @@ macro_rules! logging {
 use lazy_static::lazy_static;
 
 use chrono::{FixedOffset, TimeZone, Utc};
+use jni_sys::{jint, JNIEnv};
 use std::{
     env, fs,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
@@ -21,7 +22,6 @@ use std::{
     thread,
     time::SystemTime,
 };
-use jni_sys::{jint, jobject, JNIEnv};
 
 pub mod controller;
 pub mod easytier;
@@ -97,7 +97,8 @@ lazy_static! {
     static ref LOGGING_FILE: std::path::PathBuf = WORKING_DIR.join("application.log");
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start(_env: *mut JNIEnv) -> jint {
     run() as jint
 }
@@ -115,7 +116,6 @@ fn run() -> i16 {
     redirect_std(&*LOGGING_FILE);
 
     let (port_callback, port_receiver) = mpsc::channel::<u16>();
-    let port_callback2 = port_callback.clone();
 
     logging!(
         "UI",
@@ -143,10 +143,10 @@ fn run() -> i16 {
         lazy_static::initialize(&easytier::FACTORY);
     });
 
-    return match port_receiver.recv() {
+    match port_receiver.recv() {
         Ok(port) => port as i16,
         Err(_) => -1,
-    };
+    }
 }
 
 fn redirect_std(file: &'static std::path::PathBuf) {

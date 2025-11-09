@@ -53,6 +53,7 @@ easytier = { git = "https://github.com/burningtnt/EasyTier.git", branch = "devel
 uuid = "1.18.1" # This library are the necessities to interact with EasyTier. DO NOT upgrade their version.
 toml = "0.9.8"
 tokio = "1.48.0"
+jni-sys = "0.4.0"
 
 [build-dependencies]
 winresource = "0.1"

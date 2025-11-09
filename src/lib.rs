@@ -21,6 +21,7 @@ use std::{
     thread,
     time::SystemTime,
 };
+use jni_sys::{jint, jobject, JNIEnv};
 
 pub mod controller;
 pub mod easytier;
@@ -96,8 +97,12 @@ lazy_static! {
     static ref LOGGING_FILE: std::path::PathBuf = WORKING_DIR.join("application.log");
 }
 
-#[rocket::main]
-async fn main() {
+#[no_mangle]
+pub extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start(_env: *mut JNIEnv) -> jint {
+    run() as jint
+}
+
+fn run() -> i16 {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);
@@ -127,23 +132,21 @@ async fn main() {
         env!("CARGO_CFG_TARGET_ENV"),
     );
 
-    let future = server::server_main(port_callback);
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .spawn(server::server_main(port_callback));
+
     thread::spawn(|| {
         lazy_static::initialize(&controller::SCAFFOLDING_PORT);
         lazy_static::initialize(&easytier::FACTORY);
     });
 
-    thread::spawn(move || {
-        let port = port_receiver.recv().unwrap();
-        if port != 0 {
-            let _ = open::that(format!("http://127.0.0.1:{}/", port));
-        }
-    });
-
-    future.await;
-    let _ = port_callback2.send(0);
-
-    easytier::FACTORY.remove();
+    return match port_receiver.recv() {
+        Ok(port) => port as i16,
+        Err(_) => -1,
+    };
 }
 
 fn redirect_std(file: &'static std::path::PathBuf) {

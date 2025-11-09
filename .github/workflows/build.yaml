@@ -53,7 +53,7 @@ jobs:
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
           rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
-          cargo +nightly build --release --target "${{ matrix.target }}" \
+          cargo +nightly build --release --bin terracotta --target "${{ matrix.target }}" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
         env:
@@ -90,6 +90,9 @@ jobs:
             os: freebsd
             arch: x86_64
             target: x86_64-unknown-freebsd
+          - runs-on: ubuntu-24.04
+            os: android
+            target: aarch64-linux-android
     runs-on: ${{ matrix.runs-on }}
     name: Build (${{ matrix.target }})
     steps:
@@ -97,11 +100,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install GitHub Artifact Client
         uses: lhotari/gh-actions-artifact-client@v2
-      - name: Install musl libc (linux x86_64 | linux arm64)
-        if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) && matrix.os == 'linux' }}
-        run: |
-          sudo apt update
-          sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -109,6 +107,23 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
+      - name: Setup Android SDK (Android)
+        if: ${{ matrix.os == 'android' }}
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+          packages: 'build-tools;34.0.0 ndk;26.0.10792818 tools platform-tools platforms;android-34 '
+      - name: Install cargo-ndk and protobuf-compiler (Android)
+        if: ${{ matrix.os == 'android' }}
+        run: |
+          sudo apt update
+          sudo apt install --yes --no-install-recommends protobuf-compiler libprotobuf-dev
+          cargo install cargo-ndk --force
+      - name: Install musl libc (linux x86_64 | linux arm64)
+        if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) && matrix.os == 'linux' }}
+        run: |
+          sudo apt update
+          sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
       - name: Install Zig (linux riscv64 | linux loongarch64)
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         uses: mlugg/setup-zig@v2
@@ -120,7 +135,7 @@ jobs:
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
           rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
-          cargo +nightly build --release --target "${{ matrix.target }}" \
+          cargo +nightly build --release --bin terracotta --target "${{ matrix.target }}" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
         env:
@@ -129,7 +144,7 @@ jobs:
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
-          cargo +nightly zigbuild --release --target "${{ matrix.target }}.${{ matrix.glibc-version }}"
+          cargo +nightly zigbuild --release --bin terracotta --target "${{ matrix.target }}.${{ matrix.glibc-version }}"
       - name: Build (freebsd x86_64)
         if: ${{ contains(fromJSON('["x86_64"]'), matrix.arch) && matrix.os == 'freebsd' }}
         uses: cross-platform-actions/action@v0.29.0
@@ -145,11 +160,28 @@ jobs:
             export CXX=clang++
             . $HOME/.cargo/env
             rustup target add --toolchain nightly "${{ matrix.target }}"
-            cargo +nightly build --release --target "${{ matrix.target }}"
+            cargo +nightly build --release --bin terracotta --target "${{ matrix.target }}"
+      - name: Build (Android)
+        if: ${{ matrix.os == 'android' }}
+        run: |
+          export PATH="$PATH:$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          export NDK_HOME="$ANDROID_NDK_HOME"
+          
+          rustup target add --toolchain nightly "${{ matrix.target }}"
+          rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
+          cargo +nightly ndk build --release --lib --target "${{ matrix.target }}" \
+            -Z build-std=core,std,alloc,proc_macro,panic_abort \
+            -Z build-std-features=default,optimize_for_size
       - name: Upload Artifact
         run: |
-          source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
-          cp "target/${{ matrix.target }}/release/terracotta" "$source"
+          if [ "${{ matrix.os }}" = "android" ]; then
+            source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.so"
+            cp "target/${{ matrix.target }}/release/libterracotta.so" "$source"
+          else
+            source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
+            cp "target/${{ matrix.target }}/release/terracotta" "$source"
+          fi
+          
           chmod 755 "$source"
           tar -cf "$source.tar" "$source"
           zip -q - "$source.tar" | gh-actions-artifact-client.js upload -r 90 "$source.tar"
@@ -184,7 +216,7 @@ jobs:
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
           rustup component add rust-src --toolchain "nightly-$(rustc --print host-tuple)"
-          cargo +nightly build --release --target "${{ matrix.target }}" \
+          cargo +nightly build --release --bin terracotta --target "${{ matrix.target }}" \
             -Z build-std=core,std,alloc,proc_macro,panic_abort \
             -Z build-std-features=default,optimize_for_size
         env:

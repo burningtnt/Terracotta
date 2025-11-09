@@ -92,6 +92,7 @@ jobs:
             target: x86_64-unknown-freebsd
           - runs-on: ubuntu-24.04
             os: android
+            arch: arm64v8a
             target: aarch64-linux-android
     runs-on: ${{ matrix.runs-on }}
     name: Build (${{ matrix.target }})
@@ -274,6 +275,7 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg"
+            "terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so"
           )
           artifacts_tar=(
             "terracotta-${TERRACOTTA_VERSION}-linux-x86_64"

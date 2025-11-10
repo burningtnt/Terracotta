@@ -4,20 +4,20 @@ use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
 use crate::easytier::argument::{Argument, PortForward, Proto};
+use crate::easytier::publics::{fetch_public_nodes, PublicServers};
 use crate::mc::fakeserver::FakeServer;
 use crate::ports::PortRequest;
 use crate::scaffolding::client::ClientSession;
 use crate::scaffolding::profile::{Profile, ProfileKind, ProfileSnapshot};
 use crate::scaffolding::PacketResponse;
-use rand_chacha::ChaCha12Rng;
-use rand_core::{OsRng, RngCore, SeedableRng, TryRngCore};
+use rand_core::{OsRng, TryRngCore};
 use serde_json::{json, Value};
 use std::borrow::Cow;
+use std::mem::{transmute, MaybeUninit};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use std::{io, thread};
-use std::mem::{transmute, MaybeUninit};
+use std::thread;
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 
@@ -136,10 +136,10 @@ fn from_value(value: u128) -> (String, String, String) {
     (code, network_name, network_secret)
 }
 
-pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppStateCapture) {
+pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppStateCapture, public_servers: PublicServers) {
     let scaffolding = *SCAFFOLDING_PORT;
 
-    let mut args = compute_arguments(&room);
+    let mut args = compute_arguments(&room, public_servers);
     args.push(Argument::HostName(Cow::Owned(format!("scaffolding-mc-server-{}", scaffolding))));
     args.push(Argument::IPv4(Ipv4Addr::new(10, 144, 144, 1)));
     args.push(Argument::TcpWhitelist(scaffolding));
@@ -213,7 +213,7 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
 }
 
 pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture) {
-    let mut args = compute_arguments(&room);
+    let mut args = compute_arguments(&room, fetch_public_nodes(&room));
     args.push(Argument::DHCP);
     args.push(Argument::TcpWhitelist(0));
     args.push(Argument::UdpWhitelist(0));
@@ -254,7 +254,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                     if !easytier.add_port_forward(&[PortForward {
                         local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
                         remote: SocketAddrV4::new(ip, port).into(),
-                        proto: Proto::TCP
+                        proto: Proto::TCP,
                     }]) {
                         logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for Scaffolding Connection.", local_port, port);
                         state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });
@@ -362,7 +362,9 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             for (i, local) in locals.into_iter().enumerate() {
                 for (j, proto) in protos.iter().enumerate() {
                     forwards[i * 2 + j].write(PortForward {
-                        remote: SocketAddrV4::new(host_ip, port).into(), local, proto: proto.clone()
+                        remote: SocketAddrV4::new(host_ip, port).into(),
+                        local,
+                        proto: proto.clone(),
                     });
                 }
             }
@@ -560,12 +562,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
     });
 }
 
-static FALLBACK_SERVERS: [&str; 2] = [
-    "tcp://public.easytier.top:11010",
-    "tcp://public2.easytier.cn:54321",
-];
-
-fn compute_arguments(room: &Room) -> Vec<Argument> {
+fn compute_arguments(room: &Room, public_servers: PublicServers) -> Vec<Argument> {
     static DEFAULT_ARGUMENTS: [Argument; 7] = [
         Argument::NoTun,
         Argument::Compression(Cow::Borrowed("zstd")),
@@ -574,11 +571,11 @@ fn compute_arguments(room: &Room) -> Vec<Argument> {
         Argument::EnableKcpProxy,
         Argument::Listener {
             address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
-            proto: Proto::UDP
+            proto: Proto::UDP,
         },
         Argument::Listener {
             address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
-            proto: Proto::TCP
+            proto: Proto::TCP,
         },
     ];
 
@@ -588,75 +585,10 @@ fn compute_arguments(room: &Room) -> Vec<Argument> {
         Argument::NetworkSecret(Cow::Owned(room.network_secret.clone())),
     ]);
 
-    match fetch_public_nodes(room) {
-        Ok(nodes) => {
-            for replay in nodes {
-                args.push(Argument::PublicServer(Cow::Owned(replay)));
-            }
-        }
-        Err(e) => {
-            logging!("RoomExperiment", "Cannot fetch EasyTier public nodes: {:?}.", e);
-            for replay in FALLBACK_SERVERS {
-                args.push(Argument::PublicServer(Cow::Borrowed(replay)));
-            }
-        }
+    for replay in public_servers {
+        args.push(Argument::PublicServer(Cow::Owned(replay)));
     }
 
     args.extend_from_slice(&DEFAULT_ARGUMENTS);
     args
-}
-
-fn fetch_public_nodes(room: &Room) -> io::Result<Vec<String>> {
-    static LIMIT: usize = 5;
-
-    let mut servers: Vec<String> = serde_json::from_reader::<_, Value>(
-        reqwest::blocking::Client::builder()
-            .user_agent(format!("Terracotta v{}/s={}", env!("TERRACOTTA_ET_VERSION"), option_env!("TERRACOTTA_U_S").unwrap_or("SNAPSHOT")))
-            .timeout(Some(Duration::from_secs(10)))
-            .build()
-            .map_err(io::Error::other)?
-            .get("https://uptime.easytier.cn/api/nodes?is_active=true&page=1&per_page=100&&tags=MC%E4%B8%AD%E7%BB%A7")
-            .send()
-            .map_err(io::Error::other)?
-    ).map_err(io::Error::other)?
-        .as_object()
-        .and_then(|object| {
-            if !object.get("success")?.as_bool()? {
-                return None;
-            }
-
-            Some(object.get("data")?.as_object()?
-                .get("items")?.as_array()?
-                .iter().filter_map(|node| node.as_object())
-                .flat_map(|node| {
-                    let address = node.get("address")?.as_str()?;
-                    if node.get("allow_relay")?.as_bool()? && node.get("is_active")?.as_bool()? && !FALLBACK_SERVERS.contains(&address) {
-                        Some(address.to_string())
-                    } else {
-                        None
-                    }
-                })
-                .collect())
-        })
-        .ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
-
-    if servers.len() > LIMIT {
-        let mut rng = ChaCha12Rng::from_seed(match room.kind {
-            RoomKind::Experimental { seed } => {
-                let mut value = [0u8; 32];
-                value[0..16].copy_from_slice(&seed.to_be_bytes());
-                value
-            }
-            _ => unreachable!(),
-        });
-
-        for i in (1..servers.len()).rev() {
-            servers.swap(i, rng.next_u32() as usize % (i + 1));
-        }
-        servers.truncate(5);
-    }
-    for fallback in FALLBACK_SERVERS {
-        servers.push(fallback.to_string());
-    }
-    Ok(servers)
 }

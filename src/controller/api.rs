@@ -1,5 +1,6 @@
+use std::sync::mpsc;
 use crate::controller::states::AppState;
-use crate::controller::{ExceptionType, Room};
+use crate::controller::{experimental, ExceptionType, Room};
 use crate::scaffolding::profile::Profile;
 use crate::mc::scanning::MinecraftScanner;
 use crate::MOTD;
@@ -9,6 +10,7 @@ use serde::Serializer;
 use serde_json::{json, Value};
 use std::thread;
 use std::time::{Duration, SystemTime};
+use crate::easytier::publics::fetch_public_nodes;
 
 pub fn get_state() -> Value {
     let state = AppState::acquire();
@@ -91,6 +93,15 @@ pub fn set_scanning(player: Option<String>) {
     logging!("Core", "Setting to state SCANNING.");
 
     thread::spawn(move || {
+        let room = Room::create();
+
+        let (sender, receiver) = mpsc::channel();
+        let room2 = room.clone();
+        thread::spawn(move || {
+            // EasyTier Uptime is undergoing DDOS attack, so it's crucial to perform a prefetch logic.
+            let _ = sender.send(fetch_public_nodes(&room2));
+        });
+
         let (room, port, capture) = loop {
             thread::sleep(Duration::from_millis(200));
 
@@ -102,12 +113,11 @@ pub fn set_scanning(player: Option<String>) {
             };
 
             if let Some(port) = scanner.get_ports().first() {
-                let room = Room::create();
                 break (room.clone(), *port, state.set(AppState::HostStarting { room, port: *port }));
             }
         };
 
-        room.start_host(port, player, capture);
+        experimental::start_host(room, port, player, capture, receiver.recv().unwrap())
     });
 }
 

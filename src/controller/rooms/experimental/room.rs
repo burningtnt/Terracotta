@@ -566,7 +566,7 @@ static FALLBACK_SERVERS: [&str; 2] = [
 ];
 
 fn compute_arguments(room: &Room) -> Vec<Argument> {
-    static DEFAULT_ARGUMENTS: [Argument; 6] = [
+    static DEFAULT_ARGUMENTS: [Argument; 7] = [
         Argument::NoTun,
         Argument::Compression(Cow::Borrowed("zstd")),
         Argument::MultiThread,
@@ -575,6 +575,10 @@ fn compute_arguments(room: &Room) -> Vec<Argument> {
         Argument::Listener {
             address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
             proto: Proto::UDP
+        },
+        Argument::Listener {
+            address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
+            proto: Proto::TCP
         },
     ];
 

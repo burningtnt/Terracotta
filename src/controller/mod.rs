@@ -2,10 +2,10 @@ mod states;
 mod api;
 mod rooms;
 
-pub use rooms::*;
-
 use crate::scaffolding;
-pub use states::ExceptionType;
+
+pub use rooms::*;
+pub use states::*;
 pub use api::*;
 
 lazy_static::lazy_static! {

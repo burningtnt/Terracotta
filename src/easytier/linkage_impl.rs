@@ -122,8 +122,6 @@ impl EasytierFactory {
         };
         Easytier { instance }
     }
-
-    pub fn remove(&self) {}
 }
 
 impl Easytier {

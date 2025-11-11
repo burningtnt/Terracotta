@@ -24,9 +24,9 @@ use std::{
 };
 
 pub mod controller;
-pub mod easytier;
-pub mod scaffolding;
-pub mod server;
+mod easytier;
+mod scaffolding;
+mod server;
 pub const MOTD: &'static str = "§6§l双击进入陶瓦联机大厅（请保持陶瓦运行）";
 
 mod mc;
@@ -65,7 +65,7 @@ lazy_static::lazy_static! {
 }
 
 lazy_static! {
-    pub static ref FILE_ROOT: std::path::PathBuf = {
+    static ref FILE_ROOT: std::path::PathBuf = {
         let path = if cfg!(target_os = "macos")
             && let Ok(home) = env::var("HOME")
         {
@@ -99,11 +99,15 @@ lazy_static! {
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start(_env: *mut JNIEnv) -> jint {
-    run() as jint
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start(_env: *mut JNIEnv) -> jint {
+    run(tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+    ) as jint
 }
 
-fn run() -> i16 {
+pub fn run(runtime: tokio::runtime::Runtime) -> i16 {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);
@@ -132,11 +136,7 @@ fn run() -> i16 {
         env!("CARGO_CFG_TARGET_ENV"),
     );
 
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .spawn(server::server_main(port_callback));
+    runtime.spawn(server::server_main(port_callback));
 
     thread::spawn(|| {
         lazy_static::initialize(&controller::SCAFFOLDING_PORT);

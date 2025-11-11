@@ -50,10 +50,11 @@ native-dialog = "0.9.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 easytier = { git = "https://github.com/burningtnt/EasyTier.git", branch = "develop"}
-uuid = "1.18.1" # This library are the necessities to interact with EasyTier. DO NOT upgrade their version.
-toml = "0.9.8"
-tokio = "1.48.0"
 jni-sys = "0.4.0"
+# These libraries are the necessities to interact with EasyTier. DO NOT upgrade their version.
+uuid = "1"
+toml = "0"
+tokio = "1"
 
 [build-dependencies]
 winresource = "0.1"

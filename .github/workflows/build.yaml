@@ -16,6 +16,7 @@ env:
   CARGO_TERM_COLOR: always
   name: terracotta
   RUST_BACKTRACE: full
+  TERRACOTTA_U_S: ${{ secrets.TERRACOTTA_U_S }}
 
 defaults:
   run:

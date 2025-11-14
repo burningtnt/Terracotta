@@ -1,36 +1,34 @@
-#![feature(panic_backtrace_config, const_convert, const_trait_impl, unsafe_cell_access)]
+#![feature(panic_backtrace_config, const_convert, const_trait_impl, unsafe_cell_access, panic_update_hook, internal_output_capture, string_from_utf8_lossy_owned)]
 
 extern crate core;
-#[macro_use]
-extern crate rocket;
 
 #[macro_export]
 macro_rules! logging {
     ($prefix:expr, $($arg:tt)*) => {
-        std::println!("[{}]: {}", $prefix, std::format_args!($($arg)*));
+        crate::logging_android(std::format!("[{}]: {}", $prefix, std::format_args!($($arg)*)));
     };
 }
 
 use lazy_static::lazy_static;
 
 use chrono::{FixedOffset, TimeZone, Utc};
-use jni_sys::{jint, JNIEnv};
+use jni::{JNIEnv, objects::JString, strings::JavaStr, sys::{JNI_FALSE, JNI_TRUE, jboolean, jint, jobject}};
 use std::{
-    env, fs,
-    net::{IpAddr, Ipv4Addr, Ipv6Addr},
-    sync::mpsc,
-    thread,
-    time::SystemTime,
+    env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, ptr::null_mut, sync::{Arc, Mutex}, thread
 };
+use libc::{c_char, c_int};
+
+use crate::controller::Room;
 
 pub mod controller;
 mod easytier;
 mod scaffolding;
-mod server;
 pub const MOTD: &'static str = "§6§l双击进入陶瓦联机大厅（请保持陶瓦运行）";
 
 mod mc;
 mod ports;
+
+type JNIRawEnv = *mut jni::sys::JNIEnv;
 
 lazy_static::lazy_static! {
     static ref ADDRESSES: Vec<IpAddr> = {
@@ -79,35 +77,11 @@ lazy_static! {
         path
     };
     static ref MACHINE_ID_FILE: std::path::PathBuf = FILE_ROOT.join("machine-id");
-    static ref WORKING_DIR: std::path::PathBuf = {
-        use chrono::{Datelike, Timelike};
-        let now = chrono::Local::now();
-
-        (*FILE_ROOT).join(format!(
-            "{:04}-{:02}-{:02}-{:02}-{:02}-{:02}-{}",
-            now.year(),
-            now.month(),
-            now.day(),
-            now.hour(),
-            now.minute(),
-            now.second(),
-            std::process::id()
-        ))
-    };
-    static ref LOGGING_FILE: std::path::PathBuf = WORKING_DIR.join("application.log");
 }
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start(_env: *mut JNIEnv) -> jint {
-    run(tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-    ) as jint
-}
-
-pub fn run(runtime: tokio::runtime::Runtime) -> i16 {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start(_env: JNIRawEnv) -> jint {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);
@@ -116,10 +90,18 @@ pub fn run(runtime: tokio::runtime::Runtime) -> i16 {
         }
     }
 
-    cleanup();
-    redirect_std(&*LOGGING_FILE);
+    std::panic::update_hook(|prev, info| {
+        let data = Arc::new(Mutex::new(Vec::<u8>::new()));
+        std::io::set_output_capture(Some(data.clone()));
+        prev(info);
+        std::io::set_output_capture(None);
 
-    let (port_callback, port_receiver) = mpsc::channel::<u16>();
+        let data = match Arc::try_unwrap(data) {
+            Ok(data) => String::from_utf8_lossy_owned(data.into_inner().unwrap()),
+            Err(data) => String::from_utf8_lossy_owned(data.lock().unwrap().clone()) // Should NOT happen.
+        };
+        logging_android(data);
+    });
 
     logging!(
         "UI",
@@ -136,82 +118,80 @@ pub fn run(runtime: tokio::runtime::Runtime) -> i16 {
         env!("CARGO_CFG_TARGET_ENV"),
     );
 
-    runtime.spawn(server::server_main(port_callback));
+    if let Err(e) = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build() {
+        logging!("UI", "Cannot launch tokio runtime: {:?}", e);
+        return 2;
+    }
 
     thread::spawn(|| {
         lazy_static::initialize(&controller::SCAFFOLDING_PORT);
         lazy_static::initialize(&easytier::FACTORY);
     });
 
-    match port_receiver.recv() {
-        Ok(port) => port as i16,
-        Err(_) => -1,
-    }
+    return 0;
 }
 
-fn redirect_std(file: &'static std::path::PathBuf) {
-    if cfg!(debug_assertions) {
-        return;
+fn logging_android(line: String) {
+    #[link(name = "log")]
+    unsafe extern "C" {
+        fn __android_log_write(prio: c_int, tag: *const c_char, text: *const c_char) -> c_int;
     }
 
-    let Some(parent) = file.parent() else {
-        return;
-    };
+    let line = CString::new(line).unwrap();
 
-    if !fs::metadata(parent).is_ok() {
-        if !fs::create_dir_all(parent).is_ok() {
-            return;
-        }
-    }
-
-    let Ok(logging_file) = fs::File::create(file.clone()) else {
-        return;
-    };
-
-    logging!(
-        "UI",
-        "There will be not information on the console. Logs will be saved to {}",
-        file.to_str().unwrap()
-    );
-
-    use std::os::unix::io::AsRawFd;
+    // SAFETY: 4 is ANDROID_LOG_INFO, while pointers to tag and line are valid.
     unsafe {
-        libc::dup2(logging_file.as_raw_fd(), libc::STDOUT_FILENO);
-        libc::dup2(logging_file.as_raw_fd(), libc::STDERR_FILENO);
+        __android_log_write(4, c"hello".as_ptr(), line.as_ptr());
     }
 }
 
-fn cleanup() {
-    thread::spawn(move || {
-        let now = SystemTime::now();
+#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_getState(env: JNIRawEnv) -> jobject {
+    let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
+    env.new_string(serde_json::to_string(&controller::get_state()).unwrap()).unwrap().into_raw()
+}
 
-        if let Ok(value) = fs::read_dir(&*FILE_ROOT) {
-            for file in value {
-                if let Ok(file) = file
-                    && file
-                        .path()
-                        .file_name()
-                        .and_then(|v| v.to_str())
-                        .is_none_or(|v| v != "terracotta.lock")
-                    && let Ok(metadata) = file.metadata()
-                    && let Ok(file_type) = file.file_type()
-                    && let Ok(time) = metadata.created()
-                    && let Ok(duration) = now.duration_since(time)
-                    && duration.as_secs()
-                        >= if cfg!(debug_assertions) {
-                            120
-                        } else {
-                            24 * 60 * 60
-                        }
-                    && let Err(e) = if file_type.is_dir() {
-                        fs::remove_dir_all(file.path())
-                    } else {
-                        fs::remove_file(file.path())
-                    }
-                {
-                    logging!("UI", "Cannot remove old file {:?}: {:?}", file.path(), e);
-                }
-            }
-        }
-    });
+#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setWaiting(_env: JNIRawEnv) {
+    controller::set_waiting();
+}
+
+#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanning(env: JNIRawEnv, player: jobject) {
+    let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
+    let player  = parse_jstring(&env, player);
+
+    controller::set_scanning(player);
+}
+
+#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setGuesting(env: JNIRawEnv, room: jobject, player: jobject) -> jboolean {
+    let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
+    let room  = parse_jstring(&env, room);
+    let player  = parse_jstring(&env, player);
+
+    if let Some(room) = room && let Some(room) = Room::from(&room) && controller::set_guesting(room, player) {
+        JNI_TRUE
+    } else {
+        JNI_FALSE
+    }
+}
+
+fn parse_jstring(env: &JNIEnv<'static>, value: jobject) -> Option<String> {
+    if value == null_mut() {
+        None
+    } else {
+        // SAFETY: value is a Java String Object
+        
+        let value = unsafe { JString::from_raw(value) };
+        Some(<JavaStr<'_, '_, '_> as Into<String>>::into(unsafe { 
+            env.get_string_unchecked(&value) 
+        }.unwrap().into()))
+    }
 }

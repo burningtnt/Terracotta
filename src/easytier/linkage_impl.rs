@@ -1,18 +1,27 @@
-use std::cell::UnsafeCell;
 use crate::easytier::argument::{Argument, PortForward};
 use easytier::common::config::{PortForwardConfig, TomlConfigLoader};
 use easytier::launcher::NetworkInstance;
-use easytier::proto::api::instance::{ListRouteRequest, Route};
+use easytier::proto::api::instance::{ListRouteRequest, Route, ShowNodeInfoRequest};
 use easytier::proto::rpc_types::controller::BaseController;
 use easytier::socks5::Socks5Server;
+use std::cell::UnsafeCell;
 use std::fmt::Write;
 use std::net::Ipv4Addr;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
+use easytier::proto::common::Ipv4Inet;
 use tokio::runtime::Handle;
 use toml::{Table, Value};
 
 lazy_static::lazy_static! {
     pub static ref FACTORY: EasytierFactory = create();
+}
+
+pub struct EasyTierTunRequest {
+    pub address: Ipv4Addr,
+    pub network_length: u8,
+    pub cidrs: Vec<String>,
+    pub dest: Arc<RwLock<Option<i32>>>,
 }
 
 pub struct EasytierFactory();
@@ -116,6 +125,46 @@ impl EasytierFactory {
             .and_then(|str| TomlConfigLoader::new_from_str(str.as_str()).ok())
             .map(|config| NetworkInstance::new(config));
         let instance = if let Some(mut instance) = instance && let Ok((_, server)) = instance.start() {
+            let tun_fd = instance.get_tun_fd_setting().unwrap();
+            let service = instance.get_api_service().unwrap();
+
+            tokio::spawn(async move {
+                let mut p_address = None;
+                let mut p_proxy_cidrs = vec![];
+
+                loop {
+                    let address = service.get_peer_manage_service()
+                        .show_node_info(BaseController::default(), ShowNodeInfoRequest::default())
+                        .await.ok()
+                        .and_then(|my_info| my_info.node_info)
+                        .unwrap()
+                        .ipv4_addr
+                        .parse::<cidr::Ipv4Inet>().ok()
+                        .map(|address| { (address.address(), address.network_length()) });
+
+                    let proxy_cidrs = service.get_peer_manage_service()
+                        .list_route(BaseController::default(), ListRouteRequest::default())
+                        .await.ok()
+                        .unwrap()
+                        .routes
+                        .into_iter()
+                        .flat_map(|route| route.proxy_cidrs).collect::<Vec<_>>();
+
+                    if p_address != address || p_proxy_cidrs != proxy_cidrs {
+                        if let Some((address, network_length)) = address {
+                            crate::on_vpnservice_change(EasyTierTunRequest {
+                                address, network_length,
+                                cidrs: proxy_cidrs.clone(),
+                                dest: tun_fd.clone(),
+                            });
+                        }
+                    }
+
+                    p_address = address;
+                    p_proxy_cidrs = proxy_cidrs;
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+            });
             Some((instance, server.unwrap()))
         } else {
             None

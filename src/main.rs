@@ -6,6 +6,13 @@
 #![feature(panic_backtrace_config, const_convert, const_trait_impl)]
 #![feature(unsafe_cell_access)]
 
+#[cfg((any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos"
+)))]
+compile_error!("Terracotta lib mode is intended for Android platform.");
+
 #[macro_export]
 macro_rules! logging {
     ($prefix:expr, $($arg:tt)*) => {

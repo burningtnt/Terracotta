@@ -9,7 +9,8 @@
 #[cfg(not(any(
     target_os = "windows",
     target_os = "linux",
-    target_os = "macos"
+    target_os = "macos",
+    target_os = "freebsd"
 )))]
 compile_error!("Terracotta lib mode is intended for Android platform.");
 

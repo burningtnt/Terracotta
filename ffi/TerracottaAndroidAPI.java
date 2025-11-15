@@ -78,7 +78,7 @@ public final class TerracottaAndroidAPI {
      * @implNote Usually, this method doesn't take a long time to fetch states.
      *   However, when initializing the EasyTier, state fetching may block for ~1 seconds.
      */
-    private static void setWaiting() {
+    public static void setWaiting() {
         assertStarted();
         setWaiting0();
     }
@@ -91,7 +91,7 @@ public final class TerracottaAndroidAPI {
      * @implNote Usually, this method doesn't take a long time to fetch states.
      *   However, when initializing the EasyTier, state fetching may block for ~1 seconds.
      */
-    private static void setScanning(@Nullable String player) {
+    public static void setScanning(@Nullable String player) {
         assertStarted();
         setScanning0(player);
     }
@@ -107,7 +107,7 @@ public final class TerracottaAndroidAPI {
      * @implNote Usually, this method doesn't take a long time to fetch states.
      *   However, when initializing the EasyTier, state fetching may block for ~1 seconds.
      */
-    private static boolean setGuesting(String room, @Nullable String player) {
+    public static boolean setGuesting(String room, @Nullable String player) {
         Objects.requireNonNull(room, "room");
 
         assertStarted();

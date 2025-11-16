@@ -9,7 +9,6 @@ use std::fmt::Write;
 use std::net::Ipv4Addr;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use easytier::proto::common::Ipv4Inet;
 use tokio::runtime::Handle;
 use toml::{Table, Value};
 

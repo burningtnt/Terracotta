@@ -8,7 +8,8 @@
     string_from_utf8_lossy_owned
 )]
 
-extern crate core;#[cfg(not(target_os = "android"))]
+extern crate core;
+#[cfg(not(target_os = "android"))]
 compile_error!("Terracotta lib mode is intended for Android platform.");
 
 #[macro_export]
@@ -22,10 +23,9 @@ use lazy_static::lazy_static;
 
 use chrono::{FixedOffset, TimeZone, Utc};
 use jni::signature::{Primitive, ReturnType};
-use jni::sys::{jbyte, jshort, jvalue, JNI_GetCreatedJavaVMs, JNI_OK};
+use jni::sys::{jshort, jsize, jvalue, JavaVM};
 use jni::{objects::JString, strings::JavaStr, sys::{jboolean, jint, jobject, JNI_FALSE, JNI_TRUE}, JNIEnv};
 use libc::{c_char, c_int};
-use std::sync::{LazyLock, OnceLock};
 use std::time::Duration;
 use std::{
     env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, ptr::null_mut, sync::{Arc, Mutex}, thread,
@@ -96,7 +96,13 @@ static VPN_SERVICE_CFG: Mutex<Option<crate::easytier::EasyTierTunRequest>> = Mut
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(_env: JNIRawEnv) -> jint {
+extern "system" fn JNI_GetCreatedJavaVMs(vmBuf: *mut *mut JavaVM, bufLen: jsize, nVMs: *mut jsize) -> jint {
+    unreachable!();
+}
+
+#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(env: JNIRawEnv) -> jint {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);
@@ -140,19 +146,15 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(_e
         return 2;
     }
 
-    thread::spawn(|| {
-        let jvm = unsafe {
-            let mut vm: *mut jni::sys::JavaVM = null_mut();
-            let mut count: i32 = 0;
-            if JNI_GetCreatedJavaVMs(&mut vm, 1, &mut count) == JNI_OK && count > 0 {
-                jni::JavaVM::from_raw(vm).unwrap()
-            } else {
-                panic!("Cannot locate created VMs.");
-            }
-        };
+    let mut jenv = unsafe { JNIEnv::from_raw(env) }.unwrap();
+    let jvm = jenv.get_java_vm().unwrap();
 
+    // In Native daemon thread, it's impossible to access TerracottaAndroidAPI with find_class.
+    // So we find them here and use a global ref to hold it.
+    let callback_class = jenv.find_class("net/burningtnt/terracotta/TerracottaAndroidAPI").unwrap();
+    let callback_class = jenv.new_global_ref(callback_class).unwrap();
+    thread::spawn(move || {
         let mut jenv = jvm.attach_current_thread_as_daemon().unwrap();
-        let callback_class = jenv.find_class("net/burningtnt/terracotta/TerracottaAndroidAPI").unwrap();
         let callback_method = jenv.get_static_method_id(
             &callback_class, "onVpnServiceStateChanged", "(BBBBSLjava/lang/String;)I"
         ).unwrap();

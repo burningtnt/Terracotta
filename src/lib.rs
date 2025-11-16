@@ -23,14 +23,14 @@ use lazy_static::lazy_static;
 
 use chrono::{FixedOffset, TimeZone, Utc};
 use jni::signature::{Primitive, ReturnType};
-use jni::sys::{jshort, jsize, jvalue, JavaVM};
+use jni::sys::{jclass, jshort, jsize, jvalue, JavaVM};
 use jni::{objects::JString, strings::JavaStr, sys::{jboolean, jint, jobject, JNI_FALSE, JNI_TRUE}, JNIEnv};
 use libc::{c_char, c_int};
 use std::time::Duration;
 use std::{
     env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, ptr::null_mut, sync::{Arc, Mutex}, thread,
 };
-
+use jni::objects::JClass;
 use crate::controller::Room;
 
 pub mod controller;
@@ -102,7 +102,7 @@ extern "system" fn JNI_GetCreatedJavaVMs(vmBuf: *mut *mut JavaVM, bufLen: jsize,
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(env: JNIRawEnv) -> jint {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(env: JNIRawEnv, clazz: jclass) -> jint {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
             std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);
@@ -146,17 +146,15 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
         return 2;
     }
 
-    let mut jenv = unsafe { JNIEnv::from_raw(env) }.unwrap();
+    let jenv = unsafe { JNIEnv::from_raw(env) }.unwrap();
     let jvm = jenv.get_java_vm().unwrap();
+    let clazz = jenv.new_global_ref(unsafe  { JClass::from_raw(clazz) }).unwrap();
 
-    // In Native daemon thread, it's impossible to access TerracottaAndroidAPI with find_class.
-    // So we find them here and use a global ref to hold it.
-    let callback_class = jenv.find_class("net/burningtnt/terracotta/TerracottaAndroidAPI").unwrap();
-    let callback_class = jenv.new_global_ref(callback_class).unwrap();
     thread::spawn(move || {
         let mut jenv = jvm.attach_current_thread_as_daemon().unwrap();
-        let callback_method = jenv.get_static_method_id(
-            &callback_class, "onVpnServiceStateChanged", "(BBBBSLjava/lang/String;)I"
+
+        let on_vpn_service_sc = jenv.get_static_method_id(
+            &clazz, "onVpnServiceStateChanged", "(BBBBSLjava/lang/String;)I"
         ).unwrap();
 
         loop {
@@ -173,7 +171,7 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
             let cidrs2 = jenv.new_string(cidrs).unwrap();
 
             let tun_fd = unsafe {
-                jenv.call_static_method_unchecked(&callback_class, callback_method, ReturnType::Primitive(Primitive::Int), &[
+                jenv.call_static_method_unchecked(&clazz, on_vpn_service_sc, ReturnType::Primitive(Primitive::Int), &[
                     jvalue { b: ip1 }, jvalue { b: ip2 }, jvalue { b: ip3 }, jvalue { b: ip4 },
                     jvalue { s: cfg.network_length as jshort },
                     jvalue { l: cidrs2.into_raw() }
@@ -209,20 +207,20 @@ fn logging_android(line: String) {
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_getState0(env: JNIRawEnv) -> jobject {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_getState0(env: JNIRawEnv, _: jclass) -> jobject {
     let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
     env.new_string(serde_json::to_string(&controller::get_state()).unwrap()).unwrap().into_raw()
 }
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setWaiting0(_env: JNIRawEnv) {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setWaiting0(_env: JNIRawEnv, _: jclass) {
     controller::set_waiting();
 }
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanning0(env: JNIRawEnv, player: jobject) {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanning0(env: JNIRawEnv, _: jclass, player: jobject) {
     let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
     let player = parse_jstring(&env, player);
 
@@ -231,7 +229,7 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanni
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setGuesting0(env: JNIRawEnv, room: jobject, player: jobject) -> jboolean {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setGuesting0(env: JNIRawEnv, _: jclass, room: jobject, player: jobject) -> jboolean {
     let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
     let room = parse_jstring(&env, room);
     let player = parse_jstring(&env, player);
@@ -255,8 +253,8 @@ fn parse_jstring(env: &JNIEnv<'static>, value: jobject) -> Option<String> {
         // SAFETY: value is a Java String Object
 
         let value = unsafe { JString::from_raw(value) };
-        Some(<JavaStr<'_, '_, '_> as Into<String>>::into(unsafe {
+        Some(unsafe {
             env.get_string_unchecked(&value)
-        }.unwrap().into()))
+        }.unwrap().into())
     }
 }

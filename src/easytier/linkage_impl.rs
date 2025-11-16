@@ -120,55 +120,71 @@ impl EasytierFactory {
             }
         }
 
-        let instance = toml::to_string(&Value::Table(table.into_inner())).ok()
-            .and_then(|str| TomlConfigLoader::new_from_str(str.as_str()).ok())
-            .map(|config| NetworkInstance::new(config));
-        let instance = if let Some(mut instance) = instance && let Ok((_, server)) = instance.start() {
-            let tun_fd = instance.get_tun_fd_setting().unwrap();
-            let service = instance.get_api_service().unwrap();
-
-            tokio::spawn(async move {
-                let mut p_address = None;
-                let mut p_proxy_cidrs = vec![];
-
-                loop {
-                    let address = service.get_peer_manage_service()
-                        .show_node_info(BaseController::default(), ShowNodeInfoRequest::default())
-                        .await.ok()
-                        .and_then(|my_info| my_info.node_info)
-                        .unwrap()
-                        .ipv4_addr
-                        .parse::<cidr::Ipv4Inet>().ok()
-                        .map(|address| { (address.address(), address.network_length()) });
-
-                    let proxy_cidrs = service.get_peer_manage_service()
-                        .list_route(BaseController::default(), ListRouteRequest::default())
-                        .await.ok()
-                        .unwrap()
-                        .routes
-                        .into_iter()
-                        .flat_map(|route| route.proxy_cidrs).collect::<Vec<_>>();
-
-                    if p_address != address || p_proxy_cidrs != proxy_cidrs {
-                        if let Some((address, network_length)) = address {
-                            crate::on_vpnservice_change(EasyTierTunRequest {
-                                address, network_length,
-                                cidrs: proxy_cidrs.clone(),
-                                dest: tun_fd.clone(),
-                            });
-                        }
-                    }
-
-                    p_address = address;
-                    p_proxy_cidrs = proxy_cidrs;
-                    tokio::time::sleep(Duration::from_millis(100)).await;
-                }
-            });
-            Some((instance, server.unwrap()))
-        } else {
-            None
+        let Some((mut instance, server)) =
+            toml::to_string(&Value::Table(table.into_inner()))
+                .map_err(|e| {
+                    logging!("EasyTier", "Cannot convert configuration to toml string: {:?}", e);
+                }).ok()
+                .and_then(|str|
+                    TomlConfigLoader::new_from_str(str.as_str())
+                        .map_err(|e| {
+                            logging!("EasyTier", "Cannot convert toml string to config: {:?}", e);
+                        }).ok()
+                )
+                .map(NetworkInstance::new)
+                .and_then(|mut instance|
+                    instance.start()
+                        .map(|(_, socks5)| (instance, socks5.unwrap()))
+                        .map_err(|e| {
+                            logging!("EasyTier", "Cannot launch EasyTier: {:?}", e);
+                        }).ok()
+                )
+        else {
+            return Easytier { instance: None };
         };
-        Easytier { instance }
+
+        let tun_fd = instance.get_tun_fd_setting().unwrap();
+        let service = instance.get_api_service().unwrap();
+        tokio::spawn(async move {
+            let mut p_address = None;
+            let mut p_proxy_cidrs = vec![];
+
+            loop {
+                let address = service.get_peer_manage_service()
+                    .show_node_info(BaseController::default(), ShowNodeInfoRequest::default())
+                    .await.ok()
+                    .and_then(|my_info| my_info.node_info)
+                    .unwrap()
+                    .ipv4_addr
+                    .parse::<cidr::Ipv4Inet>().ok()
+                    .map(|address| { (address.address(), address.network_length()) });
+
+                let proxy_cidrs = service.get_peer_manage_service()
+                    .list_route(BaseController::default(), ListRouteRequest::default())
+                    .await.ok()
+                    .unwrap()
+                    .routes
+                    .into_iter()
+                    .flat_map(|route| route.proxy_cidrs).collect::<Vec<_>>();
+
+                if p_address != address || p_proxy_cidrs != proxy_cidrs {
+                    if let Some((address, network_length)) = address {
+                        crate::on_vpnservice_change(EasyTierTunRequest {
+                            address,
+                            network_length,
+                            cidrs: proxy_cidrs.clone(),
+                            dest: tun_fd.clone(),
+                        });
+                    }
+                }
+
+                p_address = address;
+                p_proxy_cidrs = proxy_cidrs;
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+        });
+
+        Easytier { instance: Some((instance, server)) }
     }
 }
 
@@ -241,10 +257,13 @@ impl Drop for Easytier {
     fn drop(&mut self) {
         logging!("EasyTier", "Killing EasyTier.");
 
-        self.instance.take()
-            .and_then(|(instance, _)| instance.get_stop_notifier())
-            .map(|stop| {
-                Handle::current().block_on(stop.notified());
-            });
+        if let Some((instance, _)) = self.instance.take() {
+            if let Some(msg) = instance.get_latest_error_msg() {
+                logging!("EasyTier", "EasyTier has encountered an fatal error: {}", msg);
+            }
+            if let Some(notifier) = instance.get_stop_notifier() {
+                Handle::current().block_on(notifier.notified());
+            }
+        }
     }
 }

@@ -21,17 +21,17 @@ macro_rules! logging {
 
 use lazy_static::lazy_static;
 
+use crate::controller::Room;
 use chrono::{FixedOffset, TimeZone, Utc};
+use jni::objects::JClass;
 use jni::signature::{Primitive, ReturnType};
 use jni::sys::{jclass, jshort, jsize, jvalue, JavaVM};
-use jni::{objects::JString, strings::JavaStr, sys::{jboolean, jint, jobject, JNI_FALSE, JNI_TRUE}, JNIEnv};
+use jni::{objects::JString, sys::{jboolean, jint, jobject, JNI_FALSE, JNI_TRUE}, JNIEnv};
 use libc::{c_char, c_int};
 use std::time::Duration;
 use std::{
-    env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, ptr::null_mut, sync::{Arc, Mutex}, thread,
+    env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, sync::{Arc, Mutex}, thread,
 };
-use jni::objects::JClass;
-use crate::controller::Room;
 
 pub mod controller;
 mod easytier;
@@ -94,9 +94,11 @@ lazy_static! {
 
 static VPN_SERVICE_CFG: Mutex<Option<crate::easytier::EasyTierTunRequest>> = Mutex::new(None);
 
+// FIXME: Third-party crate 'jni-sys' leaves a dynamic link to JNI_GetCreatedJavaVMs,
+// which doesn't exist on Android, so A dummy JNI_GetCreatedJavaVMs is declared as a workaround.
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn JNI_GetCreatedJavaVMs(vmBuf: *mut *mut JavaVM, bufLen: jsize, nVMs: *mut jsize) -> jint {
+extern "system" fn JNI_GetCreatedJavaVMs(_: *mut *mut JavaVM, _: jsize, _: *mut jsize) -> jint {
     unreachable!();
 }
 
@@ -178,7 +180,7 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
                 ])
             }.unwrap();
             if !jenv.exception_check().unwrap() {
-                cfg.dest.write().unwrap().replace(tun_fd.i().unwrap() as i32);
+                cfg.dest.write().unwrap().replace(tun_fd.i().unwrap());
             }
         }
     });
@@ -247,14 +249,12 @@ pub(crate) fn on_vpnservice_change(request: crate::easytier::EasyTierTunRequest)
 }
 
 fn parse_jstring(env: &JNIEnv<'static>, value: jobject) -> Option<String> {
-    if value == null_mut() {
+    if value.is_null() {
         None
     } else {
         // SAFETY: value is a Java String Object
-
-        let value = unsafe { JString::from_raw(value) };
-        Some(unsafe {
-            env.get_string_unchecked(&value)
-        }.unwrap().into())
+        unsafe {
+            Some(env.get_string_unchecked(&JString::from_raw(value)).unwrap().into())
+        }
     }
 }

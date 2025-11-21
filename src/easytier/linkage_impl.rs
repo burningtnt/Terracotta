@@ -1,15 +1,16 @@
-use crate::easytier::argument::{Argument, PortForward};
-use easytier::common::config::{PortForwardConfig, TomlConfigLoader};
+use crate::easytier::argument::{Argument, PortForward, Proto};
+use easytier::common::config::{ConfigFileControl, TomlConfigLoader};
 use easytier::launcher::NetworkInstance;
 use easytier::proto::api::instance::{ListRouteRequest, Route, ShowNodeInfoRequest};
 use easytier::proto::rpc_types::controller::BaseController;
-use easytier::socks5::Socks5Server;
 use std::cell::UnsafeCell;
-use std::fmt::Write;
 use std::net::Ipv4Addr;
 use std::sync::{Arc, RwLock};
+use std::thread;
 use std::time::Duration;
-use tokio::runtime::Handle;
+use easytier::proto::api::config::{ConfigPatchAction, InstanceConfigPatch, PatchConfigRequest, PortForwardPatch};
+use easytier::proto::common::{PortForwardConfigPb, SocketType};
+use tokio::runtime::Runtime;
 use toml::{Table, Value};
 
 lazy_static::lazy_static! {
@@ -25,8 +26,11 @@ pub struct EasyTierTunRequest {
 
 pub struct EasytierFactory();
 
-pub struct Easytier {
-    instance: Option<(NetworkInstance, Arc<Socks5Server>)>,
+pub struct Easytier(Option<EasyTierHolder>);
+
+struct EasyTierHolder {
+    instance: NetworkInstance,
+    runtime: Runtime,
 }
 
 fn create() -> EasytierFactory {
@@ -84,7 +88,9 @@ impl EasytierFactory {
                     flags().insert("enable_kcp_proxy".into(), Value::Boolean(true));
                 }
                 Argument::PublicServer(server) => {
-                    peer().push(Value::String(server.into()));
+                    let mut public_server = Table::new();
+                    public_server.insert("uri".into(), Value::String(server.into()));
+                    peer().push(Value::Table(public_server));
                 }
                 Argument::NetworkName(name) => {
                     identity().insert("network_name".into(), Value::String(name.into()));
@@ -112,15 +118,15 @@ impl EasytierFactory {
                     acquire_table().insert("ipv4".into(), Value::String(address.to_string()));
                 }
                 Argument::TcpWhitelist(port) => {
-                    tcp_whitelist().push(Value::Integer(port as i64));
+                    tcp_whitelist().push(Value::String(port.to_string()));
                 }
                 Argument::UdpWhitelist(port) => {
-                    udp_whitelist().push(Value::Integer(port as i64));
+                    udp_whitelist().push(Value::String(port.to_string()));
                 }
             }
         }
 
-        let Some((mut instance, server)) =
+        let Some((instance, runtime)) =
             toml::to_string(&Value::Table(table.into_inner()))
                 .map_err(|e| {
                     logging!("EasyTier", "Cannot convert configuration to toml string: {:?}", e);
@@ -131,21 +137,48 @@ impl EasytierFactory {
                             logging!("EasyTier", "Cannot convert toml string to config: {:?}", e);
                         }).ok()
                 )
-                .map(NetworkInstance::new)
+                .map(|config| NetworkInstance::new(config, ConfigFileControl::STATIC_CONFIG))
                 .and_then(|mut instance|
                     instance.start()
-                        .map(|(_, socks5)| (instance, socks5.unwrap()))
+                        .map(|_| instance)
                         .map_err(|e| {
                             logging!("EasyTier", "Cannot launch EasyTier: {:?}", e);
-                        }).ok()
+                        })
+                        .ok()
                 )
+                .and_then(|instance| {
+                    tokio::runtime::Builder::new_multi_thread()
+                        .enable_all()
+                        .build()
+                        .map(|runtime| (instance, runtime))
+                        .map_err(|e| {
+                            logging!("EasyTier", "Cannot launch Tokio: {:?}", e);
+                        })
+                        .ok()
+                })
         else {
-            return Easytier { instance: None };
+            return Easytier(None);
         };
 
-        let tun_fd = instance.get_tun_fd_setting().unwrap();
-        let service = instance.get_api_service().unwrap();
-        tokio::spawn(async move {
+        let service = 'service: {
+            thread::sleep(Duration::from_millis(1500));
+
+            for _ in 0..20 {
+                if let Some(service) = instance.get_api_service() {
+                    break 'service service;
+                }
+
+                thread::sleep(Duration::from_millis(500));
+            }
+
+            if let Some(notifier) = instance.get_stop_notifier() {
+                notifier.notify_one();
+            }
+            return Easytier(None)
+        };
+        let tun_fd = instance.launcher.as_ref().unwrap().data.tun_fd.clone();
+
+        runtime.spawn(async move {
             let mut p_address = None;
             let mut p_proxy_cidrs = vec![];
 
@@ -184,21 +217,21 @@ impl EasytierFactory {
             }
         });
 
-        Easytier { instance: Some((instance, server)) }
+        Easytier(Some(EasyTierHolder { instance, runtime }))
     }
 }
 
 impl Easytier {
     pub fn is_alive(&mut self) -> bool {
-        self.instance.as_ref().is_some_and(|(instance, _)| instance.is_easytier_running())
+        self.0.as_ref().is_some_and(|EasyTierHolder { instance, .. }| instance.is_easytier_running())
     }
 
     pub fn get_players(&mut self) -> Option<Vec<(String, Ipv4Addr)>> {
-        self.instance.as_ref()
-            .and_then(|(instance, _)| {
+        self.0.as_ref()
+            .and_then(|EasyTierHolder { instance, runtime, .. }| {
                 instance.get_api_service()
                     .and_then(|service| {
-                        Handle::current().block_on(service.get_peer_manage_service()
+                        runtime.block_on(service.get_peer_manage_service()
                             .list_route(BaseController::default(), ListRouteRequest::default())
                         ).ok()
                     })
@@ -218,36 +251,34 @@ impl Easytier {
         &mut self,
         forwards: &[PortForward],
     ) -> bool {
-        if let Some((_, socks5)) = self.instance.as_ref() {
-            let mut stream = forwards.iter().map(|forward| {
-                let task = socks5.add_port_forward(PortForwardConfig {
-                    bind_addr: forward.local,
-                    dst_addr: forward.remote,
-                    proto: forward.proto.name().into(),
+        if let Some(EasyTierHolder { instance, runtime, .. }) = self.0.as_ref() {
+            let service = instance.get_api_service().unwrap();
+            let task = service.get_config_service()
+                .patch_config(BaseController::default(), PatchConfigRequest {
+                    patch: Some(InstanceConfigPatch {
+                        port_forwards: forwards.iter().map(|forward| PortForwardPatch {
+                            action: ConfigPatchAction::Add as i32,
+                            cfg: Some(PortForwardConfigPb {
+                                bind_addr: Some(forward.local.into()),
+                                dst_addr: Some(forward.remote.into()),
+                                socket_type: match forward.proto {
+                                    Proto::TCP => SocketType::Tcp,
+                                    Proto::UDP => SocketType::Udp,
+                                } as i32,
+                            }),
+                        }).collect::<Vec<PortForwardPatch>>(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
                 });
 
-                (task, forward)
-            }).filter_map(|(task, forward)| {
-                Handle::current().block_on(task).err().map(|e| (e, forward))
-            });
-
-            if let Some(mut item) = stream.next() {
-                let mut msg = "Cannot adding port-forward rules: ".to_string();
-                loop {
-                    let (e, PortForward { local, remote, proto }) = item;
-                    write!(&mut msg, "{} -> {} ({}): {:?}", local, remote, proto.name(), e).unwrap();
-
-                    if let Some(item2) = stream.next() {
-                        msg.push_str(", ");
-                        item = item2;
-                    } else {
-                        break;
-                    }
+            return match runtime.block_on(task) {
+                Ok(_) => true,
+                Err(e) => {
+                    logging!("EasyTier", "Cannot adding port-forward rules: {:?}", e);
+                    false
                 }
-                logging!("EasyTier CLI", "{}", msg);
-            } else {
-                return true;
-            }
+            };
         }
         return false;
     }
@@ -257,13 +288,14 @@ impl Drop for Easytier {
     fn drop(&mut self) {
         logging!("EasyTier", "Killing EasyTier.");
 
-        if let Some((instance, _)) = self.instance.take() {
+        if let Some(EasyTierHolder { instance, runtime, .. }) = self.0.take() {
             if let Some(msg) = instance.get_latest_error_msg() {
                 logging!("EasyTier", "EasyTier has encountered an fatal error: {}", msg);
             }
             if let Some(notifier) = instance.get_stop_notifier() {
-                Handle::current().block_on(notifier.notified());
+                notifier.notify_one();
             }
+            runtime.shutdown_background();
         }
     }
 }

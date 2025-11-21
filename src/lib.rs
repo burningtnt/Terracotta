@@ -25,13 +25,15 @@ use crate::controller::Room;
 use chrono::{FixedOffset, TimeZone, Utc};
 use jni::objects::JClass;
 use jni::signature::{Primitive, ReturnType};
-use jni::sys::{jclass, jshort, jsize, jvalue, JavaVM};
+use jni::sys::{jclass, jshort, jsize, jstring, jvalue, JavaVM};
 use jni::{objects::JString, sys::{jboolean, jint, jobject, JNI_FALSE, JNI_TRUE}, JNIEnv};
 use libc::{c_char, c_int};
 use std::time::Duration;
 use std::{
     env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, sync::{Arc, Mutex}, thread,
 };
+use std::path::PathBuf;
+use crate::once_cell::OnceCell;
 
 pub mod controller;
 mod easytier;
@@ -40,6 +42,7 @@ pub const MOTD: &'static str = "§6§l双击进入陶瓦联机大厅（请保持
 
 mod mc;
 mod ports;
+mod once_cell;
 
 type JNIRawEnv = *mut jni::sys::JNIEnv;
 
@@ -75,23 +78,7 @@ lazy_static::lazy_static! {
     };
 }
 
-lazy_static! {
-    static ref FILE_ROOT: std::path::PathBuf = {
-        let path = if cfg!(target_os = "macos")
-            && let Ok(home) = env::var("HOME")
-        {
-            std::path::Path::new(&home).join("terracotta")
-        } else {
-            std::path::Path::new(&env::temp_dir()).join("terracotta")
-        };
-
-        fs::create_dir_all(&path).unwrap();
-
-        path
-    };
-    static ref MACHINE_ID_FILE: std::path::PathBuf = FILE_ROOT.join("machine-id");
-}
-
+static MACHINE_ID_FILE: OnceCell<std::path::PathBuf> = OnceCell::new();
 static VPN_SERVICE_CFG: Mutex<Option<crate::easytier::EasyTierTunRequest>> = Mutex::new(None);
 
 // FIXME: Third-party crate 'jni-sys' leaves a dynamic link to JNI_GetCreatedJavaVMs,
@@ -104,15 +91,8 @@ extern "system" fn JNI_GetCreatedJavaVMs(_: *mut *mut JavaVM, _: jsize, _: *mut 
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(env: JNIRawEnv, clazz: jclass) -> jint {
-    cfg_if::cfg_if! {
-        if #[cfg(debug_assertions)] {
-            std::panic::set_backtrace_style(std::panic::BacktraceStyle::Short);
-        } else {
-            std::panic::set_backtrace_style(std::panic::BacktraceStyle::Full);
-        }
-    }
-
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(env: JNIRawEnv, clazz: jclass, dir: jstring) -> jint {
+    std::panic::set_backtrace_style(std::panic::BacktraceStyle::Full);
     std::panic::update_hook(|prev, info| {
         let data = Arc::new(Mutex::new(Vec::<u8>::new()));
         std::io::set_output_capture(Some(data.clone()));
@@ -141,16 +121,14 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
         env!("CARGO_CFG_TARGET_ENV"),
     );
 
-    if let Err(e) = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build() {
-        logging!("UI", "Cannot launch tokio runtime: {:?}", e);
-        return 2;
-    }
-
     let jenv = unsafe { JNIEnv::from_raw(env) }.unwrap();
     let jvm = jenv.get_java_vm().unwrap();
-    let clazz = jenv.new_global_ref(unsafe  { JClass::from_raw(clazz) }).unwrap();
+    let clazz = jenv.new_global_ref(unsafe { JClass::from_raw(clazz) }).unwrap();
+
+    let dir: String = unsafe {
+        jenv.get_string_unchecked(&JString::from_raw(dir)).unwrap().into()
+    };
+    MACHINE_ID_FILE.set(PathBuf::from(dir).join("machine-id"));
 
     thread::spawn(move || {
         let mut jenv = jvm.attach_current_thread_as_daemon().unwrap();
@@ -168,19 +146,30 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
                 continue;
             };
 
+            logging!("Android", "Requesting VpnService: ip={}, cidrs: {:?}", cfg.address, cfg.cidrs);
             let [ip1, ip2, ip3, ip4] = cfg.address.octets().map(|i| i as i8);
             let cidrs = cfg.cidrs.join("\0");
             let cidrs2 = jenv.new_string(cidrs).unwrap();
 
             let tun_fd = unsafe {
-                jenv.call_static_method_unchecked(&clazz, on_vpn_service_sc, ReturnType::Primitive(Primitive::Int), &[
+                let arguments = [
                     jvalue { b: ip1 }, jvalue { b: ip2 }, jvalue { b: ip3 }, jvalue { b: ip4 },
                     jvalue { s: cfg.network_length as jshort },
                     jvalue { l: cidrs2.into_raw() }
-                ])
-            }.unwrap();
-            if !jenv.exception_check().unwrap() {
-                cfg.dest.write().unwrap().replace(tun_fd.i().unwrap());
+                ];
+                jenv.call_static_method_unchecked(&clazz, on_vpn_service_sc, ReturnType::Primitive(Primitive::Int), &arguments)
+            };
+
+            match tun_fd {
+                Ok(tun_fd) => {
+                    let tun_fd = tun_fd.i().unwrap();
+                    logging!("Android", "VpnService initialized: tun_fd={}", tun_fd);
+                    cfg.dest.write().unwrap().replace(tun_fd);
+                },
+                Err(jni::errors::Error::JavaException) => {
+                    logging!("Android", "Cannot request VpnService: An JavaException is thrown on Java Level.");
+                },
+                Err(e) => Err(e).unwrap(),
             }
         }
     });

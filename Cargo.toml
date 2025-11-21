@@ -49,7 +49,7 @@ objc2-web-kit = "0.3.1"
 native-dialog = "0.9.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
-easytier = { git = "https://github.com/burningtnt/EasyTier.git", branch = "develop"}
+easytier = { git = "https://github.com/burningtnt/EasyTier.git", branch = "main"}
 jni = { version = "0.21.1", features = ["invocation"] }
 # These libraries are the necessities to interact with EasyTier. DO NOT upgrade their version.
 uuid = "1"

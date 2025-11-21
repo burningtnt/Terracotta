@@ -170,6 +170,8 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     thread::spawn(move || {
         let mut counter = 0;
         loop {
+            thread::sleep(Duration::from_secs(5));
+
             if legacy::check_mc_conn(port) {
                 counter = 0;
             } else {
@@ -282,8 +284,8 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
     }
 
     let mut session = 'session: {
-        for timeout in [4, 4, 8, 4, 8, 16] {
-            thread::sleep(Duration::from_secs(timeout));
+        for _ in 0..60 {
+            thread::sleep(Duration::from_secs(4));
 
             const FINGERPRINT: [u8; 16] = [0x41, 0x57, 0x48, 0x44, 0x86, 0x37, 0x40, 0x59, 0x57, 0x44, 0x92, 0x43, 0x96, 0x99, 0x85, 0x01];
             if let Ok(mut session) = ClientSession::open(IpAddr::V4(Ipv4Addr::LOCALHOST), scaffolding_port)
@@ -563,7 +565,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
 }
 
 fn compute_arguments(room: &Room, public_servers: PublicServers) -> Vec<Argument> {
-    static DEFAULT_ARGUMENTS: [Argument; 7] = [
+    static DEFAULT_ARGUMENTS: [Argument; 8] = [
         Argument::NoTun,
         Argument::Compression(Cow::Borrowed("zstd")),
         Argument::MultiThread,
@@ -577,6 +579,7 @@ fn compute_arguments(room: &Room, public_servers: PublicServers) -> Vec<Argument
             address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
             proto: Proto::TCP,
         },
+        Argument::P2POnly
     ];
 
     let mut args: Vec<Argument> = Vec::with_capacity(32);

@@ -45,4 +45,5 @@ pub enum Argument {
     IPv4(Ipv4Addr),
     TcpWhitelist(u16),
     UdpWhitelist(u16),
+    P2POnly,
 }

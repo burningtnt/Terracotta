@@ -8,13 +8,13 @@ use crate::controller::states::AppStateCapture;
 pub struct Room {
     pub code: String,
 
-    pub(crate) network_name: String,
-    pub(crate) network_secret: String,
-    pub(crate) kind: RoomKind,
+    pub network_name: String,
+    pub network_secret: String,
+    pub kind: RoomKind,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum RoomKind {
+pub enum RoomKind {
     Experimental { seed: u128 },
     TerracottaLegacy { mc_port: u16 },
     PCL2CE { mc_port: u16 },

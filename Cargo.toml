@@ -5,7 +5,7 @@ edition = "2024"
 build = "build.rs"
 
 [package.metadata.easytier]
-version = "v2.4.5"
+version = "v2.4.6"
 
 [workspace]
 resolver = "3"

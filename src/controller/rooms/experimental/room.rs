@@ -170,6 +170,8 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     thread::spawn(move || {
         let mut counter = 0;
         loop {
+            thread::sleep(Duration::from_secs(5));
+
             if legacy::check_mc_conn(port) {
                 counter = 0;
             } else {
@@ -282,8 +284,8 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
     }
 
     let mut session = 'session: {
-        for timeout in [4, 4, 8, 4, 8, 16] {
-            thread::sleep(Duration::from_secs(timeout));
+        for _ in 0..60 {
+            thread::sleep(Duration::from_secs(4));
 
             const FINGERPRINT: [u8; 16] = [0x41, 0x57, 0x48, 0x44, 0x86, 0x37, 0x40, 0x59, 0x57, 0x44, 0x92, 0x43, 0x96, 0x99, 0x85, 0x01];
             if let Ok(mut session) = ClientSession::open(IpAddr::V4(Ipv4Addr::LOCALHOST), scaffolding_port)
@@ -386,7 +388,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
     }
     logging!("RoomExperiment", "MC connection is OK.");
 
-    let local = ProfileSnapshot {
+    let local_profile = ProfileSnapshot {
         machine_id: MACHINE_ID.to_string(),
         name: player.unwrap_or("Terracotta Anonymous Guest".to_string()),
         vendor: VENDOR.to_string(),
@@ -406,7 +408,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                 room,
                 easytier,
                 server: FakeServer::create(local_port, crate::MOTD),
-                profiles: vec![local.clone()],
+                profiles: vec![local_profile.clone()],
             }
         })
     };
@@ -418,9 +420,9 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             {
                 let Some(_) = session.send_sync(("c", "player_ping"), |body| {
                     serde_json::to_writer(body, &json!({
-                        "machine_id": local.get_machine_id(),
-                        "name": local.get_name(),
-                        "vendor": local.get_vendor()
+                        "machine_id": local_profile.get_machine_id(),
+                        "name": local_profile.get_name(),
+                        "vendor": local_profile.get_vendor()
                     })).unwrap();
                 }) else {
                     fail(capture);
@@ -429,7 +431,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             }
 
             {
-                let Some(mut server_profiles) = session.send_sync(("c", "player_profiles_list"), |_| {}).map(|response| {
+                let Some(server_profiles) = session.send_sync(("c", "player_profiles_list"), |_| {}).map(|response| {
                     let PacketResponse::Ok { data } = response else {
                         unreachable!();
                     };
@@ -474,6 +476,9 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                         logging!("RoomExperiment", "API c:player_profiles_list invocation failed: No host detected.");
                         return None;
                     }
+                    if !local {
+                        server_players.push(local_profile.clone());
+                    }
 
                     server_players.sort_by_cached_key(|profile| profile.get_machine_id().to_string());
                     for profile in server_players.windows(2) {
@@ -497,10 +502,6 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                 if !easytier.is_alive() {
                     state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });
                     return;
-                }
-
-                if server_profiles.binary_search_by_key(&*MACHINE_ID, |profile| profile.get_machine_id()).is_err() {
-                    server_profiles.push(local.clone());
                 }
 
                 let mut used = vec![false; server_profiles.len()];
@@ -547,6 +548,8 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                         },
                     }
                 }
+
+                let mut server_profiles = server_profiles;
                 for i in (0..server_profiles.len()).rev() {
                     let profile = server_profiles.pop().unwrap();
                     if !used[i] && *profile.get_kind() != ProfileKind::LOCAL {
@@ -563,7 +566,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
 }
 
 fn compute_arguments(room: &Room, public_servers: PublicServers) -> Vec<Argument> {
-    static DEFAULT_ARGUMENTS: [Argument; 7] = [
+    static DEFAULT_ARGUMENTS: [Argument; 8] = [
         Argument::NoTun,
         Argument::Compression(Cow::Borrowed("zstd")),
         Argument::MultiThread,
@@ -577,6 +580,7 @@ fn compute_arguments(room: &Room, public_servers: PublicServers) -> Vec<Argument
             address: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0).into(),
             proto: Proto::TCP,
         },
+        Argument::P2POnly
     ];
 
     let mut args: Vec<Argument> = Vec::with_capacity(32);

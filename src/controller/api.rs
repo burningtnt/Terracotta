@@ -79,10 +79,10 @@ pub fn set_waiting() {
     state.set(AppState::Waiting);
 }
 
-pub fn set_scanning(player: Option<String>) {
+pub fn set_scanning(room: Option<String>, player: Option<String>) {
     let capture = {
         let state = AppState::acquire();
-        if !matches!(state.as_ref(), AppState::Waiting { .. }) {
+        if !matches!(state.as_ref(), AppState::Waiting) {
             return;
         }
 
@@ -93,7 +93,9 @@ pub fn set_scanning(player: Option<String>) {
     logging!("Core", "Setting to state SCANNING.");
 
     thread::spawn(move || {
-        let room = Room::create();
+        let room = room
+            .and_then(|room| Room::from(&room))
+            .unwrap_or_else(Room::create);
 
         let (sender, receiver) = mpsc::channel();
         let room2 = room.clone();

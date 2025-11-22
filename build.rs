@@ -90,7 +90,7 @@ fn download_easytier() {
 
     let conf = match (target_os.as_str(), target_arch.as_str()) {
         ("windows", "x86_64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-windows-x86_64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-windows-x86_64-{V}.zip",
             files: vec![
                 "easytier-windows-x86_64/easytier-core.exe",
                 "easytier-windows-x86_64/easytier-cli.exe",
@@ -101,7 +101,7 @@ fn download_easytier() {
             desc: "windows-x86_64",
         },
         ("windows", "aarch64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-windows-arm64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-windows-arm64-{V}.zip",
             files: vec![
                 "easytier-windows-arm64/easytier-core.exe",
                 "easytier-windows-arm64/easytier-cli.exe",
@@ -112,7 +112,7 @@ fn download_easytier() {
             desc: "windows-arm64",
         },
         ("linux", "x86_64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-x86_64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-linux-x86_64-{V}.zip",
             files: vec![
                 "easytier-linux-x86_64/easytier-core",
                 "easytier-linux-x86_64/easytier-cli",
@@ -122,7 +122,7 @@ fn download_easytier() {
             desc: "linux-x86_64",
         },
         ("linux", "aarch64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-aarch64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-linux-aarch64-{V}.zip",
             files: vec![
                 "easytier-linux-aarch64/easytier-core",
                 "easytier-linux-aarch64/easytier-cli",
@@ -132,7 +132,7 @@ fn download_easytier() {
             desc: "linux-arm64",
         },
         ("linux", "riscv64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-riscv64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-linux-riscv64-{V}.zip",
             files: vec![
                 "easytier-linux-riscv64/easytier-core",
                 "easytier-linux-riscv64/easytier-cli",
@@ -142,7 +142,7 @@ fn download_easytier() {
             desc: "linux-riscv64",
         },
         ("linux", "loongarch64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-linux-loongarch64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-linux-loongarch64-{V}.zip",
             files: vec![
                 "easytier-linux-loongarch64/easytier-core",
                 "easytier-linux-loongarch64/easytier-cli",
@@ -152,7 +152,7 @@ fn download_easytier() {
             desc: "linux-loongarch64",
         },
         ("macos", "x86_64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-x86_64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-macos-x86_64-{V}.zip",
             files: vec![
                 "easytier-macos-x86_64/easytier-core",
                 "easytier-macos-x86_64/easytier-cli",
@@ -162,7 +162,7 @@ fn download_easytier() {
             desc: "macos-x86_64",
         },
         ("macos", "aarch64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-macos-aarch64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-macos-aarch64-{V}.zip",
             files: vec![
                 "easytier-macos-aarch64/easytier-core",
                 "easytier-macos-aarch64/easytier-cli",
@@ -172,7 +172,7 @@ fn download_easytier() {
             desc: "macos-arm64",
         },
         ("freebsd", "x86_64") => EasytierFiles {
-            url: "https://github.com/EasyTier/EasyTier/releases/download/{V}/easytier-freebsd-13.2-x86_64-{V}.zip",
+            url: "https://github.com/burningtnt/EasyTier/releases/download/{V}/easytier-freebsd-13.2-x86_64-{V}.zip",
             files: vec![
                 "easytier-freebsd-13.2-x86_64/easytier-core",
                 "easytier-freebsd-13.2-x86_64/easytier-cli",

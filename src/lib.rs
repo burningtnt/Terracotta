@@ -19,21 +19,19 @@ macro_rules! logging {
     };
 }
 
-use lazy_static::lazy_static;
-
 use crate::controller::Room;
+use crate::once_cell::OnceCell;
 use chrono::{FixedOffset, TimeZone, Utc};
 use jni::objects::JClass;
 use jni::signature::{Primitive, ReturnType};
 use jni::sys::{jclass, jshort, jsize, jstring, jvalue, JavaVM};
 use jni::{objects::JString, sys::{jboolean, jint, jobject, JNI_FALSE, JNI_TRUE}, JNIEnv};
 use libc::{c_char, c_int};
+use std::path::PathBuf;
 use std::time::Duration;
 use std::{
-    env, ffi::CString, fs, net::{IpAddr, Ipv4Addr, Ipv6Addr}, sync::{Arc, Mutex}, thread,
+    env, ffi::CString, net::{IpAddr, Ipv4Addr, Ipv6Addr}, sync::{Arc, Mutex}, thread,
 };
-use std::path::PathBuf;
-use crate::once_cell::OnceCell;
 
 pub mod controller;
 mod easytier;
@@ -211,11 +209,12 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setWaitin
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanning0(env: JNIRawEnv, _: jclass, player: jobject) {
+extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanning0(env: JNIRawEnv, _: jclass, room: jobject, player: jobject) {
     let env = unsafe { JNIEnv::from_raw(env) }.unwrap();
+    let room = parse_jstring(&env, room);
     let player = parse_jstring(&env, player);
 
-    controller::set_scanning(player);
+    controller::set_scanning(room, player);
 }
 
 #[unsafe(no_mangle)]
@@ -242,8 +241,6 @@ fn parse_jstring(env: &JNIEnv<'static>, value: jobject) -> Option<String> {
         None
     } else {
         // SAFETY: value is a Java String Object
-        unsafe {
-            Some(env.get_string_unchecked(&JString::from_raw(value)).unwrap().into())
-        }
+        unsafe { Some(env.get_string_unchecked(&JString::from_raw(value)).unwrap().into()) }
     }
 }

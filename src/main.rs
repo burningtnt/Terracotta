@@ -12,7 +12,7 @@
     target_os = "macos",
     target_os = "freebsd"
 )))]
-compile_error!("Terracotta lib mode is intended for Android platform.");
+compile_error!("Terracotta Executable is intended for Windows, Linux, macos and FreeBSD.");
 
 #[macro_export]
 macro_rules! logging {

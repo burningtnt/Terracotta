@@ -10,7 +10,7 @@
 
 extern crate core;
 #[cfg(not(target_os = "android"))]
-compile_error!("Terracotta lib mode is intended for Android platform.");
+compile_error!("Terracotta Library is intended for Android platform.");
 
 #[macro_export]
 macro_rules! logging {

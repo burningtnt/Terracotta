@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * <p>An API to handle Terracotta Android.</p>
  *
+ * <p>Unlike normal JNI bindings, relocating this class to another package is supported.</p>
+ *
  * <h1>State Definition</h1>
  *
  * <p>For Android platform, developers must invoke {@link #initialize} with a {@link VpnServiceCallback} to initialize the rust backend.
@@ -126,6 +128,7 @@ public final class TerracottaAndroidAPI {
     }
 
     static {
+        System.setProperty("net.burningtnt.terracotta.native_location", TerracottaAndroidAPI.class.getName().replace('.', '/'));
         System.loadLibrary("terracotta");
     }
 
@@ -305,7 +308,7 @@ public final class TerracottaAndroidAPI {
      */
     public static Reader collectLogs() throws IOException {
         assertStarted();
-        
+
         long ptr = prepareExportLogs0();
         if (ptr == 0) {
             throw new RuntimeException("Cannot export logs from Terracotta Android.");
@@ -367,10 +370,12 @@ public final class TerracottaAndroidAPI {
         }, StandardCharsets.UTF_8));
     }
 
+    /**
+     * @deprecated This API is exposed for debug purpose.
+     */
     @Deprecated
     public static void panic() {
         panic0();
-
         throw new AssertionError("Should NOT be here: A RuntimeException should be thrown in panic0");
     }
 

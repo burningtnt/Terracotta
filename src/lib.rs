@@ -20,13 +20,11 @@ macro_rules! logging {
 }
 
 macro_rules! try_jvm {
-    ($env:expr, |$jenv:ident| $codes:block) => {{
-        let mut $jenv = unsafe { JNIEnv::from_raw($env) }.unwrap();
+    (|$jenv:ident| $($tokens:tt)*) => {{
+        let mut $jenv = $jenv;
 
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            #[allow(unused_variables)]
-            let $jenv = &mut $jenv;
-            $codes
+            $($tokens)*
         })) {
             Ok(val) => val,
             Err(e) => {
@@ -41,11 +39,11 @@ macro_rules! try_jvm {
 use crate::controller::{Room, RoomKind};
 use crate::once_cell::OnceCell;
 use chrono::{FixedOffset, TimeZone, Utc};
-use jni::objects::JClass;
 use jni::signature::{Primitive, ReturnType};
-use jni::sys::{jclass, jlong, jshort, jsize, jstring, jvalue, JavaVM};
-use jni::{objects::JString, sys::{jboolean, jint, JNI_FALSE, JNI_TRUE}, JNIEnv};
+use jni::sys::JNI_VERSION_1_6;
+use jni::{objects::{JClass, JString}, sys::{jboolean, jint, jlong, jshort, jsize, jvalue, JNI_FALSE, JNI_TRUE}, JNIEnv, JavaVM, NativeMethod};
 use libc::{c_char, c_int};
+use std::ffi::c_void;
 use std::fs::File;
 use std::io::Write;
 use std::os::fd::FromRawFd;
@@ -64,8 +62,6 @@ pub const MOTD: &'static str = "§6§l双击进入陶瓦联机大厅（请保持
 mod mc;
 mod ports;
 mod once_cell;
-
-type JNIRawEnv = *mut jni::sys::JNIEnv;
 
 lazy_static::lazy_static! {
     static ref ADDRESSES: Vec<IpAddr> = {
@@ -103,17 +99,66 @@ static MACHINE_ID_FILE: OnceCell<std::path::PathBuf> = OnceCell::new();
 static LOGGING_FD: Mutex<Option<std::fs::File>> = Mutex::new(None);
 static VPN_SERVICE_CFG: Mutex<Option<crate::easytier::EasyTierTunRequest>> = Mutex::new(None);
 
-// FIXME: Third-party crate 'jni-sys' leaves a dynamic link to JNI_GetCreatedJavaVMs,
-// which doesn't exist on Android, so A dummy JNI_GetCreatedJavaVMs is declared as a workaround.
+// FIXME: Third-party crate 'jni-sys' leaves a dynamic link to JNI_GetCreatedJavaVMs which doesn't exist on Android.
+//        A dummy JNI_GetCreatedJavaVMs is declared as a workaround to prevent fatal errors while linking.
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn JNI_GetCreatedJavaVMs(_: *mut *mut JavaVM, _: jsize, _: *mut jsize) -> jint {
+extern "system" fn JNI_GetCreatedJavaVMs(_: *mut c_void, _: jsize, _: *mut c_void) -> jint {
     unreachable!();
 }
 
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(env: JNIRawEnv, clazz: jclass, dir: jstring, logging_fd: jint) -> jint {
+extern "system" fn JNI_OnLoad(vm: JavaVM, _: *mut c_void) -> jint {
+    let registration = || -> jni::errors::Result<jint> {
+        let mut jenv = vm.get_env()?;
+
+        let target_class = {
+            let clazz = jenv.find_class("java/lang/System")?;
+            let method = jenv.get_static_method_id(&clazz, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;")?;
+
+            let key = jenv.new_string("net.burningtnt.terracotta.native_location")?;
+            let location = unsafe {
+                jenv.call_static_method_unchecked(
+                    clazz, method, ReturnType::Object, &[ jvalue { l: key.as_raw() }],
+                )?.l()?
+            };
+
+            jenv.find_class(
+                parse_jstring(&jenv, &JString::from(location)).unwrap_or("net/burningtnt/terracotta/TerracottaAndroidAPI".into())
+            )?
+        };
+
+        macro_rules! of {
+            [$name:expr, $signature:expr, $method:expr] => {
+                NativeMethod { name: $name.into(), sig: $signature.into(), fn_ptr: $method as *mut c_void }
+            };
+        }
+
+        jenv.register_native_methods(target_class, &[
+            of!["start0", "(Ljava/lang/String;I)I", jni_start],
+            of!["getState0", "()Ljava/lang/String;", jni_get_state],
+            of!["setWaiting0", "()V", jni_set_waiting],
+            of!["setScanning0", "(Ljava/lang/String;Ljava/lang/String;)V", jni_set_scanning],
+            of!["setGuesting0", "(Ljava/lang/String;Ljava/lang/String;)Z", jni_set_guesting],
+            of!["verifyRoomCode0", "(Ljava/lang/String;)I", jni_verify_room_code],
+            of!["getMetadata0", "()Ljava/lang/String;", jni_get_metadata],
+            of!["prepareExportLogs0", "()J", jni_prepare_export_logs],
+            of!["finishExportLogs0", "(J)V", jni_finish_export_logs],
+            of!["panic0", "()V", jni_panic],
+        ])?;
+
+        Ok(JNI_VERSION_1_6)
+    };
+
+    registration().unwrap_or_else(|e| {
+        let line = format!("Cannot initialize Terracotta Android: {:?}", e);
+        logging_android(line.clone());
+        panic!("{}", line);
+    })
+}
+
+extern "system" fn jni_start<'l>(jenv: JNIEnv<'l>, clazz: JClass<'l>, dir: JString<'l>, logging_fd: jint) -> jint {
     std::panic::set_backtrace_style(std::panic::BacktraceStyle::Full);
     std::panic::update_hook(|prev, info| {
         let data = Arc::new(Mutex::new(Vec::<u8>::new()));
@@ -127,6 +172,8 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
         };
         logging_android(data);
     });
+
+    let _ = LOGGING_FD.lock().unwrap().replace(unsafe { std::fs::File::from_raw_fd(logging_fd) });
 
     logging!(
         "UI",
@@ -143,22 +190,17 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
         env!("CARGO_CFG_TARGET_ENV"),
     );
 
-    let jenv = unsafe { JNIEnv::from_raw(env) }.unwrap();
     let jvm = jenv.get_java_vm().unwrap();
-    let clazz = jenv.new_global_ref(unsafe { JClass::from_raw(clazz) }).unwrap();
+    let clazz = jenv.new_global_ref(clazz).unwrap();
 
-    let dir: String = unsafe {
-        jenv.get_string_unchecked(&JString::from_raw(dir)).unwrap().into()
-    };
+    let dir: String = parse_jstring(&jenv, &dir).unwrap();
     MACHINE_ID_FILE.set(PathBuf::from(dir).join("machine-id"));
-
-    let _ = LOGGING_FD.lock().unwrap().replace(unsafe { std::fs::File::from_raw_fd(logging_fd) });
 
     thread::spawn(move || {
         let mut jenv = jvm.attach_current_thread_as_daemon().unwrap();
 
         let on_vpn_service_sc = jenv.get_static_method_id(
-            &clazz, "onVpnServiceStateChanged", "(BBBBSLjava/lang/String;)I"
+            &clazz, "onVpnServiceStateChanged", "(BBBBSLjava/lang/String;)I",
         ).unwrap();
 
         loop {
@@ -189,10 +231,10 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_start0(en
                     let tun_fd = tun_fd.i().unwrap();
                     logging!("Android", "VpnService initialized: tun_fd={}", tun_fd);
                     cfg.dest.write().unwrap().replace(tun_fd);
-                },
+                }
                 Err(jni::errors::Error::JavaException) => {
                     logging!("Android", "Cannot request VpnService: An JavaException is thrown on Java Level.");
-                },
+                }
                 Err(e) => Err(e).unwrap(),
             }
         }
@@ -224,52 +266,42 @@ fn logging_android(line: String) {
     }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_getState0(env: JNIRawEnv, _: jclass) -> jstring {
-    try_jvm!(env, |jenv| {
-        jenv.new_string(serde_json::to_string(&controller::get_state()).unwrap()).unwrap().into_raw()
-    })
+extern "system" fn jni_get_state<'l>(jenv: JNIEnv<'l>, _: JClass<'l>) -> JString<'l> {
+    try_jvm! { |jenv|
+        jenv.new_string(serde_json::to_string(&controller::get_state()).unwrap()).unwrap()
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setWaiting0(env: JNIRawEnv, _: jclass) {
-    try_jvm!(env, |jenv| {
+extern "system" fn jni_set_waiting<'l>(jenv: JNIEnv<'l>, _: JClass<'l>) {
+    try_jvm! { |jenv|
         controller::set_waiting()
-    })
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setScanning0(env: JNIRawEnv, _: jclass, room: jstring, player: jstring) {
-    try_jvm!(env, |jenv| {
-        let room = parse_jstring(jenv, room);
-        let player = parse_jstring(jenv, player);
+extern "system" fn jni_set_scanning<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>, player: JString<'l>) {
+    try_jvm! { |jenv|
+        let room = parse_jstring(&jenv, &room);
+        let player = parse_jstring(&jenv, &player);
         controller::set_scanning(room, player);
-    })
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_setGuesting0(env: JNIRawEnv, _: jclass, room: jstring, player: jstring) -> jboolean {
-    try_jvm!(env, |jenv| {
-        let room = parse_jstring(jenv, room).expect("'room' must not be NULL.");
-        let player = parse_jstring(jenv, player);
+extern "system" fn jni_set_guesting<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>, player: JString<'l>) -> jboolean {
+    try_jvm! { |jenv|
+        let room = parse_jstring(&jenv, &room).expect("'room' must not be NULL.");
+        let player = parse_jstring(&jenv, &player);
 
         if let Some(room) = Room::from(&room) && controller::set_guesting(room, player) {
             JNI_TRUE
         } else {
             JNI_FALSE
         }
-    })
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_verifyRoomCode0(env: JNIRawEnv, _: jclass, room: jstring) -> jint {
-    try_jvm!(env, |jenv| {
-        let room = parse_jstring(jenv, room).expect("'room' must not be NULL.");
+extern "system" fn jni_verify_room_code<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>) -> jint {
+    try_jvm! { |jenv|
+        let room = parse_jstring(&jenv, &room).expect("'room' must not be NULL.");
 
         match Room::from(&room) {
             Some(Room { kind, .. }) => match kind {
@@ -279,23 +311,19 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_verifyRoo
             },
             None => -1
         }
-    })
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_getMetadata0(env: JNIRawEnv, _: jclass) -> jstring {
-    try_jvm!(env, |jenv| {
+extern "system" fn jni_get_metadata<'l>(jenv: JNIEnv<'l>, _: JClass<'l>) -> JString<'l> {
+    try_jvm! { |jenv|
         jenv.new_string(format!(
             "{}\0{}\0{}", env!("TERRACOTTA_VERSION"), timestamp::compile_time!() as i64, env!("TERRACOTTA_ET_VERSION")
-        )).unwrap().into_raw()
-    })
+        )).unwrap()
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_prepareExportLogs0(env: JNIRawEnv, _: jclass) -> jlong {
-    try_jvm!(env, |jenv| {
+extern "system" fn jni_prepare_export_logs<'l>(jenv: JNIEnv<'l>, _: JClass<'l>) -> jlong {
+    try_jvm! { |jenv|
         let mut logging = LOGGING_FD.lock().unwrap();
 
         if let Some(file) = logging.as_mut() {
@@ -305,25 +333,21 @@ extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_prepareEx
         } else {
             0
         }
-    })
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_finishExportLogs0(env: JNIRawEnv, _: jclass, ptr: jlong) {
-    try_jvm!(env, |jenv| {
+extern "system" fn jni_finish_export_logs<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, ptr: jlong) {
+    try_jvm! { |jenv|
         unsafe {
             let _ = Box::from_raw(ptr as *mut MutexGuard<Option<File>>);
         }
-    })
+    }
 }
 
-#[unsafe(no_mangle)]
-#[allow(non_snake_case)]
-extern "system" fn Java_net_burningtnt_terracotta_TerracottaAndroidAPI_panic0(env: JNIRawEnv, _: jclass) {
-    try_jvm!(env, |jenv| {
+extern "system" fn jni_panic<'l>(jenv: JNIEnv<'l>, _: JClass<'l>) {
+    try_jvm! { |jenv|
         panic!("User triggered panic manually.");
-    })
+    }
 }
 
 pub(crate) fn on_vpnservice_change(request: crate::easytier::EasyTierTunRequest) {
@@ -331,11 +355,11 @@ pub(crate) fn on_vpnservice_change(request: crate::easytier::EasyTierTunRequest)
     *guard = Some(request);
 }
 
-fn parse_jstring(env: &JNIEnv<'static>, value: jstring) -> Option<String> {
+fn parse_jstring<'l>(env: &JNIEnv<'l>, value: &JString<'l>) -> Option<String> {
     if value.is_null() {
         None
     } else {
         // SAFETY: value is a Java String Object
-        unsafe { Some(env.get_string_unchecked(&JString::from_raw(value)).unwrap().into()) }
+        unsafe { Some(env.get_string_unchecked(value).unwrap().into()) }
     }
 }

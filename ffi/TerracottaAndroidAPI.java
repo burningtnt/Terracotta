@@ -7,16 +7,20 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <p>An API to handle Terracotta Android.</p>
@@ -43,6 +47,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * or Terracotta would stuck and EasyTier cannot submit a new VpnService Request.</p>
  *
  * <p>The VpnServiceRequest must be fulfilled in 30 seconds, or it will be considered as timeout.</p>
+ *
+ * <h1>Panic</h1>
+ *
+ * <p>A RuntimeException will be thrown if an error occured in native level.</p>
  */
 public final class TerracottaAndroidAPI {
     /**
@@ -68,9 +76,8 @@ public final class TerracottaAndroidAPI {
          * @param builder A pre-configured VpnService builder.
          * @return The established Vpn Connection. Developers must close this file descriptor after EasyTier exits.
          * @throws RuntimeException if {@link VpnService.Builder#establish()} returns null.
-         *
          * @implNote Developers is able to configure the builder before passing it into Terracotta
-         *  to fully-custom the connection.
+         * to fully-custom the connection.
          */
         ParcelFileDescriptor startVpnService(VpnService.Builder builder);
 
@@ -80,16 +87,66 @@ public final class TerracottaAndroidAPI {
         void reject();
     }
 
+    /**
+     * <p>Metadata of Terracotta Android</p>
+     */
+    public static final class Metadata {
+        private final String terracottaVersion;
+
+        private final long terracottaCompileTime;
+
+        private final String easyTierVersion;
+
+        private Metadata(String terracottaVersion, long terracottaCompileTime, String easyTierVersion) {
+            this.terracottaVersion = terracottaVersion;
+            this.terracottaCompileTime = terracottaCompileTime;
+            this.easyTierVersion = easyTierVersion;
+        }
+
+        /**
+         * @return Terracotta Android version.
+         */
+        public String getTerracottaVersion() {
+            return terracottaVersion;
+        }
+
+        /**
+         * @return Terracotta Android compile timestamp. The format is identical with {@link System#currentTimeMillis()}.
+         */
+        public long getTerracottaCompileTime() {
+            return terracottaCompileTime;
+        }
+
+        /**
+         * @return EasyTier version.
+         */
+        public String getEasyTierVersion() {
+            return easyTierVersion;
+        }
+    }
+
     static {
         System.loadLibrary("terracotta");
     }
 
     private static volatile VpnServiceRequest pendingRequest = null;
 
-    private static final AtomicReference<VpnServiceCallback> VPN_SERVICE_CALLBACK = new AtomicReference<>(null);
+    private static final class RuntimeContext {
+        private final VpnServiceCallback vpnServiceCallback;
+
+        private final RandomAccessFile logging;
+
+        public RuntimeContext(VpnServiceCallback vpnServiceCallback, RandomAccessFile logging) {
+            this.vpnServiceCallback = vpnServiceCallback;
+            this.logging = logging;
+        }
+    }
+
+    private static volatile RuntimeContext runtimeContext = null;
 
     /**
      * <p>Get current pending VpnService Request.</p>
+     *
      * @return The pending VpnService Request.
      * @throws IllegalStateException if no pending VpnService Request exists.
      */
@@ -107,18 +164,43 @@ public final class TerracottaAndroidAPI {
      * @param context  An Android context object.
      * @param callback A callback to handle VpnService for EasyTier. See {@link VpnServiceCallback} for more information.
      */
-    public static void initialize(Context context, VpnServiceCallback callback) {
-        if (VPN_SERVICE_CALLBACK.compareAndSet(null, callback)) {
-            Path base = context.getFilesDir().toPath().resolve("net.burningtnt.terracotta/rs");
-            try {
-                Files.createDirectories(base);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            start0(base.toString());
-        } else {
+    public static synchronized Metadata initialize(Context context, VpnServiceCallback callback) {
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(callback, "callback");
+
+        if (runtimeContext != null) {
             throw new IllegalStateException("Terracotta Android has already started.");
         }
+
+        File root = new File(context.getFilesDir(), "net.burningtnt.terracotta");
+
+        File base = new File(root, "rs");
+        base.mkdirs();
+        if (!base.isDirectory()) {
+            throw new RuntimeException("Cannot create net.burningtnt.terracotta/rs directory.");
+        }
+
+        RandomAccessFile logging;
+        int fd;
+        try {
+            logging = new RandomAccessFile(new File(root, "application.log"), "rw");
+            fd = ParcelFileDescriptor.dup(logging.getFD()).detachFd();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        int code = start0(base.getAbsolutePath(), fd);
+        if (code != 0) {
+            throw new RuntimeException("Cannot start Terracotta Android: " + code);
+        }
+
+        runtimeContext = new RuntimeContext(callback, logging);
+
+        String[] parts = getMetadata0().split("\0", 4);
+        if (parts.length != 3) {
+            throw new AssertionError("Should NOT be here.");
+        }
+        return new Metadata(parts[0], Long.parseLong(parts[1]), parts[2]);
     }
 
     /**
@@ -177,10 +259,130 @@ public final class TerracottaAndroidAPI {
         return setGuesting0(room, player);
     }
 
+    /**
+     * Room types supported by Terracotta Android
+     */
+    public enum RoomType {
+        TERRACOTTA_LEGACY, PCL2CE, SCAFFOLDING
+    }
+
+    /**
+     * <p>Parse the given room code.</p>
+     *
+     * @param room A room code.
+     * @return The type of the room, or null if invalid.
+     * @throws NullPointerException if room is null
+     * @implNote Though this method is fast enough to be invoked in UI thread,
+     * dispatch all invocation to a separated worker is better in order to
+     * prevent potential UI freezing issues.
+     */
+    public static RoomType parseRoomCode(String room) {
+        Objects.requireNonNull(room, "room");
+
+        assertStarted();
+        switch (verifyRoomCode0(room)) {
+            case -1:
+                return null;
+            case 1:
+                return RoomType.TERRACOTTA_LEGACY;
+            case 2:
+                return RoomType.PCL2CE;
+            case 3:
+                return RoomType.SCAFFOLDING;
+            default:
+                throw new AssertionError("Should NOT be here.");
+        }
+    }
+
+    /**
+     * <p>Collect logs of Terracotta Android.</p>
+     *
+     * <p>Developers must immediately copy all data out of the returned reader and close it.
+     * Otherwise all methods, except 'parseRoomCode', will be blocked.</p>
+     *
+     * @return A reader containing logs.
+     * @throws RuntimeException if logging export is unsupported.
+     */
+    public static Reader collectLogs() throws IOException {
+        assertStarted();
+        
+        long ptr = prepareExportLogs0();
+        if (ptr == 0) {
+            throw new RuntimeException("Cannot export logs from Terracotta Android.");
+        }
+
+        RandomAccessFile file = runtimeContext.logging;
+        file.seek(0);
+
+        return new BufferedReader(new InputStreamReader(new InputStream() {
+            private final AtomicBoolean closed = new AtomicBoolean(false);
+
+            @Override
+            public int read() throws IOException {
+                assertOpen();
+                return file.read();
+            }
+
+            @Override
+            public int read(byte[] b) throws IOException {
+                assertOpen();
+                return file.read(b);
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                assertOpen();
+                return file.read(b, off, len);
+            }
+
+            @Override
+            public int available() throws IOException {
+                assertOpen();
+                return Math.toIntExact(file.length() - file.getFilePointer());
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                cleanup();
+            }
+
+            @Override
+            protected void finalize() throws Throwable {
+                super.finalize();
+                cleanup();
+            }
+
+            private void assertOpen() throws IOException {
+                if (closed.get()) {
+                    throw new IOException("Stream has already been closed");
+                }
+            }
+
+            private void cleanup() {
+                if (closed.compareAndSet(false, true)) {
+                    finishExportLogs0(ptr);
+                }
+            }
+        }, StandardCharsets.UTF_8));
+    }
+
+    @Deprecated
+    public static void panic() {
+        panic0();
+
+        throw new AssertionError("Should NOT be here: A RuntimeException should be thrown in panic0");
+    }
+
     private static final long FD_PENDING = ((long) Integer.MAX_VALUE) + 1;
     private static final long FD_REJECT = FD_PENDING + 1;
-
+;
+    @SuppressWarnings("unused") // Native callback
     private static int onVpnServiceStateChanged(byte ip1, byte ip2, byte ip3, byte ip4, short network_length, String cidr) throws UnknownHostException {
+        if (pendingRequest != null) {
+            throw new AssertionError("Should NOT be here.");
+        }
+
         AtomicLong fd = new AtomicLong(FD_PENDING);
         InetAddress address = InetAddress.getByAddress(new byte[]{ip1, ip2, ip3, ip4});
 
@@ -206,7 +408,7 @@ public final class TerracottaAndroidAPI {
                     throw new RuntimeException("Cannot establish a VPN connection.");
                 }
 
-                fd.set(connection.detachFd());
+                fd.set(connection.getFd());
                 return connection;
             }
 
@@ -216,7 +418,7 @@ public final class TerracottaAndroidAPI {
             }
         };
 
-        VPN_SERVICE_CALLBACK.get().onStartVpnService();
+        TerracottaAndroidAPI.runtimeContext.vpnServiceCallback.onStartVpnService();
 
         long timestamp = System.currentTimeMillis();
         while (true) {
@@ -232,18 +434,22 @@ public final class TerracottaAndroidAPI {
                 throw new IllegalStateException();
             } else {
                 pendingRequest = null;
-                return Math.toIntExact(value);
+
+                if ((int) value != value) {
+                    throw new AssertionError("Should NOT be here.");
+                }
+                return (int) value;
             }
         }
     }
 
     private static void assertStarted() {
-        if (VPN_SERVICE_CALLBACK.get() == null) {
+        if (runtimeContext == null) {
             throw new IllegalStateException("Terracotta Android hasn't started yet.");
         }
     }
 
-    private static native void start0(String baseDir);
+    private static native int start0(String baseDir, int loggingFD);
 
     private static native String getState0();
 
@@ -252,4 +458,14 @@ public final class TerracottaAndroidAPI {
     private static native void setScanning0(String room, String player);
 
     private static native boolean setGuesting0(String room, String player);
+
+    private static native int verifyRoomCode0(String room);
+
+    private static native String getMetadata0();
+
+    private static native long prepareExportLogs0();
+
+    private static native void finishExportLogs0(long pointer);
+
+    private static native void panic0();
 }

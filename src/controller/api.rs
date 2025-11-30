@@ -52,7 +52,13 @@ pub fn get_state() -> Value {
             json!({"state": "guest-starting", "index": index, "room": room.code})
         }
         AppState::GuestOk { server, profiles, .. } => {
-            json!({"state": "guest-ok", "index": index, "url": format!("127.0.0.1:{}", server.port), "profile_index": sharing_index, "profiles": profiles})
+            let url = if server.port == 25565 {
+                "127.0.0.1".into()
+            } else {
+                format!("127.0.0.1:{}", server.port)
+            };
+
+            json!({"state": "guest-ok", "index": index, "url": url, "profile_index": sharing_index, "profiles": profiles})
         }
         AppState::Exception { kind, .. } => json!({
             "state": "exception",

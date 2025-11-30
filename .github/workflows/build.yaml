@@ -70,32 +70,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: ubuntu-24.04
-            os: linux
-            arch: x86_64
-            target: x86_64-unknown-linux-musl
-          - runs-on: ubuntu-24.04-arm
-            os: linux
-            arch: arm64
-            target: aarch64-unknown-linux-musl
-          - runs-on: ubuntu-24.04
-            os: linux
-            arch: riscv64
-            target: riscv64gc-unknown-linux-gnu
-            glibc-version: 2.27
-          - runs-on: ubuntu-24.04
-            os: linux
-            arch: loongarch64
-            target: loongarch64-unknown-linux-gnu
-          - runs-on: ubuntu-24.04
-            os: freebsd
-            arch: x86_64
-            target: x86_64-unknown-freebsd
-          - runs-on: ubuntu-24.04
-            os: android
-            arch: arm64v8a
-            target: aarch64-linux-android
-    runs-on: ${{ matrix.runs-on }}
+          - { os: linux,   arch: x86_64,      target: x86_64-unknown-linux-musl }
+          - { os: linux,   arch: arm64,       target: aarch64-unknown-linux-musl,  runs-on: ubuntu-24.04-arm }
+          - { os: linux,   arch: riscv64,     target: riscv64gc-unknown-linux-gnu, glibc-version: 2.27 }
+          - { os: linux,   arch: loongarch64, target: loongarch64-unknown-linux-gnu }
+          - { os: freebsd, arch: x86_64,      target: x86_64-unknown-freebsd }
+          - { os: android, arch: armv7      , target: armv7-linux-androideabi }
+          - { os: android, arch: arm64v8a,    target: aarch64-linux-android }
+          - { os: android, arch: x86,         target: i686-linux-android }
+          - { os: android, arch: x86_64,      target: x86_64-linux-android }
+    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
@@ -287,7 +271,10 @@ jobs:
             "terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
             "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
+            "terracotta-${TERRACOTTA_VERSION}-android-armv7.so"
             "terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so"
+            "terracotta-${TERRACOTTA_VERSION}-android-x86.so"
+            "terracotta-${TERRACOTTA_VERSION}-android-x86_64.so"
           )
           
           file=$(mktemp -t XXXXXX.zip)

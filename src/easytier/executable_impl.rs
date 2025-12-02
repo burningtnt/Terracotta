@@ -15,6 +15,7 @@ use std::{
     thread,
     time::Duration,
 };
+use crate::easytier::EasyTierMember;
 
 static EASYTIER_ARCHIVE: (&str, &str, &[u8]) = (
     include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")),
@@ -23,21 +24,24 @@ static EASYTIER_ARCHIVE: (&str, &str, &[u8]) = (
 );
 
 lazy_static::lazy_static! {
-    pub static ref FACTORY: EasytierFactory = create();
+    static ref FACTORY: EasytierFactory = create_factory();
 }
 
-pub struct EasytierFactory {
+struct EasytierFactory {
     exe: PathBuf,
     cli: PathBuf,
 }
 
-pub struct Easytier {
-    process: Arc<Mutex<Child>>,
-    rpc: u16,
-    cli: PathBuf,
+pub fn initialize() {
+    lazy_static::initialize(&FACTORY);
 }
 
-fn create() -> EasytierFactory {
+pub struct EasyTier {
+    process: Arc<Mutex<Child>>,
+    rpc: u16,
+}
+
+fn create_factory() -> EasytierFactory {
     let _ = fs::create_dir_all(&*EASYTIER_DIR);
 
     logging!(
@@ -67,137 +71,124 @@ fn create() -> EasytierFactory {
     EasytierFactory { exe, cli }
 }
 
-impl Drop for EasytierFactory {
-    fn drop(&mut self) {
-        self.remove();
-    }
-}
+pub fn create(args: Vec<Argument>) -> EasyTier {
+    let args = {
+        let mut built: Vec<OsString> = Vec::with_capacity((args.len() as f32 * 1.5).floor() as usize);
 
-impl EasytierFactory {
-    pub fn create(&self, args: Vec<Argument>) -> Easytier {
-        let args = {
-            let mut built: Vec<OsString> = Vec::with_capacity((args.len() as f32 * 1.5).floor() as usize);
-
-            macro_rules! push {
+        macro_rules! push {
                 ($($item:expr),* $(,)?) => {
                     built.extend_from_slice(&[$($item.into()),*])
                 };
             }
-            for arg in args {
-                match arg {
-                    Argument::NoTun => push!["--no-tun"],
-                    Argument::Compression(method) => push![format!("--compression={}", method)],
-                    Argument::MultiThread => push!["--multi-thread"],
-                    Argument::LatencyFirst => push!["--latency-first"],
-                    Argument::EnableKcpProxy => push!["--enable-kcp-proxy"],
-                    Argument::PublicServer(server) => push!["-p", server.as_ref()],
-                    Argument::NetworkName(name) => push!["--network-name", name.as_ref()],
-                    Argument::NetworkSecret(secret) => push!["--network-secret", secret.as_ref()],
-                    Argument::Listener { address, proto } => push!["-l", format!("{}://{}", proto.name(), address)],
-                    Argument::PortForward(PortForward { local, remote, proto }) => push![
+        for arg in args {
+            match arg {
+                Argument::NoTun => push!["--no-tun"],
+                Argument::Compression(method) => push![format!("--compression={}", method)],
+                Argument::MultiThread => push!["--multi-thread"],
+                Argument::LatencyFirst => push!["--latency-first"],
+                Argument::EnableKcpProxy => push!["--enable-kcp-proxy"],
+                Argument::PublicServer(server) => push!["-p", server.as_ref()],
+                Argument::NetworkName(name) => push!["--network-name", name.as_ref()],
+                Argument::NetworkSecret(secret) => push!["--network-secret", secret.as_ref()],
+                Argument::Listener { address, proto } => push!["-l", format!("{}://{}", proto.name(), address)],
+                Argument::PortForward(PortForward { local, remote, proto }) => push![
                         format!("--port-forward={}://{}/{}", proto.name(), local, remote)
                     ],
-                    Argument::DHCP => push!["-d"],
-                    Argument::HostName(name) => push!["--hostname", name.as_ref()],
-                    Argument::IPv4(address) => push!["--ipv4", address.to_string()],
-                    Argument::TcpWhitelist(port) => push![format!("--tcp-whitelist={}", port)],
-                    Argument::UdpWhitelist(port) => push![format!("--udp-whitelist={}", port)],
-                    Argument::P2POnly => push!["--p2p-only"],
-                }
+                Argument::DHCP => push!["-d"],
+                Argument::HostName(name) => push!["--hostname", name.as_ref()],
+                Argument::IPv4(address) => push!["--ipv4", address.to_string()],
+                Argument::TcpWhitelist(port) => push![format!("--tcp-whitelist={}", port)],
+                Argument::UdpWhitelist(port) => push![format!("--udp-whitelist={}", port)],
+                Argument::P2POnly => push!["--p2p-only"],
             }
-            built
-        };
-
-        fs::metadata(&self.exe).unwrap();
-
-        let rpc = PortRequest::EasyTierRPC.request();
-
-        logging!("Easytier", "Starting easytier: {:?}, rpc={}", args, rpc);
-
-        let mut process = Command::new(self.exe.as_path());
-        process
-            .args(args)
-            .args(["-r", &rpc.to_string()])
-            .current_dir(env::temp_dir())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-
-        #[cfg(target_family = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            process.creation_flags(0x08000000);
         }
+        built
+    };
 
-        let mut process = process.spawn().unwrap();
+    fs::metadata(&FACTORY.exe).unwrap();
 
-        let (sender, receiver) = mpsc::channel::<String>();
-        forward_std(&mut process, move |line| {
-            let _ = sender.send(line);
-        });
+    let rpc = PortRequest::EasyTierRPC.request();
 
-        let process: Arc<Mutex<Child>> = Arc::new(Mutex::new(process));
-        let process2 = process.clone();
+    logging!("Easytier", "Starting easytier: {:?}, rpc={}", args, rpc);
 
-        thread::spawn(move || {
-            const LINES: usize = 500;
+    let mut process = Command::new(FACTORY.exe.as_path());
+    process
+        .args(args)
+        .args(["-r", &rpc.to_string()])
+        .current_dir(env::temp_dir())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
-            let mut buffer: [Option<String>; LINES] = [const { None }; LINES];
-            let mut index = 0;
-
-            let status = 'status: loop {
-                match receiver.recv_timeout(Duration::from_millis(100)) {
-                    Ok(value) => {
-                        buffer[index] = Some(value);
-                        index = (index + 1) % LINES;
-                    }
-                    Err(mpsc::RecvTimeoutError::Timeout) => {}
-                    Err(mpsc::RecvTimeoutError::Disconnected) => {
-                        match process2.lock().try_wait() {
-                            Ok(Some(status)) => break 'status Some(status),
-                            Ok(None) => {
-                                logging!("EasyTier", "Cannot fetch EasyTier process status: EasyTier hasn't exited.");
-                            }
-                            Err(e) => {
-                                logging!("EasyTier", "Cannot fetch EasyTier process status: {:?}", e);
-                            }
-                        }
-                        break 'status None;
-                    }
-                }
-            };
-
-            let mut output = String::from("Easytier has exited. with status ");
-            match status {
-                Some(status) => match status.code() {
-                    Some(code) => write!(output, "code={}, success={}", code, status.success()),
-                    None => write!(output, "code=[unknown], success={}", status.success()),
-                }.unwrap(),
-                None => output.push_str("[unknown]"),
-            }
-            output.push_str(". Here's the logs:\n############################################################");
-            for i in 0..LINES {
-                if let Some(value) = &buffer[(index + 1 + i) % LINES] {
-                    output.push_str("\n    ");
-                    output.push_str(value);
-                }
-            }
-            output.push_str("\n############################################################");
-
-            logging!("Easytier", "{}", output);
-        });
-
-        Easytier {
-            process,
-            rpc,
-            cli: self.cli.clone(),
-        }
+    #[cfg(target_family = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        process.creation_flags(0x08000000);
     }
 
-    pub fn remove(&self) {
-        let dir = self.exe.parent();
-        if let Some(dir) = dir {
-            let _ = fs::remove_dir_all(dir);
+    let mut process = process.spawn().unwrap();
+
+    let (sender, receiver) = mpsc::channel::<String>();
+    forward_std(&mut process, move |line| {
+        let _ = sender.send(line);
+    });
+
+    let process: Arc<Mutex<Child>> = Arc::new(Mutex::new(process));
+    let process2 = process.clone();
+
+    thread::spawn(move || {
+        const LINES: usize = 500;
+
+        let mut buffer: [Option<String>; LINES] = [const { None }; LINES];
+        let mut index = 0;
+
+        let status = 'status: loop {
+            match receiver.recv_timeout(Duration::from_millis(100)) {
+                Ok(value) => {
+                    buffer[index] = Some(value);
+                    index = (index + 1) % LINES;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    match process2.lock().try_wait() {
+                        Ok(Some(status)) => break 'status Some(status),
+                        Ok(None) => {
+                            logging!("EasyTier", "Cannot fetch EasyTier process status: EasyTier hasn't exited.");
+                        }
+                        Err(e) => {
+                            logging!("EasyTier", "Cannot fetch EasyTier process status: {:?}", e);
+                        }
+                    }
+                    break 'status None;
+                }
+            }
+        };
+
+        let mut output = String::from("Easytier has exited. with status ");
+        match status {
+            Some(status) => match status.code() {
+                Some(code) => write!(output, "code={}, success={}", code, status.success()),
+                None => write!(output, "code=[unknown], success={}", status.success()),
+            }.unwrap(),
+            None => output.push_str("[unknown]"),
         }
+        output.push_str(". Here's the logs:\n############################################################");
+        for i in 0..LINES {
+            if let Some(value) = &buffer[(index + 1 + i) % LINES] {
+                output.push_str("\n    ");
+                output.push_str(value);
+            }
+        }
+        output.push_str("\n############################################################");
+
+        logging!("Easytier", "{}", output);
+    });
+
+    EasyTier { process, rpc }
+}
+
+pub fn cleanup() {
+    if let Some(dir) = FACTORY.exe.parent() {
+        let _ = fs::remove_dir_all(dir);
     }
 }
 
@@ -224,40 +215,35 @@ where
     });
 }
 
-impl Easytier {
-    pub fn is_alive(&mut self) -> bool {
-        if let Ok(value) = self.process.lock().try_wait() {
-            !value.is_some()
-        } else {
-            false
-        }
+impl EasyTier {
+    pub fn is_alive(&self) -> bool {
+        matches!(self.process.lock().try_wait(), Ok(None))
     }
 
-    pub fn get_players(&mut self) -> Option<Vec<(String, Ipv4Addr)>> {
+    pub fn get_players(&self) -> Option<Vec<EasyTierMember>> {
         let object: serde_json::Value = serde_json::from_str(std::str::from_utf8(
             &self.start_cli()
                 .args(["-p", &format!("127.0.0.1:{}", self.rpc), "-o", "json", "peer"])
                 .output().ok()?.stdout
         ).ok()?).ok()?;
 
-        let mut players: Vec<(String, Ipv4Addr)> = vec![];
+        let mut players: Vec<EasyTierMember> = vec![];
         for item in object.as_array()? {
-            let host = item.as_object()?.get("hostname")?.as_str()?.to_string();
-            if let Ok(ip) = Ipv4Addr::from_str(item.as_object()?.get("ipv4")?.as_str()?) {
-                players.push((host, ip));
-            }
+            let hostname = item.as_object()?.get("hostname")?.as_str()?.to_string();
+            let Ok(address) = Ipv4Addr::from_str(item.as_object()?.get("ipv4")?.as_str()?) else {
+                continue;
+            };
+
+            players.push(EasyTierMember { hostname, address });
         }
         Some(players)
     }
 
-    pub fn add_port_forward(
-        &mut self,
-        forwards: &[PortForward],
-    ) -> bool {
+    pub fn add_port_forward(&mut self, forwards: &[PortForward]) -> bool {
         let mut processes: Vec<(&PortForward, Option<Child>)> = forwards.iter().map(|forward| (forward, None)).collect();
 
         for time in 0..3 {
-            for (PortForward { local, remote, proto}, process_holder) in processes.iter_mut() {
+            for (PortForward { local, remote, proto }, process_holder) in processes.iter_mut() {
                 let mut process = match self.start_cli().args([
                     "-p", &format!("127.0.0.1:{}", self.rpc), "port-forward", "add",
                     proto.name(), &local.to_string(), &remote.to_string(),
@@ -290,7 +276,7 @@ impl Easytier {
 
         if !processes.is_empty() {
             let mut msg = "Cannot adding port-forward rules: ".to_string();
-            for (i, (PortForward { local, remote, proto}, _)) in processes.iter().enumerate() {
+            for (i, (PortForward { local, remote, proto }, _)) in processes.iter().enumerate() {
                 write!(&mut msg, "{} -> {} ({})", local, remote, proto.name()).unwrap();
                 if i != processes.len() - 1 {
                     msg.push_str(", ");
@@ -302,8 +288,8 @@ impl Easytier {
         true
     }
 
-    fn start_cli(&mut self) -> Command {
-        let mut command = Command::new(self.cli.as_path());
+    fn start_cli(&self) -> Command {
+        let mut command = Command::new(FACTORY.cli.as_path());
         command.current_dir(env::temp_dir())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -316,7 +302,7 @@ impl Easytier {
     }
 }
 
-impl Drop for Easytier {
+impl Drop for EasyTier {
     fn drop(&mut self) {
         logging!("EasyTier", "Killing EasyTier.");
         let _ = self.process.lock().kill();

@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use crate::easytier::Easytier;
+use crate::easytier::EasyTier;
 use crate::mc::fakeserver::FakeServer;
 use crate::mc::scanning::MinecraftScanner;
 use std::mem;
@@ -22,7 +22,7 @@ pub enum AppState {
     HostOk {
         room: Room,
         port: u16,
-        easytier: Easytier,
+        easytier: EasyTier,
         profiles: Vec<(SystemTime, Profile)>,
     },
 
@@ -31,11 +31,11 @@ pub enum AppState {
     },
     GuestStarting {
         room: Room,
-        easytier: Easytier,
+        easytier: EasyTier,
     },
     GuestOk {
         room: Room,
-        easytier: Easytier,
+        easytier: EasyTier,
         server: FakeServer,
 
         profiles: Vec<Profile>,

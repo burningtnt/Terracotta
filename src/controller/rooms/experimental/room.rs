@@ -18,6 +18,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::thread;
+use crate::easytier::EasyTierMember;
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 
@@ -146,7 +147,7 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     args.push(Argument::TcpWhitelist(port));
     args.push(Argument::UdpWhitelist(port));
 
-    let easytier = easytier::FACTORY.create(args);
+    let easytier = easytier::create(args);
     let capture = {
         let Some(state) = capture.try_capture() else {
             return;
@@ -219,7 +220,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
     args.push(Argument::DHCP);
     args.push(Argument::TcpWhitelist(0));
     args.push(Argument::UdpWhitelist(0));
-    let easytier = easytier::FACTORY.create(args);
+    let easytier = easytier::create(args);
     let capture = {
         let Some(state) = capture.try_capture() else {
             return;
@@ -247,15 +248,15 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             let Some(players) = easytier.get_players() else {
                 continue;
             };
-            for (hostname, ip) in players {
+            for EasyTierMember { hostname, address } in players {
                 if hostname.starts_with("scaffolding-mc-server-") && let Ok(port) = u16::from_str(&hostname["scaffolding-mc-server-".len()..]) {
-                    logging!("RoomExperiment", "Scaffolding Server is at {}:{}", ip, port);
+                    logging!("RoomExperiment", "Scaffolding Server is at {}:{}", address, port);
 
                     let local_port = PortRequest::Scaffolding.request();
 
                     if !easytier.add_port_forward(&[PortForward {
                         local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
-                        remote: SocketAddrV4::new(ip, port).into(),
+                        remote: SocketAddrV4::new(address, port).into(),
                         proto: Proto::TCP,
                     }]) {
                         logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for Scaffolding Connection.", local_port, port);
@@ -263,7 +264,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                         return;
                     };
 
-                    break 'local_port (local_port, ip);
+                    break 'local_port (local_port, address);
                 }
             }
         }
@@ -303,10 +304,10 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                 }
             }
 
-            let Some(mut state) = capture.try_capture() else {
+            let Some(state) = capture.try_capture() else {
                 return;
             };
-            let AppState::GuestStarting { easytier, .. } = state.as_mut_ref() else {
+            let AppState::GuestStarting { easytier, .. } = state.as_ref() else {
                 unreachable!();
             };
             if !easytier.is_alive() {

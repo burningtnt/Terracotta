@@ -109,9 +109,9 @@ fn parse_segment(chars: &[char]) -> Option<Room> {
 }
 
 fn check_easytier() -> bool {
-    let mut state = AppState::acquire();
+    let state = AppState::acquire();
     if let AppState::GuestStarting { easytier, .. }
-    | AppState::GuestOk { easytier, .. } = state.as_mut_ref() && !easytier.is_alive()
+    | AppState::GuestOk { easytier, .. } = state.as_ref() && !easytier.is_alive()
     {
         logging!("Legacy Room", "EasyTier has crashed.");
         state.set(AppState::Exception {
@@ -212,7 +212,7 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
     }));
 
     let capture = {
-        let easytier = easytier::FACTORY.create(args);
+        let easytier = easytier::create(args);
 
         let Some(state) = capture.try_capture() else {
             return;

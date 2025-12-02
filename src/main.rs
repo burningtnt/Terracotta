@@ -4,6 +4,15 @@
     feature(panic_update_hook, internal_output_capture)
 )]
 #![feature(panic_backtrace_config, const_convert, const_trait_impl)]
+#![feature(unsafe_cell_access)]
+
+#[cfg(not(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "freebsd"
+)))]
+compile_error!("Terracotta Executable is intended for Windows, Linux, macos and FreeBSD.");
 
 #[macro_export]
 macro_rules! logging {

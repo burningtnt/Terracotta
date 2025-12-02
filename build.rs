@@ -11,14 +11,13 @@ use std::{
 fn main() {
     println!("cargo::rerun-if-changed=Cargo.toml");
 
-    println!("cargo::rerun-if-changed=.easytier");
     download_easytier();
 
     sevenz_rust2::compress_to_path(
         "web",
         Path::new(&get_var("OUT_DIR").unwrap()).join("webstatics.7z"),
     )
-        .unwrap();
+    .unwrap();
     println!("cargo::rerun-if-changed=web");
 
     let desc = get_var("TARGET").unwrap().replace('-', "_").to_uppercase();
@@ -84,6 +83,7 @@ fn download_easytier() {
 
         input.get("version").unwrap().as_str().unwrap().to_string()
     };
+    println!("cargo::rustc-env=TERRACOTTA_ET_VERSION={}", version);
 
     let target_os = get_var("CARGO_CFG_TARGET_OS").unwrap();
     let target_arch = get_var("CARGO_CFG_TARGET_ARCH").unwrap();
@@ -181,8 +181,14 @@ fn download_easytier() {
             cli: "easytier-cli",
             desc: "freebsd-x86_64",
         },
-        _ => panic!("Cannot compile Terracotta on {}-{}: Cannot find valid EasyTier binary.", target_os, target_arch)
+        ("android", "arm") | ("android", "aarch64") | ("android", "x86") | ("android", "x86_64") => return,
+        _ => panic!(
+            "Cannot compile Terracotta on {}-{}: Cannot find valid EasyTier binary.",
+            target_os, target_arch
+        ),
     };
+
+    println!("cargo::rerun-if-changed=.easytier");
 
     let base = Path::new(&get_var("CARGO_MANIFEST_DIR").unwrap())
         .join(".easytier")
@@ -203,7 +209,6 @@ fn download_easytier() {
         "cargo::rustc-env=TERRACOTTA_ET_ARCHIVE={}",
         entry_archive.as_path().to_str().unwrap()
     );
-    println!("cargo::rustc-env=TERRACOTTA_ET_VERSION={}", version);
 
     if fs::metadata(entry_conf.clone()).is_ok() {
         return;

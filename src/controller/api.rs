@@ -49,7 +49,7 @@ pub fn get_state() -> Value {
             json!({"state": "guest-connecting", "index": index, "room": room.code})
         }
         AppState::GuestStarting { room, difficulty, .. } => {
-            json!({"state": "guest-starting", "index": index, "room": room.code, "diffculty": match difficulty {
+            json!({"state": "guest-starting", "index": index, "room": room.code, "difficulty": match difficulty {
                 ConnectionDifficulty::Unknown => "UNKNOWN",
                 ConnectionDifficulty::Easiest => "EASIEST",
                 ConnectionDifficulty::Simple => "SIMPLE",

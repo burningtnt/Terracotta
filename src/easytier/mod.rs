@@ -1,6 +1,8 @@
-use std::net::Ipv4Addr;
+use crate::controller::ConnectionDifficulty;
 use crate::easytier::argument::{Argument, PortForward};
 use cfg_if::cfg_if;
+use std::cmp::PartialEq;
+use std::net::Ipv4Addr;
 
 pub mod argument;
 pub mod publics;
@@ -14,9 +16,42 @@ cfg_if! {
 
 pub struct EasyTier(inner::EasyTier);
 
+#[derive(Debug)]
 pub struct EasyTierMember {
     pub hostname: String,
-    pub address: Ipv4Addr
+    pub address: Option<Ipv4Addr>,
+    pub is_local: bool,
+    pub nat: NatType,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum NatType {
+    Unknown,
+    OpenInternet,
+    NoPAT,
+    FullCone,
+    Restricted,
+    PortRestricted,
+    Symmetric,
+    SymmetricUdpWall,
+    SymmetricEasyIncrease,
+    SymmetricEasyDecrease,
+}
+
+pub fn calc_conn_difficulty(left: &NatType, right: &NatType) -> ConnectionDifficulty {
+    let is = |types: &[NatType]| -> bool {
+        types.contains(left) || types.contains(right)
+    };
+
+    if is(&[NatType::OpenInternet]) {
+        ConnectionDifficulty::Easiest
+    } else if is(&[NatType::NoPAT,NatType::FullCone]) {
+        ConnectionDifficulty::Simple
+    } else if is(&[NatType::Restricted, NatType::PortRestricted]) {
+        ConnectionDifficulty::Medium
+    } else {
+        ConnectionDifficulty::Tough
+    }
 }
 
 pub fn create(args: Vec<Argument>) -> EasyTier {

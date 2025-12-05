@@ -20,6 +20,11 @@ pub(crate) enum RoomKind {
     PCL2CE { mc_port: u16 },
 }
 
+#[derive(Debug)]
+pub enum ConnectionDifficulty {
+    Unknown, Easiest, Simple, Medium, Tough
+}
+
 impl Room {
     pub fn create() -> Room {
         experimental::create_room()

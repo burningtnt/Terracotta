@@ -15,7 +15,7 @@ use std::{
     thread,
     time::Duration,
 };
-use crate::easytier::EasyTierMember;
+use crate::easytier::{EasyTierMember, NatType};
 
 static EASYTIER_ARCHIVE: (&str, &str, &[u8]) = (
     include_str!(env!("TERRACOTTA_ET_ENTRY_CONF")),
@@ -230,11 +230,26 @@ impl EasyTier {
         let mut players: Vec<EasyTierMember> = vec![];
         for item in object.as_array()? {
             let hostname = item.as_object()?.get("hostname")?.as_str()?.to_string();
-            let Ok(address) = Ipv4Addr::from_str(item.as_object()?.get("ipv4")?.as_str()?) else {
-                continue;
+            let address = Ipv4Addr::from_str(item.as_object()?.get("ipv4")?.as_str()?).ok();
+            let is_local = item.as_object()?.get("cost")?.as_str()? == "Local";
+            let nat = match item.as_object()?.get("nat_type")?.as_str()? {
+                "Unknown" => NatType::Unknown,
+                "OpenInternet" => NatType::OpenInternet,
+                "NoPat" => NatType::NoPAT ,
+                "FullCone" => NatType::FullCone,
+                "Restricted" => NatType::Restricted,
+                "PortRestricted" => NatType::PortRestricted,
+                "Symmetric" => NatType::Symmetric,
+                "SymUdpFirewall" => NatType::SymmetricUdpWall,
+                "SymmetricEasyInc" => NatType::SymmetricEasyIncrease,
+                "SymmetricEasyDec" => NatType::SymmetricEasyDecrease,
+                #[cfg(debug_assertions)]
+                nat => panic!("Unknown NAT type: {}", nat),
+                #[cfg(not(debug_assertions))]
+                _ => return None,
             };
 
-            players.push(EasyTierMember { hostname, address });
+            players.push(EasyTierMember { hostname, address, is_local, nat });
         }
         Some(players)
     }

@@ -6,7 +6,7 @@ use std::mem;
 use std::panic::Location;
 use std::time::{Duration, SystemTime};
 use parking_lot::{Mutex, MutexGuard};
-use crate::controller::Room;
+use crate::controller::{ConnectionDifficulty, Room};
 use crate::scaffolding::profile::Profile;
 
 pub enum AppState {
@@ -32,6 +32,7 @@ pub enum AppState {
     GuestStarting {
         room: Room,
         easytier: EasyTier,
+        difficulty: ConnectionDifficulty
     },
     GuestOk {
         room: Room,
@@ -61,8 +62,8 @@ impl Debug for AppState {
             AppState::GuestConnecting { room } => {
                 write!(f, "AppState::GuestConnecting {{ code: {:?} }}", room.code)
             }
-            AppState::GuestStarting { room, .. } => {
-                write!(f, "AppState::GuestStarting {{ code: {:?}, easytier: .. }}", room.code)
+            AppState::GuestStarting { room, difficulty, .. } => {
+                write!(f, "AppState::GuestStarting {{ code: {:?}, difficulty: {:?}, easytier: .. }}", room.code, difficulty)
             }
             AppState::GuestOk { room, server, profiles, .. } => {
                 write!(

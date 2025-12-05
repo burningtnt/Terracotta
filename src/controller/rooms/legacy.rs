@@ -1,5 +1,5 @@
 use crate::controller::states::{AppState, AppStateCapture};
-use crate::controller::{ExceptionType, Room, RoomKind};
+use crate::controller::{ConnectionDifficulty, ExceptionType, Room, RoomKind};
 use crate::easytier;
 use crate::easytier::argument::{Argument, PortForward, Proto};
 use crate::mc::fakeserver::FakeServer;
@@ -217,7 +217,7 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
         let Some(state) = capture.try_capture() else {
             return;
         };
-        state.set(AppState::GuestStarting { room, easytier })
+        state.set(AppState::GuestStarting { room, easytier, difficulty: ConnectionDifficulty::Unknown })
     };
 
     'init_conn: {
@@ -248,7 +248,7 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
         };
 
         state.replace(move |state| match state {
-            AppState::GuestStarting { room, easytier } => AppState::GuestOk {
+            AppState::GuestStarting { room, easytier, .. } => AppState::GuestOk {
                 room,
                 easytier,
                 server,

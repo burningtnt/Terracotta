@@ -2,52 +2,52 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleExecutable</key>
-	<string>terracotta</string>
-	<key>CFBundleIconFile</key>
-	<string>icon-mac.png</string>
-	<key>CFBundleIdentifier</key>
-	<string>net.burningtnt.terracotta</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>Terracotta</string>
-	<key>CFBundleDisplayName</key>
-	<string>Terracotta</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1.0</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.12</string>
-	<key>NSMainNibFile</key>
-	<string>MainMenu</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-	<key>NSAppTransportSecurity</key>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>terracotta</string>
+    <key>CFBundleIconFile</key>
+    <string>icon-mac.png</string>
+    <key>CFBundleIdentifier</key>
+    <string>net.burningtnt.terracotta</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Terracotta</string>
+    <key>CFBundleDisplayName</key>
+    <string>Terracotta</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.12</string>
+    <key>NSMainNibFile</key>
+    <string>MainMenu</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Allow Terracotta to scan Minecraft LAN Worlds.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_terracotta._udp</string>
-	</array>
-	<key>CFBundleGetInfoString</key>
-	<string>1.0</string>
-	<key>CFBundleSignature</key>
-	<string>Terracotta</string>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.utilities</string>
-	<key>CFBundleSupportedPlatforms</key>
-	<array>
-		<string>MacOSX</string>
-	</array>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Allow Terracotta to scan Minecraft LAN Worlds.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_terracotta._udp</string>
+    </array>
+    <key>CFBundleGetInfoString</key>
+    <string>1.0</string>
+    <key>CFBundleSignature</key>
+    <string>Terracotta</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
 </dict>
 </plist>

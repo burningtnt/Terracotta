@@ -1,7 +1,7 @@
 use crate::controller::experimental::{MACHINE_ID, VENDOR};
 use crate::controller::rooms::legacy;
 use crate::controller::states::{AppState, AppStateCapture};
-use crate::controller::{ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
+use crate::controller::{ConnectionDifficulty, ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
 use crate::easytier::argument::{Argument, PortForward, Proto};
 use crate::easytier::publics::{fetch_public_nodes, PublicServers};
@@ -226,7 +226,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             return;
         };
 
-        state.set(AppState::GuestStarting { room, easytier })
+        state.set(AppState::GuestStarting { room, easytier, difficulty: ConnectionDifficulty::Unknown })
     };
 
     let (scaffolding_port, host_ip) = 'local_port: {
@@ -237,7 +237,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
                 return;
             };
             let mut state = state.into_slow();
-            let AppState::GuestStarting { easytier, .. } = state.as_mut_ref() else {
+            let AppState::GuestStarting { easytier, difficulty, .. } = state.as_mut_ref() else {
                 unreachable!();
             };
             if !easytier.is_alive() {
@@ -248,25 +248,46 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             let Some(players) = easytier.get_players() else {
                 continue;
             };
-            for EasyTierMember { hostname, address } in players {
-                if hostname.starts_with("scaffolding-mc-server-") && let Ok(port) = u16::from_str(&hostname["scaffolding-mc-server-".len()..]) {
-                    logging!("RoomExperiment", "Scaffolding Server is at {}:{}", address, port);
 
-                    let local_port = PortRequest::Scaffolding.request();
-
-                    if !easytier.add_port_forward(&[PortForward {
-                        local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
-                        remote: SocketAddrV4::new(address, port).into(),
-                        proto: Proto::TCP,
-                    }]) {
-                        logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for Scaffolding Connection.", local_port, port);
-                        state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });
-                        return;
-                    };
-
-                    break 'local_port (local_port, address);
+            let Some(local_nat) = players.iter().find_map(|EasyTierMember { is_local, nat, ..}| {
+                if *is_local {
+                    Some(nat)
+                } else {
+                    None
                 }
-            }
+            }) else {
+                continue;
+            };
+
+            let Some((server_address, server_port, server_nat)) = players.iter().find_map(|
+                EasyTierMember { hostname, address, is_local, nat, .. }
+            | {
+                static PREFIX: &str = "scaffolding-mc-server-";
+
+                if let Some(address) = address && !is_local && hostname.starts_with(PREFIX) && let Ok(port) = u16::from_str(&hostname[PREFIX.len()..]) {
+                    Some((address, port, nat))
+                } else {
+                    None
+                }
+            }) else {
+                continue;
+            };
+
+            logging!("RoomExperiment", "Scaffolding Server is at {}:{}", server_address, server_port);
+            let local_port = PortRequest::Scaffolding.request();
+            if !easytier.add_port_forward(&[PortForward {
+                local: SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, local_port).into(),
+                remote: SocketAddrV4::new(*server_address, server_port).into(),
+                proto: Proto::TCP,
+            }]) {
+                logging!("RoomExperiment", "Cannot create a port-forward {} -> {} for Scaffolding Connection.", local_port, server_port);
+                state.set(AppState::Exception { kind: ExceptionType::GuestEasytierCrash });
+                return;
+            };
+
+            *difficulty = easytier::calc_conn_difficulty(local_nat, server_nat);
+            logging!("RoomExperiment", "Current NAT status: {:?} -> {:?}, difficulty = {:?}", local_nat, server_nat, difficulty);
+            break 'local_port (local_port, *server_address);
         }
 
         logging!("RoomExperiment", "Cannot find scaffolding server.");
@@ -401,7 +422,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
             return;
         };
         state.replace(|state| {
-            let AppState::GuestStarting { room, easytier } = state else {
+            let AppState::GuestStarting { room, easytier, .. } = state else {
                 unreachable!();
             };
 

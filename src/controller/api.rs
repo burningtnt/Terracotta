@@ -1,6 +1,6 @@
 use std::sync::mpsc;
 use crate::controller::states::AppState;
-use crate::controller::{experimental, ExceptionType, Room};
+use crate::controller::{experimental, ConnectionDifficulty, ExceptionType, Room};
 use crate::scaffolding::profile::Profile;
 use crate::mc::scanning::MinecraftScanner;
 use crate::MOTD;
@@ -48,8 +48,14 @@ pub fn get_state() -> Value {
         AppState::GuestConnecting { room, .. } => {
             json!({"state": "guest-connecting", "index": index, "room": room.code})
         }
-        AppState::GuestStarting { room, .. } => {
-            json!({"state": "guest-starting", "index": index, "room": room.code})
+        AppState::GuestStarting { room, difficulty, .. } => {
+            json!({"state": "guest-starting", "index": index, "room": room.code, "difficulty": match difficulty {
+                ConnectionDifficulty::Unknown => "UNKNOWN",
+                ConnectionDifficulty::Easiest => "EASIEST",
+                ConnectionDifficulty::Simple => "SIMPLE",
+                ConnectionDifficulty::Medium => "MEDIUM",
+                ConnectionDifficulty::Tough => "TOUGH",
+            }})
         }
         AppState::GuestOk { server, profiles, .. } => {
             let url = if server.port == 25565 {

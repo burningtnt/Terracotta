@@ -140,7 +140,7 @@ jobs:
           version: '13.2'
           shell: bash
           run: |
-            sudo pkg install -y llvm-devel curl
+            sudo pkg install -y llvm-devel curl ca_root_nss
             curl --proto 'https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             export CC=clang
             export CXX=clang++

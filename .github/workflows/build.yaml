@@ -133,7 +133,7 @@ jobs:
           cargo +nightly zigbuild --release --target "${{ matrix.target }}.${{ matrix.glibc-version }}"
       - name: Build (freebsd x86_64)
         if: ${{ contains(fromJSON('["x86_64"]'), matrix.arch) && matrix.os == 'freebsd' }}
-        uses: cross-platform-actions/action@v0.29.0
+        uses: cross-platform-actions/action@v0.30.0
         with:
           operating_system: freebsd
           architecture: ${{ matrix.arch }}

@@ -2,11 +2,11 @@ use crate::controller::states::AppState;
 use crate::scaffolding::profile::{ProfileKind, ProfileSnapshot};
 use crate::scaffolding::server::Handlers;
 use crate::scaffolding::PacketResponse;
+use serde::ser::SerializeSeq;
+use serde::Serializer as _;
 use serde_json::{json, Serializer, Value};
 use std::io;
 use std::time::SystemTime;
-use serde::ser::SerializeSeq;
-use serde::Serializer as _;
 
 fn parse<F, R>(f: F) -> io::Result<R>
 where
@@ -15,13 +15,26 @@ where
     f().ok_or(io::Error::from(io::ErrorKind::InvalidInput))
 }
 
-pub static HANDLERS: Handlers = &[
-    ("c", "ping", |request: &[u8], mut response: Vec<u8>| -> io::Result<PacketResponse> {
-        response.extend_from_slice(request);
+macro_rules! define_handle {
+    ($namespace:ident : $path:ident [ $request:ident => $response:ident ] $($tokens:tt)* ) => {
+        (
+            ::core::stringify!($namespace),
+            ::core::stringify!($path),
+            #[allow(unused_variables, unused_mut)]
+            |$request: &[u8], mut $response: Vec<u8>| -> ::std::io::Result<crate::scaffolding::PacketResponse> {
+                $($tokens)*
 
-        PacketResponse::ok(response)
-    }),
-    ("c", "protocols", |_: &[u8], mut response: Vec<u8>| -> io::Result<PacketResponse> {
+                crate::scaffolding::PacketResponse::ok($response)
+            }
+        )
+    };
+}
+
+pub static HANDLERS: Handlers = &[
+    define_handle! { c:ping[request => response]
+        response.extend_from_slice(request);
+    },
+    define_handle! { c:protocols[request => response]
         for (i, handler) in HANDLERS.iter().enumerate() {
             response.extend_from_slice(handler.0.as_bytes());
             response.push(b':');
@@ -31,10 +44,8 @@ pub static HANDLERS: Handlers = &[
                 response.push(b'\0');
             }
         }
-
-        PacketResponse::ok(response)
-    }),
-    ("c", "server_port", |_: &[u8], mut response: Vec<u8>| -> io::Result<PacketResponse> {
+    },
+    define_handle! { c:server_port[request => response]
         if let Some(port) = {
             let state = AppState::acquire();
             match state.as_ref() {
@@ -43,12 +54,11 @@ pub static HANDLERS: Handlers = &[
             }
         } {
             response.extend_from_slice(&port.to_be_bytes());
-            PacketResponse::ok(response)
         } else {
-            PacketResponse::fail(32, response)
+            return PacketResponse::fail(32, response);
         }
-    }),
-    ("c", "player_ping", |request: &[u8], response: Vec<u8>| -> io::Result<PacketResponse> {
+    },
+    define_handle! { c:player_ping[request => response]
         let value: Value = serde_json::from_str(&String::from_utf8_lossy(request))?;
 
         let name = parse(|| value.as_object()?.get("name")?.as_str())?;
@@ -79,10 +89,8 @@ pub static HANDLERS: Handlers = &[
                 container.increase_shared();
             }
         }
-
-        PacketResponse::ok(response)
-    }),
-    ("c", "player_profiles_list", |_: &[u8], mut response: Vec<u8>| -> io::Result<PacketResponse> {
+    },
+    define_handle! { c:player_profiles_list[request => response]
         let mut value = Serializer::new(&mut response);
 
         let container = AppState::acquire();
@@ -104,7 +112,5 @@ pub static HANDLERS: Handlers = &[
             }))?;
         }
         sequence.end()?;
-
-        PacketResponse::ok(response)
-    }),
+    },
 ];

@@ -2,6 +2,7 @@ use std::net::{Ipv4Addr, TcpListener};
 
 #[repr(u8)]
 pub enum PortRequest {
+    #[allow(dead_code)]
     EasyTierRPC,
     Scaffolding,
     Minecraft

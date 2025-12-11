@@ -44,9 +44,7 @@
     <key>CFBundleSignature</key>
     <string>Terracotta</string>
     <key>LSApplicationCategoryType</key>
-    <string>public.app-category.games</string>
-    <key>GCSupportsGameMode</key>
-    <true/>
+    <string>public.app-category.utilities</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>

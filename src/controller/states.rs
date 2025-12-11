@@ -1,12 +1,12 @@
 use std::fmt::{Debug, Formatter};
-use crate::easytier::Easytier;
+use crate::easytier::EasyTier;
 use crate::mc::fakeserver::FakeServer;
 use crate::mc::scanning::MinecraftScanner;
 use std::mem;
 use std::panic::Location;
 use std::time::{Duration, SystemTime};
 use parking_lot::{Mutex, MutexGuard};
-use crate::controller::Room;
+use crate::controller::{ConnectionDifficulty, Room};
 use crate::scaffolding::profile::Profile;
 
 pub enum AppState {
@@ -22,7 +22,7 @@ pub enum AppState {
     HostOk {
         room: Room,
         port: u16,
-        easytier: Easytier,
+        easytier: EasyTier,
         profiles: Vec<(SystemTime, Profile)>,
     },
 
@@ -31,11 +31,12 @@ pub enum AppState {
     },
     GuestStarting {
         room: Room,
-        easytier: Easytier,
+        easytier: EasyTier,
+        difficulty: ConnectionDifficulty
     },
     GuestOk {
         room: Room,
-        easytier: Easytier,
+        easytier: EasyTier,
         server: FakeServer,
 
         profiles: Vec<Profile>,
@@ -61,8 +62,8 @@ impl Debug for AppState {
             AppState::GuestConnecting { room } => {
                 write!(f, "AppState::GuestConnecting {{ code: {:?} }}", room.code)
             }
-            AppState::GuestStarting { room, .. } => {
-                write!(f, "AppState::GuestStarting {{ code: {:?}, easytier: .. }}", room.code)
+            AppState::GuestStarting { room, difficulty, .. } => {
+                write!(f, "AppState::GuestStarting {{ code: {:?}, difficulty: {:?}, easytier: .. }}", room.code, difficulty)
             }
             AppState::GuestOk { room, server, profiles, .. } => {
                 write!(

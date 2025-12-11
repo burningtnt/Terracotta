@@ -1,5 +1,5 @@
 use crate::controller::states::{AppState, AppStateCapture};
-use crate::controller::{ExceptionType, Room, RoomKind};
+use crate::controller::{ConnectionDifficulty, ExceptionType, Room, RoomKind};
 use crate::easytier;
 use crate::easytier::argument::{Argument, PortForward, Proto};
 use crate::mc::fakeserver::FakeServer;
@@ -109,9 +109,9 @@ fn parse_segment(chars: &[char]) -> Option<Room> {
 }
 
 fn check_easytier() -> bool {
-    let mut state = AppState::acquire();
+    let state = AppState::acquire();
     if let AppState::GuestStarting { easytier, .. }
-    | AppState::GuestOk { easytier, .. } = state.as_mut_ref() && !easytier.is_alive()
+    | AppState::GuestOk { easytier, .. } = state.as_ref() && !easytier.is_alive()
     {
         logging!("Legacy Room", "EasyTier has crashed.");
         state.set(AppState::Exception {
@@ -212,12 +212,12 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
     }));
 
     let capture = {
-        let easytier = easytier::FACTORY.create(args);
+        let easytier = easytier::create(args);
 
         let Some(state) = capture.try_capture() else {
             return;
         };
-        state.set(AppState::GuestStarting { room, easytier })
+        state.set(AppState::GuestStarting { room, easytier, difficulty: ConnectionDifficulty::Unknown })
     };
 
     'init_conn: {
@@ -248,7 +248,7 @@ pub fn start_guest(room: Room, capture: AppStateCapture) {
         };
 
         state.replace(move |state| match state {
-            AppState::GuestStarting { room, easytier } => AppState::GuestOk {
+            AppState::GuestStarting { room, easytier, .. } => AppState::GuestOk {
                 room,
                 easytier,
                 server,

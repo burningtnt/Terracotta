@@ -242,7 +242,6 @@ extern "system" fn jni_start<'l>(jenv: JNIEnv<'l>, clazz: JClass<'l>, dir: JStri
 
     thread::spawn(|| {
         lazy_static::initialize(&controller::SCAFFOLDING_PORT);
-        lazy_static::initialize(&easytier::FACTORY);
     });
 
     return 0;

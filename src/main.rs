@@ -431,7 +431,7 @@ async fn main_single(state: Option<Lock>, mode: Mode) {
     let future = server::server_main(port_callback);
     thread::spawn(|| {
         lazy_static::initialize(&controller::SCAFFOLDING_PORT);
-        lazy_static::initialize(&easytier::FACTORY);
+        easytier::initialize();
     });
 
     thread::spawn(move || {
@@ -454,7 +454,7 @@ async fn main_single(state: Option<Lock>, mode: Mode) {
     future.await;
     let _ = port_callback2.send(0);
 
-    easytier::FACTORY.remove();
+    easytier::cleanup();
 }
 
 async fn main_secondary(port: u16, mode: Mode) {

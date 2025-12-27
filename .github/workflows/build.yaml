@@ -293,18 +293,25 @@ jobs:
           zip -r - terracotta.7z | gh-actions-artifact-client.js upload -r 90 "terracotta-${TERRACOTTA_VERSION}-all.7z"
           
           if [ ! -z "${{ github.event.inputs.version }}" ]; then
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-x86_64
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-riscv64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-riscv64
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-linux-loongarch64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-loongarch64
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64
+            mkdir -p bundle
           
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
-            tar -czvf terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-x86_64
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-riscv64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-riscv64
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-loongarch64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-loongarch64
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64
           
-            gh release create v"${{ github.event.inputs.version }}" -R "${{ github.repository }}" --draft --generate-notes terracotta-${TERRACOTTA_VERSION}-*-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-android-*.so
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-macos-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-x86_64 terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-macos-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-macos-arm64 terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg
+          
+            cp terracotta-${TERRACOTTA_VERSION}-android-armv7.so bundle/terracotta-${TERRACOTTA_VERSION}-android-armv7.so
+            cp terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so bundle/terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so
+            cp terracotta-${TERRACOTTA_VERSION}-android-x86.so bundle/terracotta-${TERRACOTTA_VERSION}-android-x86.so
+            cp terracotta-${TERRACOTTA_VERSION}-android-x86_64.so bundle/terracotta-${TERRACOTTA_VERSION}-android-x86_64.so
+          
+            gh release create v"${{ github.event.inputs.version }}" -R "${{ github.repository }}" --draft --generate-notes bundle/terracotta-${TERRACOTTA_VERSION}-*
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

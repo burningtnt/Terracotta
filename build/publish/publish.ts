@@ -114,10 +114,6 @@ export async function main({context, octokit, require}) {
             throw new Error(`HTTP error: ${response.status}`);
         }
 
-        if (asset.name.endsWith("-pkg.tar.gz")) {
-            return undefined;
-        }
-
         return {name: asset.name, data: Buffer.from(await response.arrayBuffer())};
     })).then(l => l.filter(e => e));
     console.log(`Gathered ${assets.length} assets`);

@@ -5,7 +5,7 @@ edition = "2024"
 build = "build.rs"
 
 [package.metadata.easytier]
-version = "v2.4.5-terracotta.1"
+version = "v2.5.0-terracotta.1"
 
 [workspace]
 resolver = "3"

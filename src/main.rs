@@ -486,38 +486,30 @@ async fn main_secondary(port: u16, mode: Mode) {
 async fn secondary_switch(port: u16) -> Option<Lock> {
     let client = reqwest::Client::new();
 
-    let Ok(response) = client
-        .get(format!("http://127.0.0.1:{}/meta", port))
-        .send()
-        .await
-    else {
-        return None;
-    };
-    let Ok(body) = response.text().await else {
-        return None;
-    };
+    let body = client
+        .get(format!("http://127.0.0.1:{}/meta", port)).send().await.ok()?
+        .text().await.ok()?;
+    let compile_timestamp = serde_json::from_str::<'_, serde_json::Value>(&body).ok()?
+        .get("compile_timestamp")?.as_str()?.parse::<u128>().ok()?;
 
-    let Ok(value) = serde_json::from_str::<'_, serde_json::Value>(&body) else {
+    if timestamp::compile_time!() <= compile_timestamp {
         return None;
-    };
-    let Some(compile_timestamp) = value.get("compile_timestamp").and_then(|v| v.as_str()) else {
-        return None;
-    };
-
-    if let Ok(running) = compile_timestamp.parse::<u128>() && timestamp::compile_time!() > running
-    {
-        let _ = client.get(format!("http://127.0.0.1:{}/panic?peaceful=true", port)).send().await;
-        thread::sleep(Duration::from_millis(3000));
-        let state = Lock::get_state();
-        return match &state {
-            Lock::Single { .. } => {
-                logging!("UI", "Running in server mode.");
-                Some(state)
-            }
-            Lock::Secondary { .. } | Lock::Unknown => None,
-        };
     }
-    return None;
+
+    let _ = client.get(format!("http://127.0.0.1:{}/panic?peaceful=true", port)).send().await;
+    rocket::tokio::time::sleep(Duration::from_millis(3000)).await;
+
+    let state = Lock::get_state();
+    match &state {
+        Lock::Single { .. } => {
+            logging!("UI", "Took over from legacy Terracotta.");
+            Some(state)
+        }
+        Lock::Secondary { .. } | Lock::Unknown => {
+            logging!("UI", "Failed to take over from legacy Terracotta: global mutex hasn't been released after 3000ms.");
+            None
+        },
+    }
 }
 
 fn output_port(port: u16, file: String) {

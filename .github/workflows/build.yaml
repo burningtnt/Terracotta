@@ -295,8 +295,10 @@ jobs:
           if [ ! -z "${{ github.event.inputs.version }}" ]; then
             mkdir -p bundle
           
-            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe
-            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe
+            curl -L -o VCRUNTIME140.DLL "https://github.com/burningtnt/Terracotta/raw/refs/heads/binaries/windows_x86_64/vcruntime140.dll"
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-windows-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe VCRUNTIME140.DLL
+            curl -L -o VCRUNTIME140.DLL "https://github.com/burningtnt/Terracotta/raw/refs/heads/binaries/windows_arm64/vcruntime140.dll"
+            tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-windows-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe VCRUNTIME140.DLL
             tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-x86_64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-x86_64
             tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-arm64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-arm64
             tar -czvf bundle/terracotta-${TERRACOTTA_VERSION}-linux-riscv64-pkg.tar.gz terracotta-${TERRACOTTA_VERSION}-linux-riscv64

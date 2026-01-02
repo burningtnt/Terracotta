@@ -506,25 +506,16 @@ async fn secondary_switch(port: u16) -> Option<Lock> {
 
     if let Ok(running) = compile_timestamp.parse::<u128>() && timestamp::compile_time!() > running
     {
-        let Ok(response) = client
-            .get(format!("http://127.0.0.1:{}/panic?peaceful=true", port))
-            .send()
-            .await
-        else {
-            return None;
+        let _ = client.get(format!("http://127.0.0.1:{}/panic?peaceful=true", port)).send().await;
+        thread::sleep(Duration::from_millis(3000));
+        let state = Lock::get_state();
+        return match &state {
+            Lock::Single { .. } => {
+                logging!("UI", "Running in server mode.");
+                Some(state)
+            }
+            Lock::Secondary { .. } | Lock::Unknown => None,
         };
-
-        if response.status().as_u16() == 502 {
-            thread::sleep(Duration::from_millis(1500));
-            let state = Lock::get_state();
-            return match &state {
-                Lock::Single { .. } => {
-                    logging!("UI", "Running in server mode.");
-                    Some(state)
-                }
-                Lock::Secondary { .. } | Lock::Unknown => None,
-            };
-        }
     }
     return None;
 }

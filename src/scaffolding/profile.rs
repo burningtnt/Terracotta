@@ -46,8 +46,4 @@ impl Profile {
     pub fn set_name(&mut self, name: String) {
         self.name = name;
     }
-
-    pub fn as_snapshot(&self) -> ProfileSnapshot {
-        ProfileSnapshot { machine_id: self.machine_id.clone(), name: self.name.clone(), vendor: self.vendor.clone(), kind: self.kind }
-    }
 }

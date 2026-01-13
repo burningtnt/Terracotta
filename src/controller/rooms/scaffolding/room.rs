@@ -1,5 +1,4 @@
-use crate::controller::experimental::{MACHINE_ID, VENDOR};
-use crate::controller::rooms::legacy;
+use crate::controller::scaffolding::{MACHINE_ID, VENDOR};
 use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ConnectionDifficulty, ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
@@ -18,6 +17,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::thread;
+use socket2::{Domain, SockAddr, Socket, Type};
 use crate::easytier::EasyTierMember;
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
@@ -52,7 +52,7 @@ pub fn create_room() -> Room {
         code,
         network_name,
         network_secret,
-        kind: RoomKind::Experimental { seed: value },
+        kind: RoomKind::Scaffolding { seed: value },
     }
 }
 
@@ -95,7 +95,7 @@ pub fn parse(code: &str) -> Option<Room> {
         code,
         network_name,
         network_secret,
-        kind: RoomKind::Experimental { seed: value },
+        kind: RoomKind::Scaffolding { seed: value },
     })
 }
 
@@ -173,7 +173,7 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
         loop {
             thread::sleep(Duration::from_secs(5));
 
-            if legacy::check_mc_conn(port) {
+            if check_mc_conn(port) {
                 counter = 0;
             } else {
                 counter += 1;
@@ -409,7 +409,7 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture)
     };
 
     for _ in 0..8 {
-        if legacy::check_mc_conn(local_port) {
+        if check_mc_conn(local_port) {
             break;
         }
     }
@@ -622,4 +622,32 @@ fn compute_arguments(room: &Room, public_servers: PublicServers) -> Vec<Argument
 
     args.extend_from_slice(&DEFAULT_ARGUMENTS);
     args
+}
+
+fn check_mc_conn(port: u16) -> bool {
+    let start = SystemTime::now();
+
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, None).unwrap();
+    socket.set_read_timeout(Some(Duration::from_secs(64))).unwrap();
+    socket.set_write_timeout(Some(Duration::from_secs(64))).unwrap();
+    if let Ok(_) = socket.connect_timeout(
+        &SockAddr::from(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), port)),
+        Duration::from_secs(64),
+    ) && let Ok(_) = socket.send(&[0xFE]) {
+        let mut buf: [MaybeUninit<u8>; _] = [MaybeUninit::uninit(); 1];
+
+        if let Ok(size) = socket.recv(&mut buf) && size >= 1
+            // SAFETY: The first byte has been initialized by recv, as size >= 1
+            && unsafe { buf[0].assume_init() } == 0xFF
+        {
+            return true;
+        }
+    }
+
+    thread::sleep(
+        (start + Duration::from_secs(5))
+            .duration_since(SystemTime::now())
+            .unwrap_or(Duration::ZERO),
+    );
+    false
 }

@@ -1,12 +1,11 @@
 mod room;
-mod protocols;
+pub mod protocols;
 
-use std::fs::OpenOptions;
-use std::io::{Read, Seek, SeekFrom, Write};
+use crate::MACHINE_ID_FILE;
 use rand_core::{OsRng, TryRngCore};
 pub use room::*;
-pub use protocols::*;
-use crate::MACHINE_ID_FILE;
+use std::fs::OpenOptions;
+use std::io::{Read, Seek, SeekFrom, Write};
 
 lazy_static::lazy_static! {
     pub static ref MACHINE_ID: &'static str = get_machine_id();

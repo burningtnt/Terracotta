@@ -1,6 +1,6 @@
 use std::sync::mpsc;
 use crate::controller::states::AppState;
-use crate::controller::{experimental, ConnectionDifficulty, ExceptionType, Room};
+use crate::controller::{scaffolding, ConnectionDifficulty, ExceptionType, Room};
 use crate::scaffolding::profile::Profile;
 use crate::mc::scanning::MinecraftScanner;
 use crate::MOTD;
@@ -131,7 +131,7 @@ pub fn set_scanning(room: Option<String>, player: Option<String>) {
             }
         };
 
-        experimental::start_host(room, port, player, capture, receiver.recv().unwrap())
+        scaffolding::start_host(room, port, player, capture, receiver.recv().unwrap())
     });
 }
 

@@ -304,9 +304,7 @@ extern "system" fn jni_verify_room_code<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, roo
 
         match Room::from(&room) {
             Some(Room { kind, .. }) => match kind {
-                RoomKind::TerracottaLegacy { .. } => 1,
-                RoomKind::PCL2CE { .. } => 2,
-                RoomKind::Experimental { .. } => 3
+                RoomKind::Scaffolding { .. } => 3
             },
             None => -1
         }

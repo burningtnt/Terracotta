@@ -1,6 +1,4 @@
-pub mod experimental;
-mod legacy;
-mod pcl2ce;
+pub mod scaffolding;
 
 use crate::controller::states::AppStateCapture;
 
@@ -10,14 +8,13 @@ pub struct Room {
 
     pub network_name: String,
     pub network_secret: String,
+    #[allow(dead_code)]
     pub kind: RoomKind,
 }
 
 #[derive(Debug, Clone)]
 pub enum RoomKind {
-    Experimental { seed: u128 },
-    TerracottaLegacy { mc_port: u16 },
-    PCL2CE { mc_port: u16 },
+    Scaffolding { #[allow(dead_code)] seed: u128 }
 }
 
 #[derive(Debug)]
@@ -27,23 +24,14 @@ pub enum ConnectionDifficulty {
 
 impl Room {
     pub fn create() -> Room {
-        experimental::create_room()
+        scaffolding::create_room()
     }
 
     pub fn from(code: &str) -> Option<Room> {
-        for parser in [experimental::parse, legacy::parse, pcl2ce::parse] {
-            if let Some(room) = parser(code) {
-                return Some(room);
-            }
-        }
-
-        None
+        scaffolding::parse(code)
     }
 
     pub fn start_guest(self, capture: AppStateCapture, player: Option<String>) {
-        match self.kind {
-            RoomKind::Experimental { .. } => experimental::start_guest(self, player, capture),
-            RoomKind::TerracottaLegacy { .. } | RoomKind::PCL2CE { .. } => legacy::start_guest(self, capture),
-        };
+        scaffolding::start_guest(self, player, capture)
     }
 }

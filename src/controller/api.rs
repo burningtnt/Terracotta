@@ -91,7 +91,7 @@ pub fn set_waiting() {
     state.set(AppState::Waiting);
 }
 
-pub fn set_scanning(room: Option<String>, player: Option<String>) {
+pub fn set_scanning(room: Option<String>, player: Option<String>, public_nodes: Vec<String>) {
     let capture = {
         let state = AppState::acquire();
         if !matches!(state.as_ref(), AppState::Waiting) {
@@ -113,7 +113,7 @@ pub fn set_scanning(room: Option<String>, player: Option<String>) {
         let room2 = room.clone();
         thread::spawn(move || {
             // EasyTier Uptime is undergoing DDOS attack, so it's crucial to perform a prefetch logic.
-            let _ = sender.send(fetch_public_nodes(&room2));
+            let _ = sender.send(fetch_public_nodes(&room2, public_nodes));
         });
 
         let (room, port, capture) = loop {
@@ -135,7 +135,7 @@ pub fn set_scanning(room: Option<String>, player: Option<String>) {
     });
 }
 
-pub fn set_guesting(room: Room, player: Option<String>) -> bool {
+pub fn set_guesting(room: Room, player: Option<String>, public_nodes: Vec<String>) -> bool {
     let capture = {
         let state = AppState::acquire();
         if !matches!(state.as_ref(), AppState::Waiting { .. }) {
@@ -144,7 +144,10 @@ pub fn set_guesting(room: Room, player: Option<String>) -> bool {
         state.set(AppState::GuestConnecting { room: room.clone() })
     };
     logging!("Core", "Connecting to room, code={}", room.code);
-    thread::spawn(move || room.start_guest(capture, player));
+    thread::spawn(move || {
+        let public_nodes = fetch_public_nodes(&room, public_nodes);
+        scaffolding::start_guest(room, player, capture, public_nodes)
+    });
 
     true
 }

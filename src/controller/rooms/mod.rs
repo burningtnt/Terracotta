@@ -1,7 +1,5 @@
 pub mod scaffolding;
 
-use crate::controller::states::AppStateCapture;
-
 #[derive(Debug, Clone)]
 pub struct Room {
     pub code: String,
@@ -29,9 +27,5 @@ impl Room {
 
     pub fn from(code: &str) -> Option<Room> {
         scaffolding::parse(code)
-    }
-
-    pub fn start_guest(self, capture: AppStateCapture, player: Option<String>) {
-        scaffolding::start_guest(self, player, capture)
     }
 }

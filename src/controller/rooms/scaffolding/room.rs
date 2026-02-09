@@ -3,7 +3,8 @@ use crate::controller::states::{AppState, AppStateCapture};
 use crate::controller::{ConnectionDifficulty, ExceptionType, Room, RoomKind, SCAFFOLDING_PORT};
 use crate::easytier;
 use crate::easytier::argument::{Argument, PortForward, Proto};
-use crate::easytier::publics::{fetch_public_nodes, PublicServers};
+use crate::easytier::publics::PublicServers;
+use crate::easytier::EasyTierMember;
 use crate::mc::fakeserver::FakeServer;
 use crate::ports::PortRequest;
 use crate::scaffolding::client::ClientSession;
@@ -11,14 +12,13 @@ use crate::scaffolding::profile::{Profile, ProfileKind, ProfileSnapshot};
 use crate::scaffolding::PacketResponse;
 use rand_core::{OsRng, TryRngCore};
 use serde_json::{json, Value};
+use socket2::{Domain, SockAddr, Socket, Type};
 use std::borrow::Cow;
 use std::mem::{transmute, MaybeUninit};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
-use std::time::{Duration, SystemTime};
 use std::thread;
-use socket2::{Domain, SockAddr, Socket, Type};
-use crate::easytier::EasyTierMember;
+use std::time::{Duration, SystemTime};
 
 static CHARS: &[u8] = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ".as_bytes();
 
@@ -215,8 +215,8 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     });
 }
 
-pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture) {
-    let mut args = compute_arguments(&room, fetch_public_nodes(&room));
+pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture, public_servers: PublicServers) {
+    let mut args = compute_arguments(&room, public_servers);
     args.push(Argument::DHCP);
     args.push(Argument::TcpWhitelist(0));
     args.push(Argument::UdpWhitelist(0));

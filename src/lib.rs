@@ -282,7 +282,7 @@ extern "system" fn jni_set_scanning<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: J
         let room = parse_jstring(&jenv, &room);
         let player = parse_jstring(&jenv, &player);
         let extra_nodes = parse_jstring(&jenv, &extra_nodes);
-        let extra_nodes: Vec<String> = extra_nodes.map(|s| s.split("\0").collect()).unwrap_or(vec![]);
+        let extra_nodes: Vec<String> = extra_nodes.map(|s| s.split("\0").map(|s| s.into()).collect()).unwrap_or(vec![]);
         controller::set_scanning(room, player, extra_nodes);
     }
 }
@@ -292,7 +292,7 @@ extern "system" fn jni_set_guesting<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: J
         let room = parse_jstring(&jenv, &room).expect("'room' must not be NULL.");
         let player = parse_jstring(&jenv, &player);
         let extra_nodes = parse_jstring(&jenv, &extra_nodes);
-        let extra_nodes: Vec<String> = extra_nodes.map(|s| s.split("\0").collect()).unwrap_or(vec![]);
+        let extra_nodes: Vec<String> = extra_nodes.map(|s| s.split("\0").map(|s| s.into()).collect()).unwrap_or(vec![]);
 
         if let Some(room) = Room::from(&room) && controller::set_guesting(room, player, extra_nodes) {
             JNI_TRUE

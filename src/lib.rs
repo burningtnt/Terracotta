@@ -277,20 +277,24 @@ extern "system" fn jni_set_waiting<'l>(jenv: JNIEnv<'l>, _: JClass<'l>) {
     }
 }
 
-extern "system" fn jni_set_scanning<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>, player: JString<'l>) {
+extern "system" fn jni_set_scanning<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>, player: JString<'l>, extra_nodes: JString<'l>) {
     try_jvm! { |jenv|
         let room = parse_jstring(&jenv, &room);
         let player = parse_jstring(&jenv, &player);
-        controller::set_scanning(room, player, vec![]);
+        let extra_nodes = parse_jstring(&jenv, &extra_nodes);
+        let extra_nodes: Vec<String> = extra_nodes.map(|s| s.split("\0").collect()).unwrap_or(vec![]);
+        controller::set_scanning(room, player, extra_nodes);
     }
 }
 
-extern "system" fn jni_set_guesting<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>, player: JString<'l>) -> jboolean {
+extern "system" fn jni_set_guesting<'l>(jenv: JNIEnv<'l>, _: JClass<'l>, room: JString<'l>, player: JString<'l>, extra_nodes: JString<'l>) -> jboolean {
     try_jvm! { |jenv|
         let room = parse_jstring(&jenv, &room).expect("'room' must not be NULL.");
         let player = parse_jstring(&jenv, &player);
+        let extra_nodes = parse_jstring(&jenv, &extra_nodes);
+        let extra_nodes: Vec<String> = extra_nodes.map(|s| s.split("\0").collect()).unwrap_or(vec![]);
 
-        if let Some(room) = Room::from(&room) && controller::set_guesting(room, player, vec![]) {
+        if let Some(room) = Room::from(&room) && controller::set_guesting(room, player, extra_nodes) {
             JNI_TRUE
         } else {
             JNI_FALSE

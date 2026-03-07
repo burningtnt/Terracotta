@@ -244,7 +244,7 @@ public final class TerracottaAndroidAPI {
      */
     public static void setScanning(@Nullable String room, @Nullable String player, @Nullable List<String> extraNodes) {
         assertStarted();
-        setScanning0(room, playerm, extraNodes == null ? null : String.join("\0", extraNodes));
+        setScanning0(room, player, extraNodes == null ? null : String.join("\0", extraNodes));
     }
 
     /**

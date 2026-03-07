@@ -7,10 +7,9 @@
     internal_output_capture,
     string_from_utf8_lossy_owned
 )]
+#![cfg(target_os = "android")]
 
 extern crate core;
-#[cfg(not(target_os = "android"))]
-compile_error!("Terracotta Library is intended for Android platform.");
 
 #[macro_export]
 macro_rules! logging {

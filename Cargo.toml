@@ -78,11 +78,13 @@ path = "src/main.rs"
 
 [profile.dev]
 panic = "abort"
-
-[profile.dev-fast]
-inherits = "dev"
 debug = false
 strip = "debuginfo"
+
+[profile.dev-slow]
+inherits = "dev"
+debug = true
+strip = "none"
 
 [profile.release]
 opt-level = "z"

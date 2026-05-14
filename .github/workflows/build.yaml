@@ -41,7 +41,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -49,7 +48,6 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
-      
       - name: Build
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
@@ -59,19 +57,16 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
-      
       - name: Prepare Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.exe"
           cp "target/${{ matrix.target }}/release/terracotta.exe" "$source"
           echo "ARTIFACT=$source" >> "$GITHUB_ENV"
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT }}
           path: ${{ env.ARTIFACT }}
-      
   build-unix:
     strategy:
       fail-fast: false
@@ -91,7 +86,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -99,58 +93,31 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
-      
       - name: Setup Android SDK (Android)
         if: ${{ matrix.os == 'android' }}
         uses: android-actions/setup-android@v4
         with:
           cmdline-tools-version: 11076708
           packages: 'build-tools;34.0.0 ndk;26.0.10792818 tools platform-tools platforms;android-34 '
-      
       - name: Install cargo-ndk and protobuf-compiler (Android)
         if: ${{ matrix.os == 'android' }}
         run: |
           sudo apt update
           sudo apt install --yes --no-install-recommends protobuf-compiler libprotobuf-dev
           cargo install cargo-ndk --force
-      
       - name: Install musl libc (linux x86_64 | linux arm64)
         if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
           sudo apt update
           sudo apt install --yes --no-install-recommends build-essential musl-tools musl-dev
-      
       - name: Install Zig (linux riscv64 | linux loongarch64)
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
-        run: |
-          ZIG_VERSION="0.14.0"
-
-          case "${{ runner.arch }}" in
-            X64)
-              ZIG_KEY="linux-x86_64"
-              ;;
-            ARM64)
-              ZIG_KEY="linux-aarch64"
-              ;;
-            *)
-              echo "Unsupported runner.arch: ${{ runner.arch }}"
-              exit 1
-              ;;
-          esac
-
-          ZIG_URL="https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_KEY}-${ZIG_VERSION}.tar.xz"
-          echo "Downloading Zig from: ${ZIG_URL}"
-          curl -fsSL "$ZIG_URL" -o zig.tar.xz
-          tar -xf zig.tar.xz
-          echo "$PWD/zig-${ZIG_KEY}-${ZIG_VERSION}" >> "$GITHUB_PATH"
-          export PATH="$PWD/zig-${ZIG_KEY}-${ZIG_VERSION}:$PATH"
-          which zig
-          zig version
-      
+        uses: mlugg/setup-zig@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       - name: Install cargo-zigbuild (linux riscv64 | linux loongarch64)
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: cargo install cargo-zigbuild --force
-      
       - name: Build (linux x86_64 | linux arm64)
         if: ${{ contains(fromJSON('["x86_64", "arm64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
@@ -161,13 +128,11 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
-      
       - name: Build (linux riscv64 | linux loongarch64)
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
           cargo +nightly zigbuild --release --bin terracotta --target "${{ matrix.target }}.${{ matrix.glibc-version }}"
-
       - name: Build (freebsd x86_64)
         if: ${{ contains(fromJSON('["x86_64"]'), matrix.arch) && matrix.os == 'freebsd' }}
         uses: cross-platform-actions/action@v1.0.0
@@ -184,7 +149,6 @@ jobs:
             . $HOME/.cargo/env
             rustup target add --toolchain nightly "${{ matrix.target }}"
             cargo +nightly build --release --bin terracotta --target "${{ matrix.target }}"
-      
       - name: Build (Android)
         if: ${{ matrix.os == 'android' }}
         run: |
@@ -198,7 +162,6 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=unwind
-      
       - name: Prepare Artifact
         run: |
           if [ "${{ matrix.os }}" = "android" ]; then
@@ -212,7 +175,6 @@ jobs:
           chmod 755 "$source"
           tar -czf "$source.tar.gz" "$source"
           echo "ARTIFACT=$source.tar.gz" >> "$GITHUB_ENV"
-      
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -237,7 +199,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -245,7 +206,6 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
-      
       - name: Build
         run: |
           rustup target add --toolchain nightly "${{ matrix.target }}"
@@ -255,7 +215,6 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
-      
       - name: Prepare Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
@@ -285,21 +244,18 @@ jobs:
             --component-plist build/macos/terracotta.plist \
             "$PKG_OUTPUT"
           echo "PKG_ARTIFACT=$PKG_OUTPUT" >> "$GITHUB_ENV"
-      
       - name: Upload TAR Artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.TAR_ARTIFACT }}
           path: ${{ env.TAR_ARTIFACT }}
           archive: false
-      
       - name: Upload PKG Artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.PKG_ARTIFACT }}
           path: ${{ env.PKG_ARTIFACT }}
           archive: false
-      
   assemble-packages:
     runs-on: ubuntu-latest
     name: Assemble Artifact
@@ -315,12 +271,10 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
-      
       - name: Download Artifacts
         uses: actions/download-artifact@v8
         with:
           path: artifacts
-
       - name: Assemble Artifacts
         run: |
           shopt -s nullglob
@@ -368,7 +322,6 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:

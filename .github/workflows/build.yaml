@@ -40,9 +40,7 @@ jobs:
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install GitHub Artifact Client
-        uses: lhotari/gh-actions-artifact-client@v2
+        uses: actions/checkout@v6
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -59,12 +57,16 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
-      - name: Upload Artifact
+      - name: Prepare Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.exe"
           cp "target/${{ matrix.target }}/release/terracotta.exe" "$source"
-          7z a "$source.zip" "$source"
-          cat "$source.zip" | gh-actions-artifact-client.js upload -r 90 "$source"
+          echo "ARTIFACT=$source" >> "$GITHUB_ENV"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT }}
+          path: ${{ env.ARTIFACT }}
   build-unix:
     strategy:
       fail-fast: false
@@ -83,9 +85,7 @@ jobs:
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install GitHub Artifact Client
-        uses: lhotari/gh-actions-artifact-client@v2
+        uses: actions/checkout@v6
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -95,7 +95,7 @@ jobs:
           fi
       - name: Setup Android SDK (Android)
         if: ${{ matrix.os == 'android' }}
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           cmdline-tools-version: 11076708
           packages: 'build-tools;34.0.0 ndk;26.0.10792818 tools platform-tools platforms;android-34 '
@@ -113,6 +113,8 @@ jobs:
       - name: Install Zig (linux riscv64 | linux loongarch64)
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         uses: mlugg/setup-zig@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       - name: Install cargo-zigbuild (linux riscv64 | linux loongarch64)
         if: ${{ contains(fromJSON('["riscv64", "loongarch64"]'), matrix.arch) && matrix.os == 'linux' }}
         run: cargo install cargo-zigbuild --force
@@ -133,7 +135,7 @@ jobs:
           cargo +nightly zigbuild --release --bin terracotta --target "${{ matrix.target }}.${{ matrix.glibc-version }}"
       - name: Build (freebsd x86_64)
         if: ${{ contains(fromJSON('["x86_64"]'), matrix.arch) && matrix.os == 'freebsd' }}
-        uses: cross-platform-actions/action@v0.30.0
+        uses: cross-platform-actions/action@v1.0.0
         with:
           operating_system: freebsd
           architecture: ${{ matrix.arch }}
@@ -160,7 +162,7 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=unwind
-      - name: Upload Artifact
+      - name: Prepare Artifact
         run: |
           if [ "${{ matrix.os }}" = "android" ]; then
             source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.so"
@@ -171,8 +173,14 @@ jobs:
           fi
           
           chmod 755 "$source"
-          tar -cf "$source.tar" "$source"
-          zip -q - "$source.tar" | gh-actions-artifact-client.js upload -r 90 "$source.tar"
+          tar -czf "$source.tar.gz" "$source"
+          echo "ARTIFACT=$source.tar.gz" >> "$GITHUB_ENV"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT }}
+          path: ${{ env.ARTIFACT }}
+          archive: false
   build-macos:
     strategy:
       fail-fast: false
@@ -190,9 +198,7 @@ jobs:
     name: Build (${{ matrix.target }})
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install GitHub Artifact Client
-        uses: lhotari/gh-actions-artifact-client@v2
+        uses: actions/checkout@v6
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -209,14 +215,14 @@ jobs:
             -Z build-std-features=default,optimize_for_size
         env:
           RUSTFLAGS: -Zunstable-options -Cpanic=immediate-abort
-      - name: Upload Artifact
+      - name: Prepare Artifact
         run: |
           source="terracotta-${TERRACOTTA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           
           cp "target/${{ matrix.target }}/release/terracotta" "$source"
           chmod 755 "$source"
-          tar -cf "$source.tar" "$source"
-          zip -q - "$source.tar" | gh-actions-artifact-client.js upload -r 90 "$source.tar"
+          tar -czf "$source.tar.gz" "$source"
+          echo "TAR_ARTIFACT=$source.tar.gz" >> "$GITHUB_ENV"
           
           chmod -R 755 build/macos/scripts
           TEMP_DIR=$(mktemp -d)
@@ -237,7 +243,19 @@ jobs:
             --scripts build/macos/scripts \
             --component-plist build/macos/terracotta.plist \
             "$PKG_OUTPUT"
-          zip -q - $PKG_OUTPUT | gh-actions-artifact-client.js upload -r 90 "$source.pkg"
+          echo "PKG_ARTIFACT=$PKG_OUTPUT" >> "$GITHUB_ENV"
+      - name: Upload TAR Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.TAR_ARTIFACT }}
+          path: ${{ env.TAR_ARTIFACT }}
+          archive: false
+      - name: Upload PKG Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.PKG_ARTIFACT }}
+          path: ${{ env.PKG_ARTIFACT }}
+          archive: false
   assemble-packages:
     runs-on: ubuntu-latest
     name: Assemble Artifact
@@ -246,8 +264,6 @@ jobs:
       - build-unix
       - build-macos
     steps:
-      - name: Install GitHub Artifact Client
-        uses: lhotari/gh-actions-artifact-client@v2
       - name: Compute Version
         run: |
           if [ -z "${{ github.event.inputs.version }}" ]; then
@@ -255,42 +271,31 @@ jobs:
           else
             echo "TERRACOTTA_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
       - name: Assemble Artifacts
         run: |
-          artifacts_direct=(
-            "terracotta-${TERRACOTTA_VERSION}-windows-x86_64.exe"
-            "terracotta-${TERRACOTTA_VERSION}-windows-arm64.exe"
-            "terracotta-${TERRACOTTA_VERSION}-macos-x86_64.pkg"
-            "terracotta-${TERRACOTTA_VERSION}-macos-arm64.pkg"
-          )
-          artifacts_tar=(
-            "terracotta-${TERRACOTTA_VERSION}-linux-x86_64"
-            "terracotta-${TERRACOTTA_VERSION}-linux-arm64"
-            "terracotta-${TERRACOTTA_VERSION}-linux-riscv64"
-            "terracotta-${TERRACOTTA_VERSION}-linux-loongarch64"
-            "terracotta-${TERRACOTTA_VERSION}-freebsd-x86_64"
-            "terracotta-${TERRACOTTA_VERSION}-macos-x86_64"
-            "terracotta-${TERRACOTTA_VERSION}-macos-arm64"
-            "terracotta-${TERRACOTTA_VERSION}-android-armv7.so"
-            "terracotta-${TERRACOTTA_VERSION}-android-arm64v8a.so"
-            "terracotta-${TERRACOTTA_VERSION}-android-x86.so"
-            "terracotta-${TERRACOTTA_VERSION}-android-x86_64.so"
-          )
-          
-          file=$(mktemp -t XXXXXX.zip)
-          for artifact in "${artifacts_direct[@]}"; do
-            gh-actions-artifact-client.js download "$artifact" > "$file"
-            unzip -p "$file" > "$artifact"
+          shopt -s nullglob
+          for dir in artifacts/*/; do
+            file="$(find "$dir" -maxdepth 1 -type f | head -n 1)"
+            if [ -n "$file" ]; then
+              name="$(basename "$dir")"
+
+              if [[ "$name" == *.tar.gz ]]; then
+                tar -xzOf "$file" > "${name%.tar.gz}"
+              else
+                mv "$file" "$name"
+              fi
+            fi
           done
-          for artifact in "${artifacts_tar[@]}"; do
-            gh-actions-artifact-client.js download "$artifact.tar" > "$file"
-            unzip -p "$file" | tar -xOf - > "$artifact"
-          done
-          rm "$file"
+          rm -r artifacts
           
-          chmod 755 terracotta-${TERRACOTTA_VERSION}-*
-          7z -m0=LZMA2 -mx=9 -ms=on a terracotta.7z terracotta-${TERRACOTTA_VERSION}-*
-          zip -r - terracotta.7z | gh-actions-artifact-client.js upload -r 90 "terracotta-${TERRACOTTA_VERSION}-all.7z"
+          chmod 755 ./terracotta-${TERRACOTTA_VERSION}-*
+
+          7z -m0=LZMA2 -mx=9 -ms=on a terracotta-${TERRACOTTA_VERSION}-all.7z terracotta-${TERRACOTTA_VERSION}-*
+          echo "ARTIFACT=terracotta-${TERRACOTTA_VERSION}-all.7z" >> $GITHUB_ENV
           
           if [ ! -z "${{ github.event.inputs.version }}" ]; then
             mkdir -p bundle
@@ -317,3 +322,10 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT }}
+          path: ${{ env.ARTIFACT }}
+          retention-days: 90
+          archive: false

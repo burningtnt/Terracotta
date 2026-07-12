@@ -139,7 +139,7 @@ jobs:
         with:
           operating_system: freebsd
           architecture: ${{ matrix.arch }}
-          version: '13.2'
+          version: '14.0'
           shell: bash
           run: |
             sudo pkg install -y llvm-devel curl ca_root_nss

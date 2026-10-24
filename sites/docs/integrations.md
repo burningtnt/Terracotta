@@ -34,11 +34,6 @@
 - **官网**：[MoLaunch](https://molaunch.moiu.cn)
 - **源码**：[MoTeam-cn/MoLaunch](https://github.com/MoTeam-cn/MoLaunch)
 
-### SJMCL
-
-- **官网**：[SJMCL](https://mc.sjtu.cn/sjmcl)
-- **源码**：[UNIkeEN/SJMCL](https://github.com/UNIkeEN/SJMCL)
-
 ### Axolotl
 
 - **官网**：[Axolotl](https://axlmc.org/)

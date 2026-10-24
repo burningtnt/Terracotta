@@ -20,6 +20,10 @@ Terracotta 为游玩 Minecraft: Java Edition 的玩家提供开箱即用的联�
 | FreeBSD（x86_64） | ✅ |
 | Android（JNI） | ✅ |
 
+## 下载
+
+可在 [GitHub Releases](https://github.com/burningtnt/Terracotta/releases)、[Gitee Releases](https://gitee.com/burningtnt/Terracotta/releases)、[CNB Releases](https://cnb.cool/HMCL-Terracotta/Terracotta/-/releases) 和 [QQ 下载群 1055803454](https://qm.qq.com/cgi-bin/qm/qr?k=nIf5u5xQ3LXEP4ZEmLQtfjtpppjgHfI5&jump_from=webapi&authKey=sXStlPuGzhD1JyAhyExd2OwjzZkRf3x7bAEb/j1xNX1wrQcDdg71qPrhumIm6pyf) 下载对应平台的发行包。
+
 ## 许可
 
 本程序使用 [GNU Affero General Public License v3.0 or later](https://github.com/burningtnt/Terracotta/blob/master/LICENSE) 许可，并附有以下例外：

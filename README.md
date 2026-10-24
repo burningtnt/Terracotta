@@ -4,6 +4,8 @@ Terracotta 为游玩 Minecraft: Java Edition 的玩家提供开箱即用的联�
 
 项目基于 EasyTier 开发，针对 Minecraft 做了大量优化，尽量降低操作门槛并集成了 HMCL 启动器支持。
 
+有关更多信息，请参阅[文档](https://burningtnt.github.io/Terracotta/)。
+
 ## 下载
 
 可在 [Releases](https://github.com/burningtnt/Terracotta/releases) 页面下载对应平台的发行包。

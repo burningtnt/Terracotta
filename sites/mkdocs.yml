@@ -6,6 +6,8 @@ repo_name: Terracotta
 theme:
   name: material
   language: zh
+  favicon: favicon.ico
+  logo: favicon.ico
   palette:
     scheme: default
     primary: red
@@ -19,8 +21,9 @@ theme:
 
 nav:
   - 首页: index.md
-  - HTTP API: api.md
+  - HTTP API: http-api.md
   - Android API: android-api.md
+  - macOS 自动安装: macos-install.md
   - 内部协议: internal-protocol.md
   - 公共节点: public-server.md
   - 集成列表: integrations.md

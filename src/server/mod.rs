@@ -36,6 +36,9 @@ fn download_log(fetch: Option<bool>) -> Result<std::fs::File, Status> {
 fn panic(peaceful: Option<bool>) {
     if peaceful.unwrap_or(false) {
         logging!("Core", "Closed by web API. Shutting down.");
+        // Keep the state locked until exit so no new EasyTier process can start.
+        let mut state = controller::AppState::acquire().into_slow();
+        *state.as_mut_ref() = controller::AppState::Waiting;
         std::process::exit(0);
     } else {
         panic!();
@@ -94,4 +97,6 @@ pub async fn server_main(port_callback: mpsc::Sender<u16>) {
         .launch()
         .await
         .unwrap();
+
+    controller::AppState::acquire().into_slow().set(controller::AppState::Waiting);
 }

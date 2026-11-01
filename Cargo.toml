@@ -40,6 +40,7 @@ timestamp = { path = "timestamp" }
 hex = "0.4.3"
 rand_chacha = "0.9.0"
 parking_lot = "0.12.4"
+sha2 = { version = "0.11.1", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.1"
@@ -68,6 +69,8 @@ reqwest = { version = "0.12.22", default-features = false, features = [
 ] }
 zip = "4.3.0"
 toml = "0.9.4"
+sha2 = { version = "0.11.1", default-features = false }
+hex = "0.4.3"
 
 [lib]
 crate-type = ["cdylib"]

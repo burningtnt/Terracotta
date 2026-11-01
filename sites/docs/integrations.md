@@ -39,6 +39,11 @@
 - **官网**：[Axolotl](https://axlmc.org/)
 - **源码**：[Mystic-Stars/Axolotl](https://github.com/Mystic-Stars/Axolotl)
 
+### Air
+
+- **官网**：[Air](https://air-legacy.air-devs.top/)
+- **源码**：[herbrine8403/Amethyst-iOS-MyRemastered](https://github.com/herbrine8403/Amethyst-iOS-MyRemastered)
+
 ## 游戏模组（Mods）
 
 ### VoxLink
@@ -46,3 +51,5 @@
 - **官网**：[VoxLink](https://p2p.wuhui.icu/)
 - **下载**：[CurseForge - VoxLink](https://www.curseforge.com/minecraft/mc-mods/voxlink)
 - **源码**：[AUGUHDAR/VoxLink](https://github.com/AUGUHDAR/VoxLink)
+
+注：该程序也提供独立的应用程序

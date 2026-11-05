@@ -1,5 +1,6 @@
 use sevenz_rust2::encoder_options::{EncoderOptions, LZMA2Options};
 use sevenz_rust2::{ArchiveEntry, EncoderConfiguration, EncoderMethod, SourceReader};
+use sha2::{Digest, Sha256};
 use std::io::Cursor;
 use std::{
     env, fs,
@@ -197,6 +198,7 @@ fn download_easytier() {
     let entry_conf = base.clone().join("entry-conf.v1.txt");
     let cli_conf = base.clone().join("cli-conf.v1.txt");
     let entry_archive = base.clone().join("easytier.7z");
+    let checksums_conf = base.join("checksums.v1.txt");
     println!(
         "cargo::rustc-env=TERRACOTTA_ET_ENTRY_CONF={}",
         entry_conf.as_path().to_str().unwrap()
@@ -209,8 +211,12 @@ fn download_easytier() {
         "cargo::rustc-env=TERRACOTTA_ET_ARCHIVE={}",
         entry_archive.as_path().to_str().unwrap()
     );
+    println!(
+        "cargo::rustc-env=TERRACOTTA_ET_CHECKSUMS={}",
+        checksums_conf.to_str().unwrap()
+    );
 
-    if fs::metadata(entry_conf.clone()).is_ok() {
+    if fs::metadata(entry_conf.clone()).is_ok() && checksums_conf.is_file() {
         return;
     }
 
@@ -250,13 +256,17 @@ fn download_easytier() {
     }]);
     let mut archive_entries: Vec<ArchiveEntry> = vec![];
     let mut archive_readers: Vec<SourceReader<Cursor<Vec<u8>>>> = vec![];
+    let mut checksums = String::new();
     for file in conf.files.iter() {
         let mut entry = archive.by_name(file).unwrap();
 
         let mut buf: Vec<u8> = vec![];
         entry.read_to_end(&mut buf).unwrap();
 
-        archive_entries.push(ArchiveEntry::new_file(Path::new(&entry.enclosed_name().unwrap()).file_name().unwrap().to_str().unwrap()));
+        let name = entry.enclosed_name().unwrap();
+        let name = name.file_name().unwrap().to_str().unwrap();
+        checksums.push_str(&format!("{} {}\n", hex::encode(Sha256::digest(&buf)), name));
+        archive_entries.push(ArchiveEntry::new_file(name));
         archive_readers.push(SourceReader::new(Cursor::new(buf)));
     }
     writer.push_archive_entries(archive_entries, archive_readers).unwrap();
@@ -268,6 +278,7 @@ fn download_easytier() {
     }
     fs::write(entry_conf, conf.entry).unwrap();
     fs::write(cli_conf, conf.cli).unwrap();
+    fs::write(checksums_conf, checksums).unwrap();
 }
 
 pub fn get_var<K: AsRef<std::ffi::os_str::OsStr>>(key: K) -> Result<String, env::VarError> {

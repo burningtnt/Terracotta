@@ -9,10 +9,11 @@ pub mod publics;
 
 cfg_if! {
     if #[cfg(not(target_os = "android"))] {
+        mod cache;
         mod executable_impl;
         use executable_impl as inner;
 
-        pub use inner::{initialize, cleanup};
+        pub use inner::initialize;
     } else {
         mod linkage_impl;
         use linkage_impl as inner;

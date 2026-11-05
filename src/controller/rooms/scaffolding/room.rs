@@ -147,11 +147,16 @@ pub fn start_host(room: Room, port: u16, player: Option<String>, capture: AppSta
     args.push(Argument::TcpWhitelist(port));
     args.push(Argument::UdpWhitelist(port));
 
+    #[cfg(target_os = "android")]
     let easytier = easytier::create(args);
     let capture = {
         let Some(state) = capture.try_capture() else {
             return;
         };
+        #[cfg(not(target_os = "android"))]
+        let state = state.into_slow();
+        #[cfg(not(target_os = "android"))]
+        let easytier = easytier::create(args);
         state.set(AppState::HostOk {
             room,
             port,
@@ -220,11 +225,16 @@ pub fn start_guest(room: Room, player: Option<String>, capture: AppStateCapture,
     args.push(Argument::DHCP);
     args.push(Argument::TcpWhitelist(0));
     args.push(Argument::UdpWhitelist(0));
+    #[cfg(target_os = "android")]
     let easytier = easytier::create(args);
     let capture = {
         let Some(state) = capture.try_capture() else {
             return;
         };
+        #[cfg(not(target_os = "android"))]
+        let state = state.into_slow();
+        #[cfg(not(target_os = "android"))]
+        let easytier = easytier::create(args);
 
         state.set(AppState::GuestStarting { room, easytier, difficulty: ConnectionDifficulty::Unknown })
     };

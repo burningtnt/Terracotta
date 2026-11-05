@@ -126,7 +126,7 @@ lazy_static! {
         ))
     };
     static ref LOGGING_FILE: std::path::PathBuf = WORKING_DIR.join("application.log");
-    static ref EASYTIER_DIR: std::path::PathBuf = WORKING_DIR.join("embedded-easytier");
+    static ref EASYTIER_DIR: std::path::PathBuf = FILE_ROOT.join("easytier");
 }
 
 #[derive(Debug, PartialEq)]
@@ -447,8 +447,6 @@ async fn main_single(state: Option<Lock>, mode: Mode) {
 
     future.await;
     let _ = port_callback2.send(0);
-
-    easytier::cleanup();
 }
 
 async fn main_secondary(port: u16, mode: Mode) {
@@ -565,7 +563,7 @@ fn cleanup() {
                         .path()
                         .file_name()
                         .and_then(|v| v.to_str())
-                        .is_none_or(|v| v != "terracotta.lock")
+                        .is_none_or(|v| !matches!(v, "terracotta.lock" | "easytier"))
                     && let Ok(metadata) = file.metadata()
                     && let Ok(file_type) = file.file_type()
                     && let Ok(time) = metadata.created()

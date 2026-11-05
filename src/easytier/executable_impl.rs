@@ -1,3 +1,4 @@
+use super::cache;
 use crate::easytier::argument::{Argument, PortForward};
 use crate::ports::PortRequest;
 use crate::EASYTIER_DIR;
@@ -8,7 +9,7 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::{
     env, fs,
-    io::{BufRead, BufReader, Cursor, Error},
+    io::{BufRead, BufReader},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{mpsc, Arc},
@@ -30,6 +31,7 @@ lazy_static::lazy_static! {
 struct EasytierFactory {
     exe: PathBuf,
     cli: PathBuf,
+    _cache_lock: fs::File,
 }
 
 pub fn initialize() {
@@ -42,17 +44,18 @@ pub struct EasyTier {
 }
 
 fn create_factory() -> EasytierFactory {
-    let _ = fs::create_dir_all(&*EASYTIER_DIR);
-
     logging!(
         "Easytier",
-        "Releasing easytier to {}",
+        "Preparing easytier at {}",
         &*EASYTIER_DIR.to_string_lossy()
     );
 
-    sevenz_rust2::decompress(Cursor::new(EASYTIER_ARCHIVE.2.to_vec()), &*EASYTIER_DIR)
-        .map_err(|e| Error::other(e.to_string()))
-        .unwrap();
+    let lock = cache::prepare(
+        &EASYTIER_DIR,
+        EASYTIER_ARCHIVE.2,
+        include_str!(env!("TERRACOTTA_ET_CHECKSUMS")),
+    )
+    .expect("Cannot prepare the embedded EasyTier files");
 
     let exe: PathBuf = Path::join(&EASYTIER_DIR, EASYTIER_ARCHIVE.0);
     let cli: PathBuf = Path::join(&EASYTIER_DIR, EASYTIER_ARCHIVE.1);
@@ -68,7 +71,7 @@ fn create_factory() -> EasytierFactory {
         permissions.set_mode(permissions.mode() | 0o100);
         fs::set_permissions(cli.clone(), permissions).unwrap();
     }
-    EasytierFactory { exe, cli }
+    EasytierFactory { exe, cli, _cache_lock: lock }
 }
 
 pub fn create(args: Vec<Argument>) -> EasyTier {
@@ -184,12 +187,6 @@ pub fn create(args: Vec<Argument>) -> EasyTier {
     });
 
     EasyTier { process, rpc }
-}
-
-pub fn cleanup() {
-    if let Some(dir) = FACTORY.exe.parent() {
-        let _ = fs::remove_dir_all(dir);
-    }
 }
 
 fn forward_std<F>(process: &mut Child, handle: F)
@@ -320,6 +317,9 @@ impl EasyTier {
 impl Drop for EasyTier {
     fn drop(&mut self) {
         logging!("EasyTier", "Killing EasyTier.");
-        let _ = self.process.lock().kill();
+        let mut process = self.process.lock();
+        if let Err(e) = process.kill().and_then(|_| process.wait()) {
+            logging!("EasyTier", "Cannot stop EasyTier: {:?}", e);
+        }
     }
 }

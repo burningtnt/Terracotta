@@ -1,0 +1,952 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Terracotta">
+      
+      
+      
+      
+        <link rel="prev" href="../http-api/">
+      
+      
+        <link rel="next" href="../macos-install/">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Android API - Terracotta</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#android-api" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="Terracotta" class="md-header__button md-logo" aria-label="Terracotta" data-md-component="logo">
+      
+  <img src="../favicon.ico" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terracotta
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Android API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/burningtnt/Terracotta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Terracotta
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../http-api/" class="md-tabs__link">
+        
+  
+    
+  
+  HTTP API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  Android API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../macos-install/" class="md-tabs__link">
+        
+  
+    
+  
+  macOS 自动安装
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../internal-protocol/" class="md-tabs__link">
+        
+  
+    
+  
+  内部协议
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../public-server/" class="md-tabs__link">
+        
+  
+    
+  
+  公共节点
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/" class="md-tabs__link">
+        
+  
+    
+  
+  集成列表
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Terracotta" class="md-nav__button md-logo" aria-label="Terracotta" data-md-component="logo">
+      
+  <img src="../favicon.ico" alt="logo">
+
+    </a>
+    Terracotta
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/burningtnt/Terracotta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Terracotta
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../http-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    HTTP API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Android API
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Android API
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      引入方式
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      生命周期与初始化
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      状态读取与切换
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="状态读取与切换">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      读取状态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      切换状态
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vpnservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      VpnService 接入
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      日志收集
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      异常处理
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      典型接入流程
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../macos-install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    macOS 自动安装
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../internal-protocol/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    内部协议
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../public-server/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    公共节点
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    集成列表
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      引入方式
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      生命周期与初始化
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      状态读取与切换
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="状态读取与切换">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      读取状态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      切换状态
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vpnservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      VpnService 接入
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      日志收集
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      异常处理
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      典型接入流程
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="android-api">Android API 接入指南</h1>
+<p>Terracotta 在 Android 平台以 JNI 静态库的形式发布，配套提供一个 <code>TerracottaAndroidAPI</code> Java 类作为接入层。启动器或联机应用只需将该 Java 文件拷贝进工程，并将 <code>libterracotta.so</code> 打包到 APK，即可直接调用陶瓦的房间创建、加入、状态查询与日志收集能力。</p>
+<blockquote>
+<p>本文档基于版本 <code>v0.4.2</code> 源码整理。状态 JSON 的字段定义与 <a href="../http-api/">HTTP API</a> 一致。</p>
+</blockquote>
+<h2 id="_1">引入方式</h2>
+<ol>
+<li>将 <code>ffi/TerracottaAndroidAPI.java</code> 拷贝到工程中。该类不依赖 Terracotta 其它 Java 代码，可以整体重定位到任意包名下——只需保持文件名不变，类加载时会通过 <code>net.burningtnt.terracotta.native_location</code> 系统属性自动告知原生层实际的 JNI 类路径。</li>
+<li>将为 Android 构建的 <code>libterracotta.so</code> 放入 <code>jniLibs/&lt;abi&gt;/</code> 目录。类加载时自动执行 <code>System.loadLibrary("terracotta")</code>，无需手动加载。</li>
+<li>准备好一个 <code>VpnService</code> 子类用于建立 VPN 连接（见下文「VpnService 接入」）。</li>
+</ol>
+<p>类上所有方法均为静态方法且线程安全，可在任意线程并发调用。但 EasyTier 初始化期间，<code>getState</code> / <code>setWaiting</code> / <code>setScanning</code> / <code>setGuesting</code> 可能阻塞约 1 秒，建议在后台线程调用。</p>
+<h2 id="_2">生命周期与初始化</h2>
+<p><code>TerracottaAndroidAPI</code> 是进程级单例：<code>initialize</code> 只能成功调用一次，重复调用会抛出 <code>IllegalStateException</code>。调用前必须先准备：</p>
+<ul>
+<li>一个 Android <code>Context</code>（用于定位 <code>filesDir</code>，陶瓦会在其下创建 <code>net.burningtnt.terracotta/</code> 目录，包含 EasyTier 数据目录 <code>rs/</code> 与日志文件 <code>application.log</code>）；</li>
+<li>一个 <code>VpnServiceCallback</code> 回调，用于接收陶瓦发起的 VPN 建立请求。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TerracottaAndroidAPI</span><span class="p">.</span><span class="na">Metadata</span><span class="w"> </span><span class="n">metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TerracottaAndroidAPI</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">context</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="c1">// 陶瓦请求建立 VpnService，此处应跳转到 VpnService 授权界面或直接建立连接</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">);</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">Log</span><span class="p">.</span><span class="na">i</span><span class="p">(</span><span class="s">&quot;Terracotta&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version=&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">metadata</span><span class="p">.</span><span class="na">getTerracottaVersion</span><span class="p">()</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;, easytier=&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">metadata</span><span class="p">.</span><span class="na">getEasyTierVersion</span><span class="p">()</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;, compileTime=&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">metadata</span><span class="p">.</span><span class="na">getTerracottaCompileTime</span><span class="p">());</span>
+</code></pre></div>
+<p><code>Metadata</code> 包含三个字段：陶瓦版本号、编译时间戳（毫秒，与 <code>System.currentTimeMillis()</code> 同基）、EasyTier 版本号。</p>
+<p>初始化失败（目录无法创建、原生层启动失败等）会抛出 <code>RuntimeException</code>。</p>
+<h2 id="_3">状态读取与切换</h2>
+<h3 id="_4">读取状态</h3>
+<p><code>getState()</code> 返回一个 JSON 字符串，结构同 <a href="../http-api/">HTTP API 的 <code>/state</code></a>：</p>
+<ul>
+<li><code>index</code> 字段单调递增，每次状态变化（含成员变动）都会自增。轮询方应记录已见过的最大 <code>index</code>，忽略未增大的响应。</li>
+<li><code>state</code> 字段标识当前状态：<code>waiting</code> / <code>host-scanning</code> / <code>host-starting</code> / <code>host-ok</code> / <code>guest-connecting</code> / <code>guest-starting</code> / <code>guest-ok</code> / <code>exception</code>。</li>
+</ul>
+<p>建议以约 500ms 间隔在后台线程轮询。</p>
+<h3 id="_5">切换状态</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setWaiting()</code></td>
+<td>重置为待机状态，用于「返回主页」等操作。</td>
+</tr>
+<tr>
+<td><code>setScanning(@Nullable String room, @Nullable String player)</code></td>
+<td>以房主身份开房。<code>room</code> 传入已有邀请码可复用原房间，传 <code>null</code> 则新建；<code>player</code> 为房主显示名，传 <code>null</code> 使用默认值。仅在当前为 <code>waiting</code> 状态时生效，否则静默忽略。</td>
+</tr>
+<tr>
+<td><code>setGuesting(String room, @Nullable String player)</code></td>
+<td>以加入方身份加入房间。<code>room</code> 不可为空；邀请码格式错误、或当前不在 <code>waiting</code> 状态时返回 <code>false</code>，成功受理返回 <code>true</code>。</td>
+</tr>
+<tr>
+<td><code>parseRoomCode(String room)</code></td>
+<td>仅解析邀请码，不切换状态。返回 <code>RoomType.TERRACOTTA_LEGACY</code> / <code>PCL2CE</code> / <code>SCAFFOLDING</code>；格式无效返回 <code>null</code>。</td>
+</tr>
+</tbody>
+</table>
+<p>除 <code>parseRoomCode</code> 外，以上方法都要求在 <code>initialize</code> 成功之后调用，否则抛出 <code>IllegalStateException</code>。</p>
+<p><code>parseRoomCode</code> 足够快，可在 UI 线程直接调用，但仍建议放到工作线程以防潜在的 UI 卡顿。</p>
+<h2 id="vpnservice">VpnService 接入</h2>
+<p>Android 上 EasyTier 需要一块虚拟网卡（TUN 设备），只能通过系统的 <code>VpnService</code> 建立。Terracotta 采用「请求—响应」模式：</p>
+<ol>
+<li>原生层在需要 VPN 时，在 Rust 工作线程上回调 <code>initialize</code> 时传入的 <code>VpnServiceCallback.onStartVpnService()</code>。<strong>该回调不在 UI 线程</strong>，请不要在此直接操作界面；如需跳转授权页或启动 Service，请自行切换到主线程。</li>
+<li>Java 层调用 <code>getPendingVpnServiceRequest()</code> 拿到一个 <code>VpnServiceRequest</code> 对象。该对象一次性：<code>startVpnService</code> 或 <code>reject</code> 任一调用后，<code>pendingRequest</code> 即被清空；下一次 VPN 请求会生成新的对象，需重新获取。</li>
+<li>在 <strong>30 秒</strong> 内，必须调用该对象的 <code>startVpnService(builder)</code> 或 <code>reject()</code>，二者其一：</li>
+<li>调 <code>startVpnService(builder)</code>：基于传入的 <code>VpnService.Builder</code> 调用 <code>establish()</code> 建立连接。底层 fd 通过 <code>ParcelFileDescriptor.getFd()</code> 共享给原生层（非 detach），因此返回的 <code>ParcelFileDescriptor</code> 必须由开发者持有，在 EasyTier 退出后由开发者 <code>close()</code>。</li>
+<li>调 <code>reject()</code>：告知原生层本次不建立 VPN。原生层会在日志中记录一条错误并继续运行，EasyTier 启动流程随后会因拿不到 TUN fd 而失败。</li>
+<li>若 30 秒内两者都未调用，<code>onVpnServiceStateChanged</code> 会抛出 <code>IllegalStateException</code>，由原生层捕获并记日志，效果等同于 <code>reject()</code>。</li>
+</ol>
+<p>首次集成时，需先通过 <code>VpnService.prepare(context)</code> 检查用户是否已授权 VPN：返回非空 <code>Intent</code> 时，应先跳转到系统授权页，待用户同意后再触发陶瓦的状态切换（<code>setScanning</code> / <code>setGuesting</code>）。否则 <code>establish()</code> 会直接返回 <code>null</code>。</p>
+<p><code>VpnServiceRequest.startVpnService</code> 收到的 <code>Builder</code> 已经预配置了：</p>
+<ul>
+<li>虚拟 IP 地址（<code>addAddress</code>，来自 EasyTier 分配的 IPv4）；</li>
+<li>两个 DNS 服务器：<code>223.5.5.5</code>、<code>114.114.114.114</code>；</li>
+<li>若干 CIDR 路由（<code>addRoute</code>）。</li>
+</ul>
+<p>开发者可以在传入前继续定制（如 <code>addAllowedApplication</code>、MTU、Session 名等），但不要改动已配置的地址与路由，否则 EasyTier 无法正常工作。</p>
+<p>完整示例：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">TerracottaVpnService</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">VpnService</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">onStartCommand</span><span class="p">(</span><span class="n">Intent</span><span class="w"> </span><span class="n">intent</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">startId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="n">VpnServiceRequest</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TerracottaAndroidAPI</span><span class="p">.</span><span class="na">getPendingVpnServiceRequest</span><span class="p">();</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="n">Builder</span><span class="w"> </span><span class="n">builder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Builder</span><span class="p">()</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">                </span><span class="p">.</span><span class="na">setSession</span><span class="p">(</span><span class="s">&quot;Terracotta&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="p">.</span><span class="na">setMtu</span><span class="p">(</span><span class="mi">1400</span><span class="p">);</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="n">ParcelFileDescriptor</span><span class="w"> </span><span class="n">tun</span><span class="p">;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">            </span><span class="n">tun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">request</span><span class="p">.</span><span class="na">startVpnService</span><span class="p">(</span><span class="n">builder</span><span class="p">);</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">RuntimeException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">            </span><span class="c1">// establish() 返回 null，通常是用户尚未授权 VPN</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">            </span><span class="n">request</span><span class="p">.</span><span class="na">reject</span><span class="p">();</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">            </span><span class="n">stopSelf</span><span class="p">();</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">START_NOT_STICKY</span><span class="p">;</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="c1">// 由应用自行持有 tun；EasyTier 退出后调用 tun.close()</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">        </span><span class="c1">// 示例：保存到静态字段，或交给管理 VpnService 生命周期的组件</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">START_STICKY</span><span class="p">;</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="_6">日志收集</h2>
+<p><code>collectLogs()</code> 返回一个 <code>Reader</code>，内容为 <code>application.log</code> 的全部文本。使用约束：</p>
+<ul>
+<li>返回的 <code>Reader</code> 持有原生层日志文件锁，<strong>必须立即把内容完整读出并 <code>close()</code></strong>；否则除 <code>parseRoomCode</code> 以外的所有 API 都会被阻塞。</li>
+<li>即便忘记显式 <code>close()</code>，GC 触发 <code>finalize()</code> 时也会自动释放锁，但不应依赖这一点。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">Reader</span><span class="w"> </span><span class="n">reader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TerracottaAndroidAPI</span><span class="p">.</span><span class="na">collectLogs</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">StringBuilder</span><span class="w"> </span><span class="n">sb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">StringBuilder</span><span class="p">();</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kt">char</span><span class="o">[]</span><span class="w"> </span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="kt">char</span><span class="o">[</span><span class="mi">8192</span><span class="o">]</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reader</span><span class="p">.</span><span class="na">read</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="n">sb</span><span class="p">.</span><span class="na">append</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">logs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sb</span><span class="p">.</span><span class="na">toString</span><span class="p">();</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="c1">// 上传或展示 logs</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="_7">异常处理</h2>
+<ul>
+<li>原生层出现不可恢复错误（内部 panic 等）时，正在进行的 JNI 调用会抛出 <code>RuntimeException</code>。</li>
+<li>房间生命周期内的可恢复错误（连接失败、EasyTier 崩溃、房主 MC 失联等）不会抛异常，而是通过 <code>getState()</code> 返回 <code>exception</code> 状态上报，具体子类型见 <a href="../http-api/">HTTP API 文档</a>。</li>
+<li><code>TerracottaAndroidAPI.panic()</code> 是仅用于调试的入口，调用后原生层立即 panic 并抛 <code>RuntimeException</code>，请勿在生产环境使用。</li>
+</ul>
+<h2 id="_8">典型接入流程</h2>
+<p>以启动器集成「创建房间」为例：</p>
+<ol>
+<li>应用启动时调用 <code>TerracottaAndroidAPI.initialize(context, callback)</code>，缓存返回的 <code>Metadata</code>。</li>
+<li>用户点击「创建房间」→ 在后台线程调用 <code>setScanning(null, playerName)</code>。</li>
+<li>轮询 <code>getState()</code>：<code>host-scanning</code> 提示用户打开 MC 并对局域网开放；进入 <code>host-ok</code> 后展示 <code>room</code> 邀请码与 <code>profiles</code> 成员列表。</li>
+<li>中途若原生层需要 VPN，回调被触发，启动 <code>VpnService</code> 完成 <code>startVpnService</code>。</li>
+<li>用户点击「关闭房间」→ 调用 <code>setWaiting()</code>。</li>
+<li>需要导出诊断信息时 → 调用 <code>collectLogs()</code> 读取全部日志。</li>
+</ol>
+<p>「加入房间」流程对应把第 2 步改为：先 <code>parseRoomCode(code)</code> 在 UI 层做即时校验，再调用 <code>setGuesting(code, playerName)</code>，并处理 <code>guest-ok</code> 后 <code>url</code> 字段的展示。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>

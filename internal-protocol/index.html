@@ -1,0 +1,1289 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Terracotta">
+      
+      
+      
+      
+        <link rel="prev" href="../macos-install/">
+      
+      
+        <link rel="next" href="../public-server/">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>内部协议 - Terracotta</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#scaffoldingminecraft" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="Terracotta" class="md-header__button md-logo" aria-label="Terracotta" data-md-component="logo">
+      
+  <img src="../favicon.ico" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terracotta
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              内部协议
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/burningtnt/Terracotta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Terracotta
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../http-api/" class="md-tabs__link">
+        
+  
+    
+  
+  HTTP API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../android-api/" class="md-tabs__link">
+        
+  
+    
+  
+  Android API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../macos-install/" class="md-tabs__link">
+        
+  
+    
+  
+  macOS 自动安装
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  内部协议
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../public-server/" class="md-tabs__link">
+        
+  
+    
+  
+  公共节点
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/" class="md-tabs__link">
+        
+  
+    
+  
+  集成列表
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Terracotta" class="md-nav__button md-logo" aria-label="Terracotta" data-md-component="logo">
+      
+  <img src="../favicon.ico" alt="logo">
+
+    </a>
+    Terracotta
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/burningtnt/Terracotta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Terracotta
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../http-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    HTTP API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Android API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../macos-install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    macOS 自动安装
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    内部协议
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    内部协议
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      目标
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      名词定义
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      协议定义
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="协议定义">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机房间码
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机网络
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机中心发现协议
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机信息获取协议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="联机信息获取协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      标准协议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="标准协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      字段类型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="字段类型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#machine_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      machine_id
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      通用协议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="通用协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cping" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:ping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cprotocols" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:protocols
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cserver_port" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:server_port
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      玩家
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="玩家">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cplayer_ping-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:player_ping [心跳/5秒]
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cplayer_easytier_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:player_easytier_id [协议协商标识]
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cplayer_profiles_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:player_profiles_list
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      拓展协议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../public-server/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    公共节点
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    集成列表
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      目标
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      名词定义
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      协议定义
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="协议定义">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机房间码
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机网络
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机中心发现协议
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      联机信息获取协议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="联机信息获取协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      标准协议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="标准协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      字段类型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="字段类型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#machine_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      machine_id
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      通用协议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="通用协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cping" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:ping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cprotocols" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:protocols
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cserver_port" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:server_port
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      玩家
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="玩家">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cplayer_ping-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:player_ping [心跳/5秒]
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cplayer_easytier_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:player_easytier_id [协议协商标识]
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cplayer_profiles_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      c:player_profiles_list
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      拓展协议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="scaffoldingminecraft">Scaffolding：Minecraft 联机客户端数据交换协议</h1>
+<blockquote>
+<p>本文档摘自 <a href="https://github.com/Scaffolding-MC/Scaffolding-MC/blob/fb4e6154a5543e65ebc7dd749176b8f41cee5db9/README.md">Scaffolding-MC/Scaffolding-MC@fb4e615</a>。</p>
+<p>本协议仍在开发，若有问题或建议，可在 <a href="https://github.com/Scaffolding-MC/Scaffolding-MC">Scaffolding-MC/Scaffolding-MC</a> 提交 Issue 或发起 Pull Request。</p>
+</blockquote>
+<!---
+
+MIT License
+
+Copyright (c) 2025 Burning_TNT (pangyl08@163.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<h2 id="_1">目标</h2>
+<ul>
+<li>在 <a href="https://easytier.cn/">EasyTier</a> 的基础上建立协议；</li>
+<li>允许联机客户端相互交换和 Minecraft 联机的相关协议；</li>
+<li>带有充足可拓展性：允许各联机客户端自定义“子协议”交换更多数据。</li>
+</ul>
+<h2 id="_2">名词定义</h2>
+<ul>
+<li>联机客户端：运行在联机成员各自的电脑上，拼接参数并拉起 EasyTier 实例的应用程序；</li>
+<li>联机中心：承担 Scaffolding 协议中心服务器职责的联机客户端，运行在与 Minecraft 服务器 相同的物理机上；</li>
+<li>联机房客：处于联机网络中的其他联机客户端。</li>
+</ul>
+<h2 id="_3">协议定义</h2>
+<h3 id="_4">联机房间码</h3>
+<p>联机中心应在 Minecraft 服务器启动后，通过密码学安全的随机数生成器，创建符合 <code>U/NNNN-NNNN-SSSS-SSSS</code> 形式的联机房间码，满足以下约束：</p>
+<ul>
+<li>N 和 S 为任意大写字母（除去 I 和 O）和数字；</li>
+<li>按照 0-9、A-H、J-N、P-Z顺序映射至 [0, 33] 后，依“小端序”读得的整型应能被7整除。</li>
+</ul>
+<h3 id="_5">联机网络</h3>
+<p>EasyTier 网络名称应为 <code>scaffolding-mc-NNNN-NNNN</code>，网络密钥应为 <code>SSSS-SSSS</code>。
+例如，房间码 <code>U/YNZE-U61D-2206-HXRG</code> 对应的 EasyTier 网络名称和密钥应分别为 <code>scaffolding-mc-YNZE-U61D</code> 和 <code>2206-HXRG</code>。</p>
+<h3 id="_6">联机中心发现协议</h3>
+<p>每个 EasyTier 网络有且应仅有一联机中心。
+其 Hostname (https://easytier.cn/guide/network/configurations.html#其他设置) 应当为：
+scaffolding-mc-server-{port: uint16}。
+其中，port 必须是小于等于 65535 且大于 1024 的整数。例如：</p>
+<ul>
+<li>scaffolding-mc-server-33768：合法；</li>
+<li>scaffolding-mc-server-77844：不合法，77844 大于 65535；</li>
+<li>scaffolding-mc-server-n8：不合法，n8 不是整数。
+  如果一个网络中找不到合法的联机中心，联机客户端应提示玩家联机中心发现失败，并不再运行后续协议。</li>
+</ul>
+<blockquote>
+<p>[!CAUTION]
+若一个 EasyTier 网络中存在多个符合上述协议的联机中心，则将为【未定义行为】</p>
+</blockquote>
+<h3 id="_7">联机信息获取协议</h3>
+<p>该协议建立于 TCP 协议之上，地址为联机中心的虚拟 IP 地址，端口为联机中心的 port 参数。
+联机中心将在该接口开放 TCP服务器，接受符合如下标准的请求（大端序）：</p>
+<table>
+<thead>
+<tr>
+<th>代号</th>
+<th>偏移量</th>
+<th>类型</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>请求类型长度</td>
+<td>0</td>
+<td>uint8</td>
+<td>字段【请求类型】的字节长度</td>
+</tr>
+<tr>
+<td>请求类型</td>
+<td>1</td>
+<td>byte[]</td>
+<td>请求类型，应符合 {namespace: ascii string}:{value: ascii string}</td>
+</tr>
+<tr>
+<td>请求体长度</td>
+<td>1 + 请求类型长度</td>
+<td>uint32</td>
+<td>字段【请求体】的字节长度</td>
+</tr>
+<tr>
+<td>请求体</td>
+<td>5 + 请求类型长度</td>
+<td>/</td>
+<td>请求体，视协议而定</td>
+</tr>
+</tbody>
+</table>
+<p>其中，namespace 和 value 都应当是仅包含小写字母、下划线、数字的ASCII字符串。
+联机中心应返回如下标准的请求：</p>
+<table>
+<thead>
+<tr>
+<th>代号</th>
+<th>偏移量</th>
+<th>类型</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>状态</td>
+<td>0</td>
+<td>uint8</td>
+<td>响应状态</td>
+</tr>
+<tr>
+<td>响应体长度</td>
+<td>1</td>
+<td>uint32</td>
+<td>字段【响应体】的字节长度（可能为 0）</td>
+</tr>
+<tr>
+<td>响应体</td>
+<td>5</td>
+<td>/</td>
+<td>响应体（可能为空）</td>
+</tr>
+</tbody>
+</table>
+<p>如果处理请求成功，状态应为 0，响应体将视协议而定；如果请求失败，则应返回以下状态：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>错误类型</th>
+<th>响应体</th>
+<th>响应体格式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[32, 64)</td>
+<td>协议定义的错误</td>
+<td>若未由协议明确指出，默认为空</td>
+<td>/</td>
+</tr>
+<tr>
+<td>255</td>
+<td>未知错误</td>
+<td>错误详细内容</td>
+<td>UTF8字符串</td>
+</tr>
+</tbody>
+</table>
+<h4 id="_8">标准协议</h4>
+<p>标准协议请求类型的命名空间均为 c，代表 community。
+所有联机中心和联机房客都必须完整实现全部标准协议（标记为可选的除外）。</p>
+<h5 id="_9">字段类型</h5>
+<h6 id="machine_id">machine_id</h6>
+<p>各联机客户端应根据硬件信息生成足够长的字符串，避免碰撞，并尽力保证对同一设备始终产出稳定的结果。</p>
+<h5 id="_10">通用协议</h5>
+<h6 id="cping">c:ping</h6>
+<p>测试联机中心是否正常运行</p>
+<ul>
+<li>请求体：任意内容</li>
+<li>请求体格式：二进制内容，长度应小于 32 字节</li>
+<li>响应体：与请求体内容一致</li>
+<li>响应体格式：二进制内容，长度应与请求体一致</li>
+</ul>
+<h6 id="cprotocols">c:protocols</h6>
+<p>与联机中心协商协议列表</p>
+<ul>
+<li>请求体：联机房客所支持的协议列表；</li>
+<li>请求体格式：由 <code>\0</code> 分割的多个 ASCII String，如 c:protocols\0c:server_addresses\0c:player_name；</li>
+<li>响应体：联机中心所支持的协议列表；</li>
+<li>响应体格式：由 <code>\0</code> 分割的多个 ASCII String，如 c:protocols\0c:server_addresses\0c:player_name。</li>
+</ul>
+<h6 id="cserver_port">c:server_port</h6>
+<p>获取 Minecraft 服务器的地址</p>
+<ul>
+<li>请求体：空；</li>
+<li>响应体：Minecraft服务器的在联机中心上的端口；</li>
+<li>响应体格式：大端序编码的 2 字节 u16 数据，FF FF。</li>
+<li>错误状态：<ul>
+<li>32：服务器未启动</li>
+</ul>
+</li>
+</ul>
+<h5 id="_11">玩家</h5>
+<h6 id="cplayer_ping-5">c:player_ping [心跳/5秒]</h6>
+<ul>
+<li>请求体：玩家 ID、设备 machine_id 和 EasyTier Node ID</li>
+<li>请求体格式（JSON）：</li>
+<li>
+<ul>
+<li>联机客户端执行了协议协商且双端支持 <code>c:player_easytier_id</code> 协议：{ name: string, machine_id: string, easytier_id: string, vendor: string }</li>
+</ul>
+</li>
+<li>否则：{ name: string, machine_id: string, vendor: string }</li>
+<li>响应体：空</li>
+</ul>
+<blockquote>
+<p>联机中心应使用 machine_id 来作为所有节点的唯一标识符。</p>
+</blockquote>
+<h6 id="cplayer_easytier_id">c:player_easytier_id [协议协商标识]</h6>
+<h6 id="cplayer_profiles_list">c:player_profiles_list</h6>
+<ul>
+<li>请求体：空</li>
+<li>响应体：玩家列表（包括房主）</li>
+<li>响应体格式（JSON）：</li>
+<li>
+<ul>
+<li>联机客户端执行了协议协商且双端支持 <code>c:player_easytier_id</code> 协议：[{ name: string, machine_id: string, easytier_id: string, vendor: string, kind: 'HOST' | 'GUEST' }]</li>
+</ul>
+</li>
+<li>否则：[{ name: string, machine_id: string, vendor: string, kind: 'HOST' | 'GUEST' }]</li>
+</ul>
+<blockquote>
+<p>联机中心应使用 machine_id 来作为所有节点的唯一标识符。</p>
+</blockquote>
+<h5 id="_12">拓展协议</h5>
+<p>各联机客户端可以自行实现协议，选用自己的命名空间。
+请尽量选用联机客户端的名称作为命名空间，以避免命名空间冲突！
+标准联机流程</p>
+<ol>
+<li>联机客户端加入对应 EasyTier 网络；</li>
+<li>联机客户端根据联机中心发现协议，确定联机信息获取协议的 TCP 服务器；</li>
+<li>立刻发送 <code>c:player_ping</code> 心跳包（在协议协商之前）；</li>
+<li>在联机信息获取协议上发送 <code>c:protocols</code>，获取联机中心支持的协议，并与当前联机客户端支持的协议取交集，确定本次联机可用的全部协议（如果客户端仅支持基础协议，可以不执行联机协议协商）；</li>
+<li>在联机信息获取协议上发送 <code>c:server_port</code>，获取Minecraft服务器地址；</li>
+<li>每隔 5s 发送一次 <code>c:player_ping</code> 心跳包。</li>
+</ol>
+<p><strong>基础协议</strong> 包括：<code>c:ping</code>, <code>c:protocols</code>,<code>c:server_port</code>, <code>c:player_ping</code>, <code>c:player_profiles_list</code>。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>

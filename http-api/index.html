@@ -1,0 +1,1332 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Terracotta">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../android-api/">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>HTTP API - Terracotta</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#http-api" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="Terracotta" class="md-header__button md-logo" aria-label="Terracotta" data-md-component="logo">
+      
+  <img src="../favicon.ico" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terracotta
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              HTTP API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/burningtnt/Terracotta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Terracotta
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  HTTP API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../android-api/" class="md-tabs__link">
+        
+  
+    
+  
+  Android API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../macos-install/" class="md-tabs__link">
+        
+  
+    
+  
+  macOS 自动安装
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../internal-protocol/" class="md-tabs__link">
+        
+  
+    
+  
+  内部协议
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../public-server/" class="md-tabs__link">
+        
+  
+    
+  
+  公共节点
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/" class="md-tabs__link">
+        
+  
+    
+  
+  集成列表
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Terracotta" class="md-nav__button md-logo" aria-label="Terracotta" data-md-component="logo">
+      
+  <img src="../favicon.ico" alt="logo">
+
+    </a>
+    Terracotta
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/burningtnt/Terracotta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Terracotta
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    HTTP API
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    HTTP API
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      运行模型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="运行模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      端口发现
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      API 一览
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API 一览">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /meta
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      状态机：GET /state
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="状态机：GET /state">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#waiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      waiting（待机）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-scanning-minecraft" class="md-nav__link">
+    <span class="md-ellipsis">
+      host-scanning（房主：正在扫描本机 Minecraft 端口）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-starting" class="md-nav__link">
+    <span class="md-ellipsis">
+      host-starting（房主：正在创建房间）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-ok" class="md-nav__link">
+    <span class="md-ellipsis">
+      host-ok（房主：房间已就绪）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-connecting-guest-starting" class="md-nav__link">
+    <span class="md-ellipsis">
+      guest-connecting / guest-starting（加入方：连接中）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-ok" class="md-nav__link">
+    <span class="md-ellipsis">
+      guest-ok（加入方：加入成功）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception" class="md-nav__link">
+    <span class="md-ellipsis">
+      exception（异常）
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      成员信息（profiles）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      控制接口
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="控制接口">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-stateide" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /state/ide
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-statescanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /state/scanning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-stateguesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /state/guesting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      运维接口
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      房间邀请码格式
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      典型接入流程
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Android API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../macos-install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    macOS 自动安装
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../internal-protocol/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    内部协议
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../public-server/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    公共节点
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    集成列表
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      运行模型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="运行模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      端口发现
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      API 一览
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API 一览">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /meta
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      状态机：GET /state
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="状态机：GET /state">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#waiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      waiting（待机）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-scanning-minecraft" class="md-nav__link">
+    <span class="md-ellipsis">
+      host-scanning（房主：正在扫描本机 Minecraft 端口）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-starting" class="md-nav__link">
+    <span class="md-ellipsis">
+      host-starting（房主：正在创建房间）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-ok" class="md-nav__link">
+    <span class="md-ellipsis">
+      host-ok（房主：房间已就绪）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-connecting-guest-starting" class="md-nav__link">
+    <span class="md-ellipsis">
+      guest-connecting / guest-starting（加入方：连接中）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-ok" class="md-nav__link">
+    <span class="md-ellipsis">
+      guest-ok（加入方：加入成功）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception" class="md-nav__link">
+    <span class="md-ellipsis">
+      exception（异常）
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      成员信息（profiles）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      控制接口
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="控制接口">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-stateide" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /state/ide
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-statescanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /state/scanning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-stateguesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      GET /state/guesting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      运维接口
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      房间邀请码格式
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      典型接入流程
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="http-api">HTTP API 接入指南</h1>
+<p>Terracotta 内嵌了一个 HTTP 服务，同时托管 Web 控制界面与控制 API。第三方程序（如 HMCL 等启动器）可以通过该接口创建房间、加入房间、读取房间状态，实现与陶瓦联机的深度集成。</p>
+<blockquote>
+<p>本文档基于版本 <code>v0.4.2</code> 源码整理。</p>
+</blockquote>
+<h2 id="_1">运行模型</h2>
+<ul>
+<li>HTTP 服务仅监听本机回环地址（<code>127.0.0.1</code>），端口由操作系统随机分配。</li>
+<li>接口无鉴权，任何本地进程均可调用；请勿将端口暴露到外部网络。</li>
+<li>浏览器跨域调用不可用（服务未返回 CORS 头），请在本地后端 / 启动器进程内发起请求。</li>
+</ul>
+<h3 id="_2">端口发现</h3>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--hmcl &lt;file&gt;</code> 启动参数</td>
+<td>以集成模式启动：<code>terracotta --hmcl &lt;file&gt;</code>。HTTP 服务就绪后，端口会以 JSON <code>{"port": &lt;端口&gt;}</code> 的形式写入 <code>&lt;file&gt;</code>——实际先落盘 <code>&lt;file&gt;.tmp</code>、再改名为 <code>&lt;file&gt;</code>，保证读取方任意时刻拿到的都是完整内容。Windows 下 <code>--hmcl</code> 进程仅作为引导：fork 出子进程作为真正的工作进程，主进程则等待 <code>&lt;file&gt;</code> 出现，最长 8 秒，超时即报错退出。</td>
+</tr>
+<tr>
+<td>锁文件 <code>terracotta.lock</code></td>
+<td>位于数据目录：macOS 为 <code>~/terracotta/</code>，其他平台为系统临时目录下的 <code>terracotta/</code>（如 Windows 的 <code>%TEMP%\terracotta</code>、Linux 的 <code>/tmp/terracotta</code>）。内容为 2 字节大端端口号。若已有实例在运行，新进程会作为「附属进程」直接复用该端口。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api">API 一览</h2>
+<p>以下 Base URL 均为 <code>http://127.0.0.1:{端口}</code>，所有接口均为 <code>GET</code>。</p>
+<h3 id="get-meta">GET /meta</h3>
+<p>返回版本与平台信息：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v0.4.2&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;compile_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1750000000000&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;easytier_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v2.5.0-terracotta.2&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;yggdrasil_port&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13448</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&quot;target_tuple&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;x86_64-pc-windows-msvc&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">&quot;target_arch&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">&quot;target_vendor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pc&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">&quot;target_os&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;windows&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="nt">&quot;target_env&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;msvc&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">}</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version</code></td>
+<td>Terracotta 版本号</td>
+</tr>
+<tr>
+<td><code>compile_timestamp</code></td>
+<td>编译时间戳（毫秒，字符串形式的十进制数字）</td>
+</tr>
+<tr>
+<td><code>easytier_version</code></td>
+<td>内置 EasyTier 版本</td>
+</tr>
+<tr>
+<td><code>yggdrasil_port</code></td>
+<td>本地脚手架服务端口（TCP 私有协议），普通集成无需使用</td>
+</tr>
+<tr>
+<td><code>target_tuple</code> 及其余字段</td>
+<td>编译目标平台信息，格式为 <code>架构-供应商-系统-环境</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="get-state">状态机：GET /state</h3>
+<p>查询当前房间状态。建议以约 500ms 间隔轮询。</p>
+<p>每次状态变化（包括房间成员变动）都会使响应中的 <code>index</code> 单调递增。<strong>轮询方应记录已见过的最大 <code>index</code>，忽略 <code>index</code> 未增大的响应</strong>。</p>
+<p>各状态的响应结构如下：</p>
+<h4 id="waiting">waiting（待机）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;waiting&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h4 id="host-scanning-minecraft">host-scanning（房主：正在扫描本机 Minecraft 端口）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;host-scanning&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p>需要房主已启动 Minecraft 并进入存档，且对局域网开放（扫描到本机服务器后进入下一状态）。</p>
+<h4 id="host-starting">host-starting（房主：正在创建房间）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;host-starting&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;room&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;U/XXXX-XXXX-XXXX-XXXX&quot;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h4 id="host-ok">host-ok（房主：房间已就绪）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;host-ok&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;room&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;U/XXXX-XXXX-XXXX-XXXX&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;profile_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">&quot;profiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;machine_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;vendor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HOST&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">]</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>展示 <code>room</code> 邀请码给其他玩家。<code>profiles[0]</code> 恒为房主本人；玩家加入或超时退出（10 秒无心跳）时成员列表会更新并递增 <code>index</code>。</p>
+<h4 id="guest-connecting-guest-starting">guest-connecting / guest-starting（加入方：连接中）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guest-connecting&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;room&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;U/XXXX-XXXX-XXXX-XXXX&quot;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guest-starting&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;room&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;U/XXXX-XXXX-XXXX-XXXX&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;difficulty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MEDIUM&quot;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p><code>difficulty</code> 为 NAT 连接难度评估：<code>UNKNOWN</code> / <code>EASIEST</code> / <code>SIMPLE</code> / <code>MEDIUM</code> / <code>TOUGH</code>。</p>
+<h4 id="guest-ok">guest-ok（加入方：加入成功）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guest-ok&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">&quot;profile_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="nt">&quot;profiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;machine_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;vendor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LOCAL&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">]</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>url</code> 为访问房内服务器的直连地址：目标端口为 <code>25565</code> 时为 <code>127.0.0.1</code>，否则为 <code>127.0.0.1:{端口}</code>。可将其作为多人游戏备用直连地址展示给加入方。</p>
+<p>加入成功后陶瓦会在本地广播多人游戏服务器到局域网加入列表，加入方可直接加入。从此处加入时游戏会忽略正版验证。</p>
+<h4 id="exception">exception（异常）</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;exception&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><code>type</code></th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">0</td>
+<td>无法连接房主（房间已关闭或网络不稳定）</td>
+</tr>
+<tr>
+<td style="text-align: center;">1</td>
+<td>与房主的连接中断</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td>加入方 EasyTier 崩溃</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td>房主 EasyTier 崩溃</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td>房主端 Minecraft 服务器失联（房主退出存档，房间自动关闭）</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td>脚手架协议错误（请向开发者反馈）</td>
+</tr>
+</tbody>
+</table>
+<p>进入异常状态后需调用 <code>GET /state/ide</code> 才能回到待机。</p>
+<h3 id="profiles">成员信息（profiles）</h3>
+<p><code>host-ok</code> 与 <code>guest-ok</code> 响应中的成员对象结构：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>machine_id</code></td>
+<td>设备唯一标识，可用于区分玩家</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>玩家显示名，未提供时房主为 <code>Terracotta Anonymous Host</code>、加入方为 <code>Terracotta Anonymous Guest</code></td>
+</tr>
+<tr>
+<td><code>vendor</code></td>
+<td>来源标识</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>HOST</code>（房主）/ <code>LOCAL</code>（本机玩家）/ <code>GUEST</code>（其他加入者）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">控制接口</h3>
+<h4 id="get-stateide">GET /state/ide</h4>
+<p>重置为待机（<code>waiting</code>）状态，返回 <code>200</code>。用于「返回主页」等操作。</p>
+<h4 id="get-statescanning">GET /state/scanning</h4>
+<p>以房主身份开房：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>GET /state/scanning?room={邀请码}&amp;player={显示名}&amp;public_nodes={节点}&amp;public_nodes={节点}
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>room</code></td>
+<td>否</td>
+<td>使用指定房间码重新开房；省略时自动生成新房间</td>
+</tr>
+<tr>
+<td><code>player</code></td>
+<td>否</td>
+<td>房主显示名</td>
+</tr>
+<tr>
+<td><code>public_nodes</code></td>
+<td>否</td>
+<td>附加的 EasyTier 公共节点，可重复传入，会与内置公共节点合并</td>
+</tr>
+</tbody>
+</table>
+<p>仅在当前处于 <code>waiting</code> 状态时生效；否则请求被静默忽略，仍返回 <code>200</code>。</p>
+<h4 id="get-stateguesting">GET /state/guesting</h4>
+<p>以加入方身份加入房间：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>GET /state/guesting?room={邀请码}&amp;player={显示名}&amp;public_nodes={节点}
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th style="text-align: center;">必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>room</code></td>
+<td style="text-align: center;">是</td>
+<td>房间邀请码</td>
+</tr>
+<tr>
+<td><code>player</code></td>
+<td style="text-align: center;">否</td>
+<td>加入方显示名</td>
+</tr>
+<tr>
+<td><code>public_nodes</code></td>
+<td style="text-align: center;">否</td>
+<td>同上</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>邀请码有效且当前处于 <code>waiting</code> 状态：返回 <code>200</code>；</li>
+<li>邀请码格式错误或当前不在 <code>waiting</code> 状态：返回 <code>400 Bad Request</code>。</li>
+</ul>
+<blockquote>
+<p><strong>实现提示</strong>：也可以发后即忘——不检查返回值，让轮询自然进入 <code>exception</code> 状态来反馈错误。</p>
+</blockquote>
+<h3 id="_4">运维接口</h3>
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /log?fetch=true</code></td>
+<td>返回 <code>application.log</code> 日志文件内容。macOS 上不带 <code>fetch</code> 参数时会改为在访达中打开日志目录并返回 <code>204</code>。</td>
+</tr>
+<tr>
+<td><code>GET /panic?peaceful=true</code></td>
+<td>优雅退出 Terracotta 进程。不带参数将直接触发 panic，仅供调试。</td>
+</tr>
+<tr>
+<td><code>GET /</code></td>
+<td>Web 控制界面主页。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">房间邀请码格式</h2>
+<p>参见 <a href="../internal-protocol/">内部协议</a>。</p>
+<h2 id="_6">典型接入流程</h2>
+<p>以 HMCL 启动器集成为例：</p>
+<ol>
+<li>启动器启动陶瓦进程（HMCL 以 <code>terracotta --hmcl &lt;path&gt;</code> 启动，等待临时文件出现获取端口）。</li>
+<li>（可选）调用 <code>GET /meta</code> 展示版本信息。</li>
+<li>启动器启动后台轮询线程，按双频率策略请求 <code>GET /state</code>：UI 活跃时约 500ms、后台闲置时约 15s。</li>
+<li>用户点击「创建房间」→ 调用 <code>GET /state/scanning?player={显示名}&amp;public_nodes={节点}&amp;public_nodes={节点}...</code>。随后轮询线程会自然收到 <code>host-ok</code> 状态，展示 <code>room</code> 邀请码与成员列表。</li>
+<li>用户点击「加入房间」→ 同样先拉取节点列表，再调用 <code>GET /state/guesting?room={邀请码}&amp;player={显示名}&amp;public_nodes={节点}...</code>。</li>
+<li><code>guest-ok</code> 后，将 <code>url</code> 作为多人游戏备用直连地址展示。</li>
+<li>用户返回主页 → 调用 <code>GET /state/ide</code>。</li>
+<li>需要退出陶瓦时 → 调用 <code>GET /panic?peaceful=true</code>。</li>
+<li>轮询连续 5 次重试均失败后，可视为陶瓦进程已退出或异常。</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>
